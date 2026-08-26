@@ -12,11 +12,10 @@ import { createSupabaseBrowserClient } from './supabase/client'
  */
 const ALL_PROVIDERS: { id: Provider; label: string }[] = [
   { id: 'google', label: 'Google' },
-  { id: 'facebook', label: 'Facebook' },
   { id: 'apple', label: 'Apple' },
 ]
 
-// Comma-separated list of which providers to show, e.g. "google,facebook". Defaults to none, so
+// Comma-separated list of which providers to show, e.g. "google". Defaults to none, so
 // nothing appears until you've configured a provider and opted it in.
 const enabled = (process.env.NEXT_PUBLIC_OAUTH_PROVIDERS ?? '')
   .split(',')
