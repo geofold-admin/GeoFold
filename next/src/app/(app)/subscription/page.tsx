@@ -128,7 +128,7 @@ function GoPremium({ onGranted }: { onGranted: () => Promise<unknown> }) {
   }
 
   return (
-    <div className="card" data-build="snap-checkout-v2">
+    <div className="card">
       <div className="card-title">Go Premium</div>
 
       <form onSubmit={redeem} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
