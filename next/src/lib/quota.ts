@@ -30,13 +30,40 @@ export interface Workspace {
   frozenAtUtc: Date | null
 }
 
+/** Roles that are never subject to a plan limit. */
+const UNLIMITED_ROLES = new Set(['superadmin'])
+
+// Far enough out that `premiumActive` is true for any practical lifetime of this deployment, but
+// still a real date — the alternative is a null-means-forever special case threaded through every
+// quota check, and this way superadmin travels the exact same code path as a paying customer.
+const NEVER_EXPIRES = new Date('2999-12-31T00:00:00.000Z')
+
 // Free users may have no subscriptions row at all (it is created on the first grant), so an
 // absent row means a plain free workspace.
+//
+// This is the one chokepoint every quota decision passes through — projects, photos per project,
+// the daily caps, and the survey map all resolve through here — so the superadmin exemption lives
+// here and nowhere else. A role check scattered across the call sites would be a role check that
+// is missing from one of them.
 export async function getWorkspace(userId: string): Promise<Workspace | undefined> {
-  const [row] = await sql<{ WorkspaceType: string; PremiumUntilUtc: Date | null; FrozenAtUtc: Date | null }[]>`
-    SELECT "WorkspaceType", "PremiumUntilUtc", "FrozenAtUtc"
-    FROM subscriptions WHERE "UserId" = ${userId}`
-  if (!row) return undefined
+  const [row] = await sql<{
+    WorkspaceType: string | null
+    PremiumUntilUtc: Date | null
+    FrozenAtUtc: Date | null
+    Role: string | null
+  }[]>`
+    SELECT s."WorkspaceType", s."PremiumUntilUtc", s."FrozenAtUtc", p."Role"
+    FROM profiles p
+    LEFT JOIN subscriptions s ON s."UserId" = p."Id"
+    WHERE p."Id" = ${userId}`
+
+  if (row?.Role && UNLIMITED_ROLES.has(row.Role)) {
+    return { workspaceType: 'premium', premiumUntilUtc: NEVER_EXPIRES, frozenAtUtc: null }
+  }
+
+  // No profile row, or a profile with no subscription — both are a plain free workspace.
+  if (!row || !row.WorkspaceType) return undefined
+
   return {
     workspaceType: row.WorkspaceType === 'premium' ? 'premium' : 'free',
     premiumUntilUtc: row.PremiumUntilUtc,
