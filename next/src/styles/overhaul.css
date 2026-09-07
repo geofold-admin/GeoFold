@@ -96,13 +96,18 @@
 .mk-portal:hover { background: var(--mk-green); color: var(--mk-on-green); opacity: 1; }
 
 /* ---------- display typography ---------- */
-.mk-h-title, .mk-sec-head h2, .mk-close h2 {
+/* `.mk .mk-h-title` rather than `.mk-h-title`: marketing.css sets `.mk h1, .mk h2, .mk h3`
+   with `font-family: var(--font-sans)` and `text-transform: none` at specificity (0,1,1), which
+   beats a lone class at (0,1,0). Without the extra class the display face silently stayed
+   Archivo in sentence case — the h2 rules below already carry an element selector and win on
+   source order, which is exactly why only the h1 was affected. */
+.mk .mk-h-title, .mk .mk-sec-head h2, .mk .mk-close h2 {
   font-family: var(--font-cond), sans-serif;
   text-transform: uppercase; letter-spacing: -.005em; line-height: .95;
 }
-.mk-h-title { font-size: 46px; }
-.mk-h-title em { color: var(--mk-green); font-style: normal; }
-.mk-sec-head h2, .mk-close h2 { font-size: 32px; }
+.mk .mk-h-title { font-size: 46px; }
+.mk .mk-h-title em { color: var(--mk-green); font-style: normal; }
+.mk .mk-sec-head h2, .mk .mk-close h2 { font-size: 32px; }
 
 .mk-h-eyebrow, .mk-kick, .mk-cap-kick, .mk-price-name, .mk-facts dt {
   font-family: var(--font-mono), monospace; text-transform: uppercase;
@@ -198,7 +203,7 @@
 /* ---------- the compliance + legal pages ----------
    These carry the text a payment gateway reads, so they get explicit treatment rather than
    inheriting whatever the token flip happens to produce. */
-.mk-hero h1 { font-family: var(--font-cond), sans-serif; text-transform: uppercase; line-height: .96; }
+.mk .mk-hero h1 { font-family: var(--font-cond), sans-serif; text-transform: uppercase; line-height: .96; }
 .mk-eyebrow { font-family: var(--font-mono), monospace; color: var(--mk-green); letter-spacing: .12em; }
 .mk-lede { color: var(--mk-muted); }
 .mk-doc h2 { color: var(--mk-ink); border-top-color: var(--mk-line); }
@@ -253,13 +258,13 @@
 
 /* ---------- widen ---------- */
 @media (min-width: 700px) {
-  .mk-h-title { font-size: 78px; }
-  .mk-sec-head h2, .mk-close h2 { font-size: 46px; }
+  .mk .mk-h-title { font-size: 78px; }
+  .mk .mk-sec-head h2, .mk .mk-close h2 { font-size: 46px; }
   .mk-price-num { font-size: 46px; }
 }
 @media (min-width: 1080px) {
-  .mk-h-title { font-size: 104px; letter-spacing: -.015em; }
-  .mk-sec-head h2 { font-size: 54px; }
+  .mk .mk-h-title { font-size: 104px; letter-spacing: -.015em; }
+  .mk .mk-sec-head h2 { font-size: 54px; }
 }
 
 /* The fixed background attachment is a known scroll-jank source on mobile Safari/Chrome. */
