@@ -1,0 +1,268 @@
+/* =====================================================================================
+   GeoFold marketing — visual overhaul, 2026-09-07.
+
+   The previous identity was a light editorial one: cream paper, dark green, Archivo headings.
+   It read like a brochure. This is a field instrument: near-black, topographic contour texture,
+   a high-visibility signal green of the sort used on safety gear and GPS displays, condensed
+   display type, and coordinates set in monospace as a recurring motif.
+
+   HOW IT WORKS. marketing.css tokenises its whole palette on `.mk`, so most of the re-skin
+   happens by redefining those custom properties — and the mapping is chosen so existing
+   components invert correctly rather than needing rewriting:
+
+     --mk-green      was the dark fill under light text → now the signal accent under dark text
+     --mk-on-green   was light text on that fill        → now dark text on the accent
+     --mk-bg/--mk-ink swap polarity
+
+   Everything below the token block is the handful of places where that mapping is not enough,
+   or where the design wanted something genuinely new. Loaded last so it wins on equal specificity.
+   ===================================================================================== */
+
+.mk {
+  /* ---- surfaces ---- */
+  --mk-bg: #090f0d;
+  --mk-panel: #0f1815;
+  --mk-raise: #14201c;
+  --mk-line: #1d2c26;
+
+  /* ---- ink ---- */
+  --mk-ink: #eaf2ec;
+  --mk-prose: #c2d2c7;
+  --mk-muted: #90a397;
+  /* Light enough to clear WCAG AA (4.5:1) against the *raised* panel, not just the page —
+     these are the labels on the contact page's business-details table, which a payment gateway
+     reads. On --mk-panel the old #6c7f74 measured 4.24. */
+  --mk-faint: #7f9488;
+
+  /* ---- signal accent: high-visibility, the colour of field safety gear ---- */
+  --mk-green: #c8f73c;
+  --mk-green-2: #b3e02e;
+  --mk-green-line: #7d9c34;
+  --mk-on-green: #0b120e;
+  --mk-on-green-dim: #2b3a24;
+
+  /* ---- secondary accent, for the drone / aerial material ---- */
+  --mk-amber: #f2a950;
+
+  --mk-sand: #16221d;
+  --mk-sand-ink: #c8f73c;
+  --mk-input-line: #26382f;
+
+  background: var(--mk-bg);
+  color: var(--mk-ink);
+
+  /* Topographic contour texture. Two large, very low-contrast radial fields overlaid with a
+     fine grid — enough to read as terrain and a coordinate system without competing with type. */
+  background-image:
+    radial-gradient(ellipse 62% 48% at 14% 8%, rgba(200, 247, 60, .055), transparent 62%),
+    radial-gradient(ellipse 54% 44% at 88% 22%, rgba(90, 170, 255, .045), transparent 60%),
+    repeating-linear-gradient(0deg, rgba(200, 247, 60, .022) 0 1px, transparent 1px 92px),
+    repeating-linear-gradient(90deg, rgba(200, 247, 60, .022) 0 1px, transparent 1px 92px);
+  background-attachment: fixed;
+}
+
+.mk ::selection { background: rgba(200, 247, 60, .28); color: #eaf2ec; }
+
+/* ---------- nav: sticky, glassy, instrument-like ---------- */
+.mk-nav {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(9, 15, 13, .82);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--mk-line);
+  padding: 14px var(--mk-pad);
+}
+.mk-wordmark {
+  font-family: var(--font-cond), sans-serif; font-weight: 700; font-size: 22px;
+  letter-spacing: .04em; text-transform: uppercase; color: var(--mk-ink);
+}
+/* A live-looking status pip beside the wordmark — this is a field tool, it should feel powered on. */
+.mk-wordmark::after {
+  content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 100px;
+  background: var(--mk-green); margin-left: 7px; vertical-align: middle;
+  box-shadow: 0 0 0 3px rgba(200, 247, 60, .16);
+}
+.mk-nav-links a {
+  font-size: 13px; letter-spacing: .01em; color: var(--mk-muted); padding: 4px 0; position: relative;
+}
+.mk-nav-links a:hover { color: var(--mk-ink); opacity: 1; }
+.mk-nav-links a[aria-current='page'] { color: var(--mk-green); }
+.mk-nav-links a[aria-current='page']::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: -2px; height: 1px; background: var(--mk-green);
+}
+.mk-portal {
+  border-color: var(--mk-green); color: var(--mk-green); border-radius: 100px;
+  padding: 8px 16px; font-size: 12.5px; font-weight: 600;
+}
+.mk-portal:hover { background: var(--mk-green); color: var(--mk-on-green); opacity: 1; }
+
+/* ---------- display typography ---------- */
+.mk-h-title, .mk-sec-head h2, .mk-close h2 {
+  font-family: var(--font-cond), sans-serif;
+  text-transform: uppercase; letter-spacing: -.005em; line-height: .95;
+}
+.mk-h-title { font-size: 46px; }
+.mk-h-title em { color: var(--mk-green); font-style: normal; }
+.mk-sec-head h2, .mk-close h2 { font-size: 32px; }
+
+.mk-h-eyebrow, .mk-kick, .mk-cap-kick, .mk-price-name, .mk-facts dt {
+  font-family: var(--font-mono), monospace; text-transform: uppercase;
+}
+.mk-h-eyebrow {
+  background: transparent; border: 1px solid var(--mk-line); color: var(--mk-green);
+  border-radius: 4px; font-size: 10.5px; letter-spacing: .12em; padding: 6px 10px;
+}
+.mk-kick, .mk-cap-kick { color: var(--mk-green); letter-spacing: .12em; }
+.mk-kick.on-dark { color: var(--mk-green); }
+
+/* ---------- buttons ---------- */
+.mk .mk-btn { border-radius: 4px; font-family: var(--font-sans), sans-serif; letter-spacing: .01em; }
+.mk .mk-btn-primary {
+  background: var(--mk-green); color: var(--mk-on-green); border-color: var(--mk-green);
+  box-shadow: 0 0 22px rgba(200, 247, 60, .18);
+}
+.mk .mk-btn-primary:hover { background: var(--mk-green-2); opacity: 1; }
+.mk .mk-btn-outline { border-color: var(--mk-input-line); color: var(--mk-ink); background: transparent; }
+.mk .mk-btn-outline:hover { border-color: var(--mk-green); color: var(--mk-green); opacity: 1; }
+.mk .mk-btn-ghost { color: var(--mk-green); }
+.mk .mk-btn-ghost:hover { background: var(--mk-sand); opacity: 1; }
+
+/* ---------- sections ---------- */
+.mk-sec-tint { background: rgba(20, 32, 28, .55); border-block: 1px solid var(--mk-line); }
+/* The accent is far too loud as a full section fill — this one stays dark and gets an accent rule. */
+.mk-sec-dark { background: var(--mk-panel); border-block: 1px solid var(--mk-line); position: relative; }
+.mk-sec-dark::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--mk-green);
+}
+.mk-sec-dark .mk-sec-head h2 { color: var(--mk-ink); }
+.mk-why p { color: var(--mk-prose); }
+.mk-why strong { color: var(--mk-green); }
+
+/* ---------- fact strip: instrument readout ---------- */
+.mk-facts { border-top: 1px solid var(--mk-line); }
+.mk-facts dt { color: var(--mk-faint); font-size: 9.5px; letter-spacing: .1em; }
+.mk-facts dd { font-family: var(--font-mono), monospace; font-weight: 400; color: var(--mk-green); }
+
+/* ---------- cards ---------- */
+.mk-cap, .mk-rec, .mk-price-card, .mk-meta, .mk-plan, .mk-tags li {
+  background: var(--mk-panel); border-color: var(--mk-line); color: var(--mk-prose);
+}
+.mk-cap { border-radius: 6px; }
+.mk-cap-copy h3, .mk-rec-t, .mk-qa h3 { color: var(--mk-ink); }
+.mk-cap-copy p, .mk-rec-b, .mk-qa p, .mk-meta-b { color: var(--mk-muted); }
+.mk-recs { background: var(--mk-line); border-color: var(--mk-line); border-radius: 6px; }
+.mk-rec { background: var(--mk-panel); }
+.mk-tags li { border-radius: 4px; color: var(--mk-prose); }
+.mk-tags li:hover { border-color: var(--mk-green); color: var(--mk-green); }
+
+/* ---------- carousel ---------- */
+.mk-car-arrow { border-color: var(--mk-input-line); color: var(--mk-ink); border-radius: 4px; }
+.mk-car-arrow:hover:not(:disabled) { border-color: var(--mk-green); color: var(--mk-green); }
+.mk-car-dots button { background: var(--mk-input-line); }
+.mk-car-dots button.on { background: var(--mk-green); box-shadow: 0 0 10px rgba(200, 247, 60, .5); }
+
+/* The phone screens stay light — that is what the app actually looks like, and the contrast
+   against the dark page is the point. Only the frame changes. */
+.mk-phone-frame { background: #050908; box-shadow: 0 18px 44px rgba(0, 0, 0, .6); border: 1px solid var(--mk-line); }
+
+/* ---------- pricing ---------- */
+.mk-price-card.feat { background: var(--mk-raise); border-color: var(--mk-green); }
+.mk-price-card.feat .mk-price-name { color: var(--mk-green); }
+.mk-price-card.feat .mk-price-num { color: var(--mk-ink); }
+.mk-price-card.feat p { color: var(--mk-muted); }
+.mk-price-num { font-family: var(--font-cond), sans-serif; color: var(--mk-ink); font-size: 38px; }
+.mk-price-name { color: var(--mk-faint); letter-spacing: .12em; font-size: 10.5px; }
+.mk-plist li { color: var(--mk-prose); }
+.mk-plist li::before, .mk-plist.on-dark li::before { color: var(--mk-green); }
+.mk-plist.on-dark li { color: var(--mk-prose); }
+.mk .mk-price-card.feat .mk-btn-primary { background: var(--mk-green); color: var(--mk-on-green); }
+.mk-price-note, .mk-price-note a { color: var(--mk-muted); }
+.mk-price-note a { color: var(--mk-green); }
+
+/* ---------- closer ---------- */
+.mk-close { border-top: 1px solid var(--mk-line); }
+.mk-close h2 { color: var(--mk-ink); }
+.mk-close p { color: var(--mk-muted); }
+
+/* ---------- footer ---------- */
+.mk-footer { background: var(--mk-panel); border-top: 1px solid var(--mk-line); color: var(--mk-muted); }
+.mk-footer-brand {
+  font-family: var(--font-cond), sans-serif; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--mk-ink);
+}
+.mk-footer-col span { color: var(--mk-faint); font-family: var(--font-mono), monospace; font-size: 10px; letter-spacing: .1em; }
+.mk-footer-col a { color: var(--mk-muted); }
+.mk-footer-col a:hover { color: var(--mk-green); opacity: 1; }
+.mk-copy { color: var(--mk-faint); }
+.mk-copy a { color: var(--mk-muted); }
+
+/* ---------- the compliance + legal pages ----------
+   These carry the text a payment gateway reads, so they get explicit treatment rather than
+   inheriting whatever the token flip happens to produce. */
+.mk-hero h1 { font-family: var(--font-cond), sans-serif; text-transform: uppercase; line-height: .96; }
+.mk-eyebrow { font-family: var(--font-mono), monospace; color: var(--mk-green); letter-spacing: .12em; }
+.mk-lede { color: var(--mk-muted); }
+.mk-doc h2 { color: var(--mk-ink); border-top-color: var(--mk-line); }
+.mk-doc h3 { color: var(--mk-ink); }
+.mk-doc p, .mk-doc li { color: var(--mk-prose); }
+.mk-doc strong { color: var(--mk-ink); }
+.mk-doc a, .mk-faq-a a { color: var(--mk-green); }
+.mk-doc-updated { color: var(--mk-faint); }
+.mk-rows { border-color: var(--mk-line); background: var(--mk-panel); }
+.mk-row + .mk-row { border-top-color: var(--mk-line); }
+.mk-row dt { color: var(--mk-faint); font-family: var(--font-mono), monospace; }
+.mk-row dd, .mk-row dd a { color: var(--mk-prose); }
+.mk-row dd a { color: var(--mk-green); }
+.mk-callout { background: var(--mk-raise); border-left-color: var(--mk-green); }
+.mk-callout p { color: var(--mk-prose); }
+.mk-faq h2 { color: var(--mk-ink); }
+.mk-faq-group > h2 { color: var(--mk-faint); border-bottom-color: var(--mk-line); font-family: var(--font-mono), monospace; }
+.mk-faq-q { color: var(--mk-ink); }
+.mk-faq-a { color: var(--mk-muted); }
+.mk-lang button { border-color: var(--mk-line); color: var(--mk-muted); background: transparent; }
+.mk-lang button:hover { color: var(--mk-ink); background: var(--mk-panel); }
+.mk-lang button.on { background: var(--mk-green); border-color: var(--mk-green); color: var(--mk-on-green); }
+.mk-centered-h2 { color: var(--mk-ink); font-family: var(--font-cond), sans-serif; text-transform: uppercase; }
+.mk-meta-t { color: var(--mk-ink); }
+.mk-aside-t { color: var(--mk-ink); }
+.mk-aside-b, .mk-aside-b a { color: var(--mk-muted); }
+.mk-aside-b a { color: var(--mk-green); }
+
+/* forms */
+.mk-label { color: var(--mk-faint); font-family: var(--font-mono), monospace; font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; }
+.mk-input {
+  background: var(--mk-panel); border-color: var(--mk-input-line); color: var(--mk-ink); border-radius: 4px;
+}
+.mk-input:focus { outline: none; border-color: var(--mk-green); box-shadow: 0 0 0 3px rgba(200, 247, 60, .12); }
+.mk-input::placeholder { color: var(--mk-faint); }
+.mk-send, .mk-submit {
+  background: var(--mk-green); color: var(--mk-on-green); border: 0; border-radius: 4px;
+  font-weight: 600; padding: 14px 22px; cursor: pointer; font-family: var(--font-sans), sans-serif;
+}
+.mk-send:hover, .mk-submit:hover { background: var(--mk-green-2); }
+.mk-note { background: var(--mk-raise); color: var(--mk-prose); border-left: 2px solid var(--mk-green); }
+.mk-error { background: #2a1614; border-color: #5c2b25; color: #f0b4ac; }
+.mk-card, .mk-login-shell { background: var(--mk-panel); border-color: var(--mk-line); }
+.mk-card-t { color: var(--mk-ink); }
+.mk-card-sub, .mk-card-foot, .mk-card-foot a { color: var(--mk-muted); }
+.mk-oauth-btn { background: var(--mk-panel); border-color: var(--mk-input-line); color: var(--mk-ink); }
+.mk-oauth-btn:hover:not(:disabled) { background: var(--mk-raise); border-color: var(--mk-green); }
+.mk-or { color: var(--mk-faint); }
+.mk-or::before, .mk-or::after { background: var(--mk-line); }
+.mk-consent { color: var(--mk-muted); }
+.mk-consent a { color: var(--mk-green); }
+
+/* ---------- widen ---------- */
+@media (min-width: 700px) {
+  .mk-h-title { font-size: 78px; }
+  .mk-sec-head h2, .mk-close h2 { font-size: 46px; }
+  .mk-price-num { font-size: 46px; }
+}
+@media (min-width: 1080px) {
+  .mk-h-title { font-size: 104px; letter-spacing: -.015em; }
+  .mk-sec-head h2 { font-size: 54px; }
+}
+
+/* The fixed background attachment is a known scroll-jank source on mobile Safari/Chrome. */
+@media (max-width: 700px) {
+  .mk { background-attachment: scroll; }
+}
