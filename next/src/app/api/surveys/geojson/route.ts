@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import sql from '@/lib/db'
 import { getUserId, unauthorized } from '@/lib/auth'
+import { getWorkspace, premiumActive } from '@/lib/quota'
 import { quotaExceeded } from '@/lib/http'
 
 // Premium-gated map feed, mirroring the .NET [Authorize(Policy = "PremiumOnly")] on this endpoint.
@@ -9,9 +10,14 @@ export async function GET(req: Request) {
   if (!userId) return unauthorized()
 
   // The map is a premium feature: free users can collect surveys but not view them on a map.
-  const sub = await sql<{ Status: string; Plan: string }[]>`SELECT "Status", "Plan" FROM subscriptions WHERE "UserId" = ${userId}`
-  const active = sub[0] && (sub[0].Status === 'active' || sub[0].Status === 'trialing') && sub[0].Plan === 'premium'
-  if (!active) return quotaExceeded('Viewing surveys on a map requires the Premium plan.')
+  //
+  // Gated on `premiumActive` — which compares PremiumUntilUtc against now — and not on Plan/Status.
+  // This route was the last reader of the model migration 002 retired, and Plan/Status carry no
+  // expiry: `grantPremiumDays` sets Status='active' and nothing anywhere sets it back, so a single
+  // payment or activation key bought the map *permanently*. Every other quota decision in the app
+  // goes through premiumActive(); this one now does too.
+  if (!premiumActive(await getWorkspace(userId)))
+    return quotaExceeded('Viewing surveys on a map requires the Premium plan.')
 
   const url = new URL(req.url)
   const projectId = url.searchParams.get('projectId')
