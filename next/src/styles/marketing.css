@@ -249,3 +249,67 @@ textarea.mk-input { min-height: 0; resize: vertical; }
   .mk-hero h1 { font-size: 30px; }
   .mk-section, .mk-band, .mk-band.tall, .mk-section.tight { padding-top: 48px; padding-bottom: 48px; }
 }
+
+/* ---------- Compliance pages (FAQ, refund policy, contact details) ---------- */
+/* These carry the text a payment gateway's verification team reads, so they favour legibility
+   and a visible structure over the marketing pages' looser rhythm. */
+
+.mk-lang { display: flex; gap: 6px; justify-content: center; margin: 0 auto 40px; }
+.mk-lang button {
+  font: inherit; font-size: 12.5px; padding: 7px 14px; cursor: pointer;
+  border: 1px solid var(--mk-line); background: transparent; color: var(--mk-muted); border-radius: 4px;
+}
+.mk-lang button:hover { background: #faf8f3; }
+.mk-lang button.on { background: var(--mk-green); border-color: var(--mk-green); color: #f6f4ee; }
+
+.mk-doc { max-width: 760px; margin: 0 auto; }
+.mk-doc h2 {
+  font-family: var(--font-sans), sans-serif; font-weight: 700; font-size: 19px;
+  margin: 40px 0 12px; padding-top: 20px; border-top: 1px solid var(--mk-line);
+}
+.mk-doc h2:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+.mk-doc h3 { font-family: var(--font-sans), sans-serif; font-weight: 600; font-size: 15px; margin: 24px 0 6px; }
+.mk-doc p, .mk-doc li { font-size: 14.5px; line-height: 1.75; color: var(--mk-prose); }
+.mk-doc p { margin: 0 0 12px; }
+.mk-doc ul, .mk-doc ol { margin: 0 0 14px; padding-left: 20px; }
+.mk-doc li { margin-bottom: 7px; }
+.mk-doc a { color: var(--mk-green); text-decoration: underline; text-underline-offset: 2px; }
+.mk-doc strong { font-weight: 600; color: var(--mk-ink); }
+.mk-doc-updated {
+  font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: var(--mk-faint);
+  margin-bottom: 28px;
+}
+
+/* Definition rows: label on the left, value on the right. Used for the refund timetable and the
+   contact page's legal details, where a verifier is looking for one specific fact. */
+.mk-rows { border: 1px solid var(--mk-line); border-radius: 6px; overflow: hidden; margin: 0 0 20px; }
+.mk-row { display: grid; grid-template-columns: 200px 1fr; gap: 16px; padding: 13px 16px; }
+.mk-row + .mk-row { border-top: 1px solid var(--mk-line); }
+.mk-row dt {
+  font-family: var(--font-sans), sans-serif; font-size: 12px; font-weight: 600;
+  letter-spacing: .04em; text-transform: uppercase; color: var(--mk-muted); padding-top: 2px;
+}
+.mk-row dd { margin: 0; font-size: 14.5px; line-height: 1.6; color: var(--mk-prose); }
+.mk-row dd a { color: var(--mk-green); }
+
+/* Grouped FAQ: a heading per topic, questions beneath. */
+.mk-faq-group + .mk-faq-group { margin-top: 44px; }
+.mk-faq-group > h2 {
+  font-family: var(--font-sans), sans-serif; font-size: 13px; font-weight: 600;
+  letter-spacing: .09em; text-transform: uppercase; color: var(--mk-muted);
+  text-align: left; margin: 0 0 18px; padding-bottom: 10px; border-bottom: 1px solid var(--mk-line);
+}
+.mk-faq-a ul { margin: 8px 0 0; padding-left: 18px; }
+.mk-faq-a li { margin-bottom: 5px; }
+.mk-faq-a a { color: var(--mk-green); text-decoration: underline; text-underline-offset: 2px; }
+
+.mk-callout {
+  border-left: 3px solid var(--mk-green); background: #f4f2ec;
+  padding: 14px 16px; border-radius: 0 4px 4px 0; margin: 0 0 20px;
+}
+.mk-callout p:last-child { margin-bottom: 0; }
+
+@media (max-width: 680px) {
+  .mk-row { grid-template-columns: 1fr; gap: 4px; }
+  .mk-lang { flex-wrap: wrap; }
+}

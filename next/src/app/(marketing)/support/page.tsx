@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { BUSINESS } from '@/lib/business'
 
 export const metadata: Metadata = {
   title: 'Support — Geofold',
@@ -64,16 +65,20 @@ export default function SupportPage() {
           <div className="mk-meta-grid">
             <div className="mk-meta">
               <div className="mk-meta-t">Technical support</div>
-              <div className="mk-meta-b">support@geofold.app — include the survey reference (e.g. KAMPUNG-DURIAN-001) if it is about a specific point.</div>
+              <div className="mk-meta-b">
+                <a href={`mailto:${BUSINESS.email.support}`}>{BUSINESS.email.support}</a> — include the survey reference (e.g. KAMPUNG-DURIAN-001) if it is about a specific point.
+              </div>
             </div>
             <div className="mk-meta">
               <div className="mk-meta-t">Billing &amp; activation keys</div>
-              <div className="mk-meta-b">sales@geofold.app — for redemption problems, quote the key prefix, never the full key.</div>
+              <div className="mk-meta-b">
+                <a href={`mailto:${BUSINESS.email.billing}`}>{BUSINESS.email.billing}</a> — for redemption problems, quote the key prefix, never the full key. Refunds follow the <Link href="/refund-policy">Refund Policy</Link>.
+              </div>
             </div>
             <div className="mk-meta">
               <div className="mk-meta-t">Everything else</div>
               <div className="mk-meta-b">
-                Use the <Link href="/contact">contact form</Link>. We usually reply within a business day.
+                See the <Link href="/faq">FAQ</Link>, or use the <Link href="/contact">contact form</Link>. We usually reply within a business day.
               </div>
             </div>
           </div>

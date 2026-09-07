@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { PREMIUM_DAYS, PREMIUM_PRICE_LABEL } from '@/lib/pricing'
 import { CheckIcon } from '../icons'
 
 export const metadata: Metadata = {
@@ -7,12 +8,11 @@ export const metadata: Metadata = {
   description: 'Start free with three projects. Go Premium for unlimited projects, photos and the survey map.',
 }
 
-// ⚠️ PLACEHOLDER PRICE — set this to your real QRIS/Midtrans price before launch, and keep it in
-// step with MIDTRANS_PREMIUM_IDR / MIDTRANS_PREMIUM_DAYS in the payment code (see the create
-// transaction route). The rest of this page describes the actual free/premium model from
-// docs/migration-002-subscription.sql; only the number below is unconfirmed.
-const PREMIUM_PRICE = 'Rp 49.000'
-const PREMIUM_PERIOD = '/mo'
+// Read from lib/pricing, which is also what the checkout charges — a price quoted here that
+// disagrees with what a customer is actually billed is a consumer-protection problem, so this page
+// must never hold its own copy of the number. Change it via PREMIUM_PRICE_IDR / PREMIUM_DAYS.
+const PREMIUM_PRICE = PREMIUM_PRICE_LABEL
+const PREMIUM_PERIOD = ` / ${PREMIUM_DAYS} hari`
 
 // Free tier, per docs/migration-002-subscription.sql: 3 projects, +1 project per 24h,
 // 20 photos per project, plus daily caps on surveys captured and photos uploaded.
@@ -83,7 +83,7 @@ export default function PricingPage() {
             <div className="mk-plan-name">Premium</div>
             <div className="mk-plan-for">For active field teams</div>
             <div className="mk-plan-price tight">{PREMIUM_PRICE}<small>{PREMIUM_PERIOD}</small></div>
-            <div className="mk-plan-note">billed via QRIS, or an activation key</div>
+            <div className="mk-plan-note">one-off payment — no auto-renewal</div>
             <ul className="mk-plan-list">
               {premium.map((f) => <li key={f}><CheckIcon stroke="#f6f4ee" /><span>{f}</span></li>)}
             </ul>

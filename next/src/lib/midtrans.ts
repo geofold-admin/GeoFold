@@ -1,4 +1,5 @@
 import crypto from 'node:crypto'
+import { PREMIUM_PRICE_IDR, PREMIUM_DAYS } from './pricing'
 
 /**
  * Midtrans Core API (QRIS) helpers. All secrets stay server-side; the client only ever receives an
@@ -23,13 +24,9 @@ export function midtransConfig(): MidtransConfig | null {
   return { serverKey, snapUrl: isProd ? 'https://app.midtrans.com' : 'https://app.sandbox.midtrans.com' }
 }
 
-const asPositiveInt = (v: string | undefined, fallback: number) => {
-  const n = Math.round(Number(v))
-  return Number.isFinite(n) && n > 0 ? n : fallback
-}
-
-export const PREMIUM_PRICE_IDR = asPositiveInt(process.env.PREMIUM_PRICE_IDR, 49000)
-export const PREMIUM_DAYS = asPositiveInt(process.env.PREMIUM_DAYS, 30)
+// Defined in ./pricing so the public pages can quote the same numbers without importing this
+// module (and node:crypto with it). Re-exported here because the payment routes read them here.
+export { PREMIUM_PRICE_IDR, PREMIUM_DAYS }
 
 /**
  * Verify a notification's signature: sha512(order_id + status_code + gross_amount + server_key),
