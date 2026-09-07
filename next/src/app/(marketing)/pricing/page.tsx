@@ -1,120 +1,149 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { PREMIUM_DAYS, PREMIUM_PRICE_LABEL } from '@/lib/pricing'
-import { CheckIcon } from '../icons'
+import { BUSINESS } from '@/lib/business'
 
 export const metadata: Metadata = {
-  title: 'Pricing — Geofold',
-  description: 'Start free with three projects. Go Premium for unlimited projects, photos and the survey map.',
+  title: 'Harga — GeoFold',
+  description:
+    'Gratis untuk 3 proyek, selamanya. Premium sekali bayar untuk membuka batasnya — bukan langganan otomatis.',
 }
 
-// Read from lib/pricing, which is also what the checkout charges — a price quoted here that
-// disagrees with what a customer is actually billed is a consumer-protection problem, so this page
-// must never hold its own copy of the number. Change it via PREMIUM_PRICE_IDR / PREMIUM_DAYS.
-const PREMIUM_PRICE = PREMIUM_PRICE_LABEL
-const PREMIUM_PERIOD = ` / ${PREMIUM_DAYS} hari`
+/*
+ * Rewritten 2026-09-07. The previous version sold an "Enterprise" tier offering SSO, role-based
+ * access and direct ArcGIS Online integration. None of those exist — there is no team model, no
+ * roles beyond the one that lifts quota limits, and no ArcGIS integration of any kind. Selling a
+ * tier built entirely from unbuilt features is worse than having no third tier.
+ *
+ * The two plans below are the two the code actually implements, and the limits are the ones
+ * lib/quota.ts enforces.
+ */
 
-// Free tier, per docs/migration-002-subscription.sql: 3 projects, +1 project per 24h,
-// 20 photos per project, plus daily caps on surveys captured and photos uploaded.
 const free = [
-  'Up to 3 projects (+1 more every 24h)',
-  '20 photos per project',
-  'Daily capture & upload limits',
-  'Offline capture with auto-sync',
-  'CSV & Excel (photos embedded) export',
+  '3 proyek aktif (+1 setiap 24 jam)',
+  '20 foto per proyek',
+  'Batas harian pengambilan & unggah',
+  'Pengambilan offline dengan sinkron otomatis',
+  'Ekspor CSV & Excel (foto tertanam)',
+  'Aplikasi Android dan versi web',
 ]
+
 const premium = [
-  'Unlimited projects, surveys & photos',
-  'No daily limits',
-  'Survey map view (satellite & street)',
-  'Priority support',
-]
-const enterprise = [
-  'SSO & role-based access',
-  'Direct ArcGIS Online integration',
-  'Dedicated onboarding',
-  'SLA-backed support',
+  'Proyek, survei dan foto tanpa batas',
+  'Tanpa batas harian',
+  'Peta survei (satelit & jalan)',
+  'Grid kuadrat untuk mengukur cakupan',
+  'Semua yang ada di paket Gratis',
 ]
 
 const faqs = [
   {
-    q: 'How do I upgrade to Premium?',
-    a: 'Upgrade from inside the app — pay by QRIS through Midtrans, or redeem an activation key. Premium takes effect immediately and runs until its expiry date.',
+    q: 'Ini langganan bulanan?',
+    a: `Bukan. Premium adalah pembelian sekali bayar untuk ${PREMIUM_DAYS} hari. Tidak ada penagihan berulang, tidak ada auto-debit, dan tidak ada yang perlu dibatalkan — masa aktifnya berakhir dengan sendirinya.`,
   },
   {
-    q: 'What happens when Premium expires?',
-    a: 'Your data is never touched. If your workspace is over the free limits when Premium lapses it is frozen — you can still read and export everything, and new captures resume once you renew or come back under the free limits.',
+    q: 'Apa yang terjadi kalau masa Premium habis?',
+    a: 'Data Anda tidak pernah dihapus. Jika isi workspace melampaui batas Gratis saat itu, workspace dibekukan: semuanya tetap bisa dibaca, dilihat di peta, dan diekspor — hanya penambahan data baru yang berhenti sampai Anda memperpanjang atau kembali di bawah batas.',
   },
   {
-    q: 'Who owns the survey data?',
-    a: 'You do, always. Export or delete your full project data at any time, on any plan.',
+    q: 'Bagaimana cara membayarnya?',
+    a: 'Lewat gerbang pembayaran berizin di Indonesia — QRIS, transfer/virtual account, dompet digital, kartu, atau gerai ritel, sesuai yang tersedia di halaman pembayaran. GeoFold tidak pernah menerima atau menyimpan nomor kartu, CVV, PIN, atau OTP Anda.',
   },
   {
-    q: 'Do you support other GIS platforms?',
-    a: 'GeoJSON and CSV exports work with most GIS software; Enterprise adds direct ArcGIS Online sync.',
+    q: 'Siapa pemilik data survei saya?',
+    a: 'Anda. Ekspor atau hapus seluruh data proyek kapan saja, di paket apa pun.',
+  },
+  {
+    q: 'Ada diskon untuk instansi atau lembaga penelitian?',
+    a: 'Untuk pengadaan atau program pelatihan, kami menerbitkan kunci aktivasi yang bisa ditukarkan menjadi masa Premium tanpa pembayaran daring. Hubungi kami untuk membicarakannya.',
   },
 ]
 
 export default function PricingPage() {
   return (
     <>
-      <div className="mk-hero pad-b-sm">
-        <span className="mk-eyebrow">Pricing</span>
-        <h1 style={{ maxWidth: 700 }}>Plans for every survey team.</h1>
-        <p className="mk-lede" style={{ maxWidth: 520 }}>
-          Start free with three projects. Go Premium when you&apos;re ready to put the whole team in the field.
+      <section className="mk-h">
+        <span className="mk-h-eyebrow">Harga</span>
+        <h1 className="mk-h-title">
+          Gratis dulu. <em>Selamanya</em>, kalau cukup.
+        </h1>
+        <p className="mk-h-lede">
+          Tiga proyek tidak dipungut biaya dan tidak akan pernah dipungut. Premium hanya untuk tim
+          yang sudah melewati batas itu.
         </p>
-      </div>
+      </section>
 
-      <div style={{ padding: '0 var(--mk-pad) 72px' }}>
-        <div className="mk-plans">
-          <div className="mk-plan">
-            <div className="mk-plan-name">Free</div>
-            <div className="mk-plan-for">For small pilot projects</div>
-            <div className="mk-plan-price">Rp 0</div>
-            <ul className="mk-plan-list">
-              {free.map((f) => <li key={f}><CheckIcon /><span>{f}</span></li>)}
+      <section className="mk-sec">
+        <div className="mk-price">
+          <div className="mk-price-card">
+            <div className="mk-price-name">Gratis</div>
+            <div className="mk-price-num">Rp 0</div>
+            <p>Untuk proyek percontohan dan tim kecil.</p>
+            <ul className="mk-plist">
+              {free.map((f) => (
+                <li key={f}>{f}</li>
+              ))}
             </ul>
-            <Link href="/login" className="mk-plan-cta">Get started</Link>
+            <Link href="/login" className="mk-btn mk-btn-outline">
+              Mulai
+            </Link>
           </div>
 
-          <div className="mk-plan featured">
-            <div className="mk-plan-flag">Most popular</div>
-            <div className="mk-plan-name">Premium</div>
-            <div className="mk-plan-for">For active field teams</div>
-            <div className="mk-plan-price tight">{PREMIUM_PRICE}<small>{PREMIUM_PERIOD}</small></div>
-            <div className="mk-plan-note">one-off payment — no auto-renewal</div>
-            <ul className="mk-plan-list">
-              {premium.map((f) => <li key={f}><CheckIcon stroke="#f6f4ee" /><span>{f}</span></li>)}
+          <div className="mk-price-card feat">
+            <div className="mk-price-name">Premium</div>
+            <div className="mk-price-num">
+              {PREMIUM_PRICE_LABEL}
+              <small>/ {PREMIUM_DAYS} hari</small>
+            </div>
+            <p>Untuk tim yang aktif di lapangan.</p>
+            <ul className="mk-plist on-dark">
+              {premium.map((f) => (
+                <li key={f}>{f}</li>
+              ))}
             </ul>
-            <Link href="/login" className="mk-plan-cta solid">Go Premium</Link>
-          </div>
-
-          <div className="mk-plan">
-            <div className="mk-plan-name">Enterprise</div>
-            <div className="mk-plan-for">For agencies &amp; large programs</div>
-            <div className="mk-plan-price">Custom</div>
-            <ul className="mk-plan-list">
-              {enterprise.map((f) => <li key={f}><CheckIcon /><span>{f}</span></li>)}
-            </ul>
-            <Link href="/contact" className="mk-plan-cta">Talk to sales</Link>
+            <Link href="/login" className="mk-btn mk-btn-primary">
+              Ambil Premium
+            </Link>
           </div>
         </div>
-      </div>
 
-      <div className="mk-section tight" style={{ borderTop: '1px solid var(--mk-line)' }}>
-        <div className="mk-faq">
-          <h2>Common questions</h2>
-          <div className="mk-faq-list">
-            {faqs.map(({ q, a }) => (
-              <div key={q}>
-                <div className="mk-faq-q">{q}</div>
-                <div className="mk-faq-a">{a}</div>
-              </div>
-            ))}
-          </div>
+        <p className="mk-price-note">
+          Sekali bayar, bukan langganan. Baca{' '}
+          <Link href="/refund-policy">Kebijakan Pengembalian Dana</Link> sebelum membeli.
+        </p>
+      </section>
+
+      <section className="mk-sec mk-sec-tint">
+        <div className="mk-sec-head">
+          <span className="mk-kick">Pertanyaan</span>
+          <h2>Yang biasanya ditanyakan.</h2>
         </div>
-      </div>
+        <div className="mk-qa">
+          {faqs.map(({ q, a }) => (
+            <div key={q}>
+              <h3>{q}</h3>
+              <p>{a}</p>
+            </div>
+          ))}
+        </div>
+        <p className="mk-price-note">
+          Pertanyaan lain ada di <Link href="/faq">FAQ</Link>, atau hubungi{' '}
+          <a href={`mailto:${BUSINESS.email.support}`}>{BUSINESS.email.support}</a>.
+        </p>
+      </section>
+
+      <section className="mk-close">
+        <h2>Mulai dari yang gratis.</h2>
+        <p>Naik ke Premium hanya kalau tim Anda benar-benar melewati batasnya.</p>
+        <div className="mk-h-cta">
+          <Link href="/login" className="mk-btn mk-btn-primary">
+            Buat akun
+          </Link>
+          <Link href="/contact" className="mk-btn mk-btn-ghost">
+            Tanya dulu
+          </Link>
+        </div>
+      </section>
     </>
   )
 }

@@ -1,0 +1,320 @@
+/* =====================================================================================
+   Home page — 2026-09-07 redesign.
+
+   Mobile-first, deliberately. Every rule here is written for a narrow screen first and widened
+   at breakpoints, which is the opposite of marketing.css (desktop-only, with a mobile patch at
+   the bottom). The audience is field teams on inexpensive Android phones and patchy rural
+   connections, so the phone layout is the real layout and the desktop one is the adaptation.
+
+   Kept in its own file rather than appended to marketing.css so the two approaches do not get
+   confused with one another.
+   ===================================================================================== */
+
+.mk-h { padding: 40px var(--mk-pad) 8px; }
+.mk-h-eyebrow {
+  display: inline-block; font-family: var(--font-sans), sans-serif; font-size: 11px;
+  font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--mk-green);
+  background: var(--mk-sand); padding: 6px 11px; border-radius: 100px; margin-bottom: 18px;
+}
+.mk-h-title {
+  font-family: var(--font-sans), sans-serif; font-weight: 700; font-size: 34px; line-height: 1.08;
+  letter-spacing: -.02em; margin: 0 0 14px; color: var(--mk-ink);
+}
+.mk-h-title em { font-style: normal; color: var(--mk-green); }
+.mk-h-lede { font-size: 15.5px; line-height: 1.6; color: var(--mk-muted); margin: 0 0 24px; max-width: 46ch; }
+.mk-h-cta { display: flex; flex-wrap: wrap; gap: 10px; }
+.mk-btn-ghost { border: 1px solid transparent; color: var(--mk-green); }
+.mk-btn-ghost:hover { background: var(--mk-sand); }
+
+/* Four facts side by side even on the narrowest phone — they read as a spec strip. */
+.mk-facts {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; margin: 34px 0 0;
+  border-top: 1px solid var(--mk-line); padding-top: 18px;
+}
+.mk-facts div { min-width: 0; }
+.mk-facts dt {
+  font-size: 10.5px; letter-spacing: .07em; text-transform: uppercase; color: var(--mk-faint);
+  margin-bottom: 3px;
+}
+.mk-facts dd {
+  margin: 0; font-family: var(--font-sans), sans-serif; font-weight: 600; font-size: 14px;
+  color: var(--mk-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.mk-sec { padding: 56px 0; }
+.mk-sec-tint { background: var(--mk-sand); }
+.mk-sec-dark { background: var(--mk-green); }
+.mk-sec-head { padding: 0 var(--mk-pad); margin-bottom: 26px; }
+.mk-sec-head h2 {
+  font-family: var(--font-sans), sans-serif; font-weight: 700; font-size: 26px; line-height: 1.15;
+  letter-spacing: -.015em; margin: 8px 0 0; color: var(--mk-ink);
+}
+.mk-sec-head p { margin: 8px 0 0; font-size: 14px; color: var(--mk-muted); }
+.mk-sec-dark .mk-sec-head h2 { color: #f4f8f4; }
+.mk-kick {
+  font-family: var(--font-sans), sans-serif; font-size: 11px; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--mk-green);
+}
+.mk-kick.on-dark { color: var(--mk-green-line); }
+
+/* ---------- carousel ---------- */
+.mk-car { position: relative; }
+.mk-car-track {
+  display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory;
+  padding: 4px var(--mk-pad) 8px; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.mk-car-track::-webkit-scrollbar { display: none; }
+.mk-car-slide { flex: 0 0 84%; scroll-snap-align: center; }
+.mk-car-controls { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 14px; }
+.mk-car-arrow {
+  width: 34px; height: 34px; border-radius: 100px; border: 1px solid var(--mk-line);
+  background: transparent; color: var(--mk-ink); font-size: 15px; cursor: pointer; line-height: 1;
+}
+.mk-car-arrow:disabled { opacity: .3; cursor: default; }
+.mk-car-dots { display: flex; gap: 7px; align-items: center; }
+.mk-car-dots button {
+  width: 7px; height: 7px; padding: 0; border-radius: 100px; border: 0; cursor: pointer;
+  background: var(--mk-line); transition: width .18s ease, background .18s ease;
+}
+.mk-car-dots button.on { width: 20px; background: var(--mk-green); }
+
+/* ---------- capability card ---------- */
+.mk-cap {
+  background: #fff; border: 1px solid var(--mk-line); border-radius: 14px; padding: 18px;
+  height: 100%; display: flex; flex-direction: column; gap: 16px;
+}
+.mk-cap-kick {
+  font-family: var(--font-sans), sans-serif; font-size: 10.5px; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--mk-green);
+}
+.mk-cap-copy h3 {
+  font-family: var(--font-sans), sans-serif; font-weight: 700; font-size: 17px; line-height: 1.25;
+  margin: 6px 0 7px; color: var(--mk-ink);
+}
+.mk-cap-copy p { margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--mk-muted); }
+
+/* ---------- phone mock ---------- */
+.mk-phone { display: flex; flex-direction: column; align-items: center; flex: none; }
+.mk-phone-frame {
+  width: 168px; aspect-ratio: 9 / 18; background: #14181c; border-radius: 22px; padding: 6px;
+  position: relative; box-shadow: 0 10px 26px rgba(20, 30, 22, .16);
+}
+.mk-phone-notch {
+  position: absolute; top: 9px; left: 50%; transform: translateX(-50%);
+  width: 44px; height: 4px; border-radius: 100px; background: #2a3138; z-index: 2;
+}
+.mk-phone-screen {
+  width: 100%; height: 100%; border-radius: 17px; overflow: hidden; background: #fff;
+  display: flex; flex-direction: column;
+}
+.mk-phone-cap { font-size: 11.5px; color: var(--mk-faint); margin-top: 8px; }
+
+/* ---------- schematic app screens ---------- */
+.mk-scr { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.mk-scr-head {
+  font-family: var(--font-sans), sans-serif; font-weight: 700; font-size: 9px; color: #1d231c;
+  padding: 12px 9px 7px;
+}
+.mk-scr-bar {
+  display: flex; align-items: center; justify-content: space-between; padding: 11px 9px 6px;
+  font-size: 7.5px; color: #47504a; font-weight: 600;
+}
+.mk-scr-dot { width: 5px; height: 5px; border-radius: 100px; background: #4aa06a; }
+.mk-scr-view {
+  flex: 1; margin: 0 7px; border-radius: 7px; position: relative; overflow: hidden;
+  background: linear-gradient(150deg, #7d9a80, #4c6b55 60%, #3b5744);
+}
+.mk-scr-view.drone { background: linear-gradient(160deg, #9fb8c6, #6e8fa3 55%, #4e6d80); }
+.mk-scr-reticle {
+  position: absolute; inset: 34% 30%; border: 1px solid rgba(255,255,255,.75); border-radius: 3px;
+}
+.mk-scr-stamp {
+  position: absolute; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.55); color: #fff;
+  font-family: var(--font-mono), monospace; font-size: 6px; line-height: 1.5; padding: 4px 5px;
+}
+.mk-scr-shutter { display: flex; justify-content: center; padding: 8px 0 10px; }
+.mk-scr-shutter span {
+  width: 24px; height: 24px; border-radius: 100px; background: #0070bb;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px #0070bb;
+}
+.mk-scr-chips { display: flex; gap: 4px; padding: 0 9px 7px; }
+.mk-scr-chips span {
+  font-size: 6.5px; padding: 2.5px 6px; border-radius: 100px; border: .5px solid #d8dcd9; color: #6b7379;
+}
+.mk-scr-chips span.on { background: #0070bb; border-color: #0070bb; color: #fff; }
+.mk-scr-row {
+  display: flex; align-items: center; gap: 6px; padding: 5px 9px; border-top: .5px solid #eceff1;
+}
+.mk-scr-thumb { width: 17px; height: 17px; border-radius: 3px; background: #cfd9d2; flex: none; }
+.mk-scr-ref { font-family: var(--font-mono), monospace; font-size: 7px; color: #10171c; }
+.mk-scr-meta { font-size: 6px; color: #8b9299; margin-top: 1px; }
+.mk-scr-pill { width: 5px; height: 5px; border-radius: 100px; margin-left: auto; flex: none; }
+.mk-scr-pill.ok { background: #4aa06a; }
+.mk-scr-pill.wait { background: #e0a640; }
+.mk-scr-canvas {
+  flex: 1; margin: 0 7px 9px; border-radius: 7px; position: relative; overflow: hidden;
+  background: #e8ece9;
+}
+.mk-scr-grid {
+  position: absolute; inset: 0;
+  background-image: linear-gradient(rgba(31,58,46,.18) .5px, transparent .5px),
+                    linear-gradient(90deg, rgba(31,58,46,.18) .5px, transparent .5px);
+  background-size: 22% 18%;
+}
+.mk-scr-grid.sm { background-size: 30% 30%; }
+.mk-scr-pin {
+  position: absolute; width: 5px; height: 5px; border-radius: 100px; background: #0070bb;
+  box-shadow: 0 0 0 1.5px rgba(0,112,187,.25); transform: translate(-50%, -50%);
+}
+.mk-scr-cell {
+  position: absolute; left: 5px; bottom: 5px; background: rgba(255,255,255,.9);
+  border-radius: 3px; padding: 2px 4px; font-size: 6px; color: #1d231c;
+}
+.mk-scr-sheet { margin: 0 9px; border: .5px solid #e2e6e3; border-radius: 4px; overflow: hidden; }
+.mk-scr-sheet-head, .mk-scr-sheet-row {
+  display: grid; grid-template-columns: 1.1fr 1fr .6fr; gap: 3px; padding: 3.5px 5px; font-size: 6px;
+  align-items: center;
+}
+.mk-scr-sheet-head { background: #f1f4f2; font-weight: 700; color: #47504a; }
+.mk-scr-sheet-row { border-top: .5px solid #eef1ef; color: #6b7379; }
+.mk-scr-cellimg { height: 7px; border-radius: 1.5px; background: #cfd9d2; }
+.mk-scr-formats { display: flex; gap: 5px; padding: 9px; margin-top: auto; }
+.mk-scr-formats span {
+  font-family: var(--font-mono), monospace; font-size: 6.5px; padding: 3px 6px; border-radius: 3px;
+  background: #eef3ef; color: #1f3a2e;
+}
+.mk-scr-hud {
+  position: absolute; top: 5px; left: 5px; right: 5px; display: flex; justify-content: space-between;
+  font-family: var(--font-mono), monospace; font-size: 5.5px; color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,.5);
+}
+.mk-scr-mini {
+  position: absolute; left: 5px; bottom: 16px; width: 38px; height: 34px; border-radius: 3px;
+  background: rgba(255,255,255,.85); overflow: hidden;
+}
+
+/* ---------- steps ---------- */
+.mk-steps2 { list-style: none; margin: 0; padding: 0 var(--mk-pad); display: grid; gap: 20px; }
+.mk-steps2 li { display: flex; gap: 14px; align-items: flex-start; }
+.mk-steps2-n {
+  font-family: var(--font-mono), monospace; font-size: 12px; font-weight: 700; color: var(--mk-green);
+  background: var(--mk-sand); border-radius: 7px; padding: 7px 9px; flex: none;
+}
+.mk-steps2 h3 {
+  font-family: var(--font-sans), sans-serif; font-size: 16px; margin: 2px 0 5px; color: var(--mk-ink);
+}
+.mk-steps2 p { margin: 0; font-size: 14px; line-height: 1.6; color: var(--mk-muted); }
+
+/* ---------- the why ---------- */
+.mk-why { padding: 0 var(--mk-pad); max-width: 62ch; }
+.mk-why p { font-size: 15px; line-height: 1.7; color: #d7e2d8; margin: 0 0 14px; }
+.mk-why strong { color: #fff; font-weight: 600; }
+
+/* ---------- audience tags ---------- */
+.mk-tags { list-style: none; margin: 0; padding: 0 var(--mk-pad); display: flex; flex-wrap: wrap; gap: 8px; }
+.mk-tags li {
+  font-size: 13px; padding: 8px 13px; border-radius: 100px; border: 1px solid var(--mk-line);
+  color: var(--mk-prose); background: #fff;
+}
+
+/* ---------- pricing teaser ---------- */
+.mk-price { padding: 0 var(--mk-pad); display: grid; gap: 12px; }
+.mk-price-card {
+  background: #fff; border: 1px solid var(--mk-line); border-radius: 14px; padding: 20px;
+  display: flex; flex-direction: column;
+}
+.mk-price-card.feat { background: var(--mk-green); border-color: var(--mk-green); }
+.mk-price-name {
+  font-family: var(--font-sans), sans-serif; font-size: 11px; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--mk-muted);
+}
+.mk-price-card.feat .mk-price-name { color: var(--mk-green-line); }
+.mk-price-num {
+  font-family: var(--font-sans), sans-serif; font-weight: 700; font-size: 30px; letter-spacing: -.02em;
+  margin: 6px 0 8px; color: var(--mk-ink);
+}
+.mk-price-card.feat .mk-price-num { color: #fff; }
+.mk-price-num small { font-size: 13px; font-weight: 500; opacity: .7; margin-left: 4px; }
+.mk-price-card p { font-size: 13.5px; line-height: 1.6; color: var(--mk-muted); margin: 0 0 16px; }
+.mk-price-card.feat p { color: #cfe0d3; }
+.mk-price-card .mk-btn { width: 100%; justify-content: center; margin-top: auto; }
+.mk-price-note {
+  padding: 16px var(--mk-pad) 0; font-size: 12.5px; color: var(--mk-muted); text-align: center; margin: 0;
+}
+.mk-price-note a { color: var(--mk-green); text-decoration: underline; text-underline-offset: 2px; }
+
+/* ---------- closer ---------- */
+.mk-close { padding: 56px var(--mk-pad) 64px; text-align: center; }
+.mk-close h2 {
+  font-family: var(--font-sans), sans-serif; font-weight: 700; font-size: 26px; margin: 0 0 8px;
+  letter-spacing: -.015em; color: var(--mk-ink);
+}
+.mk-close p { font-size: 14.5px; color: var(--mk-muted); margin: 0 0 20px; }
+.mk-close .mk-h-cta { justify-content: center; }
+
+/* ---------- widen ---------- */
+@media (min-width: 700px) {
+  .mk-h { padding-top: 72px; }
+  .mk-h-title { font-size: 52px; max-width: 16ch; }
+  .mk-h-lede { font-size: 17px; }
+  .mk-facts { max-width: 560px; }
+  .mk-sec { padding: 84px 0; }
+  .mk-sec-head h2 { font-size: 34px; max-width: 20ch; }
+  .mk-car-slide { flex-basis: 46%; }
+  .mk-cap { flex-direction: row; align-items: center; gap: 20px; }
+  .mk-steps2 { grid-template-columns: repeat(3, 1fr); gap: 28px; }
+  .mk-steps2 li { flex-direction: column; gap: 12px; }
+  .mk-price { grid-template-columns: repeat(2, 1fr); max-width: 720px; margin: 0 auto; }
+  .mk-close h2 { font-size: 34px; }
+}
+
+@media (min-width: 1080px) {
+  .mk-h-title { font-size: 62px; }
+  .mk-car-slide { flex-basis: 32%; }
+  .mk-cap { flex-direction: column; align-items: flex-start; }
+}
+
+/* Respect a reduced-motion preference: the carousel still moves, just without the animation. */
+@media (prefers-reduced-motion: reduce) {
+  .mk-car-track { scroll-behavior: auto; }
+  .mk-car-dots button { transition: none; }
+}
+
+/* ---------- button colour, fixed ----------
+   `.mk a { color: inherit }` in marketing.css has specificity (0,1,1) and beats
+   `.mk-btn-primary { color: var(--mk-bg) }` at (0,1,0), so every primary button rendered as a
+   link inherited dark ink on the dark green fill and was effectively invisible. Pre-existing;
+   it showed on any primary CTA outside a green band. Raising these to (0,2,0) settles it. */
+.mk .mk-btn-primary { color: var(--mk-bg); }
+.mk .mk-btn-outline { color: var(--mk-ink); }
+.mk .mk-btn-ghost { color: var(--mk-green); }
+
+/* On the dark price card a green-filled button disappears into the card. Invert it. */
+.mk .mk-price-card.feat .mk-btn-primary { background: var(--mk-bg); color: var(--mk-green); }
+
+/* ---------- product: what one record carries ---------- */
+.mk-recs { padding: 0 var(--mk-pad); display: grid; gap: 1px; background: var(--mk-line);
+  border: 1px solid var(--mk-line); border-radius: 12px; overflow: hidden; margin: 0 var(--mk-pad); }
+.mk-rec { background: #fff; padding: 16px 18px; }
+.mk-rec-t { font-family: var(--font-sans), sans-serif; font-weight: 600; font-size: 14.5px;
+  color: var(--mk-ink); margin-bottom: 4px; }
+.mk-rec-b { font-size: 13.5px; line-height: 1.6; color: var(--mk-muted); }
+
+/* ---------- pricing: plan feature list ---------- */
+.mk-plist { list-style: none; margin: 0 0 18px; padding: 0; display: grid; gap: 9px; }
+.mk-plist li { font-size: 13.5px; line-height: 1.5; color: var(--mk-prose); padding-left: 20px;
+  position: relative; }
+.mk-plist li::before { content: '—'; position: absolute; left: 0; color: var(--mk-green); }
+.mk-plist.on-dark li { color: #cfe0d3; }
+.mk-plist.on-dark li::before { color: var(--mk-green-line); }
+
+/* ---------- shared Q&A block ---------- */
+.mk-qa { padding: 0 var(--mk-pad); display: grid; gap: 20px; max-width: 760px; margin: 0 auto; }
+.mk-qa h3 { font-family: var(--font-sans), sans-serif; font-size: 15.5px; margin: 0 0 6px;
+  color: var(--mk-ink); }
+.mk-qa p { margin: 0; font-size: 14px; line-height: 1.65; color: var(--mk-muted); }
+
+@media (min-width: 700px) {
+  .mk-recs { grid-template-columns: repeat(3, 1fr); margin: 0 auto; max-width: 900px; }
+  .mk-qa { grid-template-columns: repeat(2, 1fr); gap: 26px 32px; }
+}

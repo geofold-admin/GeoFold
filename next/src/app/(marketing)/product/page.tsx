@@ -1,110 +1,161 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { Carousel } from '../Carousel'
+import {
+  PhoneMock,
+  ScreenCapture,
+  ScreenDrone,
+  ScreenExport,
+  ScreenMap,
+  ScreenRecords,
+} from '../PhoneMock'
 
 export const metadata: Metadata = {
-  title: 'Product — Geofold',
+  title: 'Produk — GeoFold',
   description:
-    'Capture, review and export — three parts of the survey workflow, built to work together instead of around each other.',
+    'Apa yang GeoFold rekam pada setiap titik survei, bagaimana datanya bertahan tanpa sinyal, dan dalam bentuk apa Anda mengambilnya kembali.',
 }
 
-const fieldPoints = [
-  'Sub-meter GPS accuracy on every photo',
-  'Fully offline, syncs when signal returns',
-  'Category tags, notes and altitude captured on-site',
-  'Works with external GNSS receivers',
+/*
+ * Rewritten 2026-09-07 because the previous version was not true.
+ *
+ * It advertised sub-metre GPS accuracy, support for external GNSS receivers, team and device sync
+ * status, a choice of coordinate system (WGS 84 / NAD83 / Web Mercator), and export to Shapefile
+ * and File Geodatabase. None of that exists. The surveys table stores a PostGIS geography point
+ * (WGS 84, always), AccuracyMeters as reported by the handset, a capture time, a sync time and a
+ * jsonb blob of the project's own form fields; `lib/export.ts` writes CSV and XLSX and nothing
+ * else; there is no team model, no device record and no CRS selection anywhere in the codebase.
+ *
+ * Everything below is checked against the schema and the exporter. If a capability is added later,
+ * add it here then — not before.
+ */
+
+/** Exactly what one survey row carries. Straight from the surveys table. */
+const record = [
+  { t: 'Koordinat', b: 'Titik WGS 84, disimpan sebagai geografi PostGIS — dan dicetak ke dalam fotonya.' },
+  { t: 'Akurasi', b: 'Angka ±meter yang dilaporkan perangkat saat itu, disimpan apa adanya. Fix yang buruk tetap terlihat buruk.' },
+  { t: 'Waktu pengambilan', b: 'Kapan tombol rana ditekan, bukan kapan datanya terkirim.' },
+  { t: 'Waktu sinkron', b: 'Kapan titik itu sampai di server. Selisihnya adalah jejak kerja offline Anda.' },
+  { t: 'Isian formulir', b: 'Nilai dari field yang Anda tentukan sendiri untuk proyek itu.' },
+  { t: 'Foto', b: 'Satu foto per titik, di bucket privat, disajikan lewat tautan bertanda tangan berumur pendek.' },
 ]
 
-const dashboardPoints = [
-  'Split map + list view of every survey point',
-  'Photo gallery with flag-for-review',
-  'Multiple projects and sites, switch in one click',
-  'Team and device sync status at a glance',
-]
+/** The five field types a project form can use — ProjectForm.tsx FIELD_TYPES. */
+const fieldTypes = ['text', 'number', 'integer', 'date', 'boolean']
 
-const formats = ['Shapefile', 'File Geodatabase', 'GeoJSON', 'CSV']
-
-const metadataFields = [
-  { title: 'Timestamp', body: 'Exact date and time of capture' },
-  { title: 'Surveyor & device', body: 'Who collected it, and with what' },
-  { title: 'Accuracy & altitude', body: 'GPS precision on every reading' },
-  { title: 'Category tag', body: 'Defect, species or feature type' },
-  { title: 'Field notes', body: 'Free-text observations' },
-  { title: 'Coordinates', body: 'Lat/long in your chosen CRS' },
+const slides = [
+  { kicker: 'Tangkap', title: 'Koordinat di dalam gambar', body: 'Posisi, akurasi dan waktu dicetak ke fotonya, bukan hanya disimpan di sebelahnya.', screen: <ScreenCapture /> },
+  { kicker: 'Antrean', title: 'Outbox yang sabar', body: 'Titik menunggu di perangkat sampai ada sinyal, lalu terkirim sendiri. Gagal satu tidak menjatuhkan sisanya.', screen: <ScreenRecords /> },
+  { kicker: 'Peta', title: 'Sebaran dan cakupan', body: 'Titik di atas peta satelit atau jalan, dengan grid kuadrat untuk mengukur blok yang sudah dilalui.', screen: <ScreenMap /> },
+  { kicker: 'Ekspor', title: 'XLSX dan CSV', body: 'Excel dengan foto tertanam di barisnya, atau CSV mentah. Dibuat di perangkat Anda, tanpa layanan pihak ketiga.', screen: <ScreenExport /> },
+  { kicker: 'Drone', title: 'Foto udara DJI', body: 'Versi drone memakai koordinat aircraft, lalu masuk ke antrean dan proyek yang sama.', screen: <ScreenDrone /> },
 ]
 
 export default function ProductPage() {
   return (
     <>
-      <div className="mk-hero pad-b">
-        <span className="mk-eyebrow">Product</span>
-        <h1>One platform, from the field to ArcGIS.</h1>
-        <p className="mk-lede">
-          Capture, review and export — three parts of the survey workflow, built to work together instead
-          of around each other.
+      <section className="mk-h">
+        <span className="mk-h-eyebrow">Produk</span>
+        <h1 className="mk-h-title">
+          Apa yang <em>sebenarnya</em> direkam.
+        </h1>
+        <p className="mk-h-lede">
+          Bukan daftar fitur. Ini isi satu baris survei, dari mana angkanya datang, dan dalam bentuk
+          apa Anda mengambilnya kembali.
         </p>
-      </div>
+      </section>
 
-      <div className="mk-band">
-        <div className="mk-inner mk-split">
-          <div>
-            <div className="mk-kicker on-green">The field app</div>
-            <h2>Capture once, correctly.</h2>
-            <div className="mk-dashes on-green">
-              {fieldPoints.map((p) => <div key={p}>— {p}</div>)}
-            </div>
-          </div>
-          <div className="mk-slot on-green">Field app</div>
+      <section className="mk-sec mk-sec-tint">
+        <div className="mk-sec-head">
+          <span className="mk-kick">Alur kerja</span>
+          <h2>Dari rana sampai spreadsheet.</h2>
+          <p>Geser untuk melihat setiap tahap.</p>
         </div>
-      </div>
-
-      <div className="mk-section tight">
-        <div className="mk-inner mk-split">
-          <div className="mk-slot on-paper">Dashboard</div>
-          <div>
-            <div className="mk-kicker on-paper">The dashboard</div>
-            <h2>Review everything, in one place.</h2>
-            <div className="mk-dashes on-paper">
-              {dashboardPoints.map((p) => <div key={p}>— {p}</div>)}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="mk-band">
-        <div className="mk-inner mk-split">
-          <div>
-            <div className="mk-kicker on-green">ArcGIS export</div>
-            <h2>Export straight into your GIS.</h2>
-            <div className="mk-chips">
-              {formats.map((f) => <span key={f} className="mk-chip">{f}</span>)}
-            </div>
-            <div style={{ fontSize: '14.5px', lineHeight: 1.6, color: 'var(--mk-on-green)' }}>
-              Pick your coordinate system — WGS 84, NAD83 or Web Mercator — and export a scoped set of
-              points in one click, straight into ArcGIS Online or Pro.
-            </div>
-          </div>
-          <div className="mk-slot on-green">Export panel</div>
-        </div>
-      </div>
-
-      <div className="mk-section">
-        <div className="mk-inner">
-          <h2 className="mk-centered-h2">Every point carries full metadata</h2>
-          <div className="mk-meta-grid">
-            {metadataFields.map((m) => (
-              <div key={m.title} className="mk-meta">
-                <div className="mk-meta-t">{m.title}</div>
-                <div className="mk-meta-b">{m.body}</div>
+        <Carousel label="Alur kerja GeoFold">
+          {slides.map((s) => (
+            <article className="mk-cap" key={s.title}>
+              <PhoneMock>{s.screen}</PhoneMock>
+              <div className="mk-cap-copy">
+                <span className="mk-cap-kick">{s.kicker}</span>
+                <h3>{s.title}</h3>
+                <p>{s.body}</p>
               </div>
-            ))}
-          </div>
-        </div>
-      </div>
+            </article>
+          ))}
+        </Carousel>
+      </section>
 
-      <div className="mk-closer">
-        <h2>Ready to see your survey data in ArcGIS?</h2>
-        <Link href="/contact" className="mk-btn mk-btn-primary">Request a demo</Link>
-      </div>
+      <section className="mk-sec">
+        <div className="mk-sec-head">
+          <span className="mk-kick">Isi satu titik</span>
+          <h2>Enam hal, setiap kali.</h2>
+        </div>
+        <div className="mk-recs">
+          {record.map((r) => (
+            <div className="mk-rec" key={r.t}>
+              <div className="mk-rec-t">{r.t}</div>
+              <div className="mk-rec-b">{r.b}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="mk-sec mk-sec-tint">
+        <div className="mk-sec-head">
+          <span className="mk-kick">Formulir</span>
+          <h2>Field-nya Anda yang tentukan.</h2>
+          <p>
+            Setiap proyek punya skema formulirnya sendiri. Buat field sebanyak yang diperlukan, beri
+            label dalam bahasa tim Anda, dan tandai mana yang wajib diisi.
+          </p>
+        </div>
+        <ul className="mk-tags" style={{ marginBottom: 18 }}>
+          {fieldTypes.map((t) => (
+            <li key={t} style={{ fontFamily: 'var(--font-mono), monospace', fontSize: 12.5 }}>
+              {t}
+            </li>
+          ))}
+        </ul>
+        <p style={{ padding: '0 var(--mk-pad)', fontSize: 13.5, color: 'var(--mk-muted)', margin: 0 }}>
+          Nilai isian tersimpan bersama titiknya dan ikut ke dalam ekspor sebagai kolom tersendiri.
+        </p>
+      </section>
+
+      <section className="mk-sec mk-sec-dark">
+        <div className="mk-sec-head">
+          <span className="mk-kick on-dark">Ekspor</span>
+          <h2>Dua format, tanpa kejutan.</h2>
+        </div>
+        <div className="mk-why">
+          <p>
+            <strong>.xlsx</strong> — satu baris per titik, dengan fotonya tertanam di baris itu.
+            Dibuat langsung di perangkat Anda, jadi tidak ada data yang dikirim ke layanan lain untuk
+            diubah formatnya.
+          </p>
+          <p>
+            <strong>.csv</strong> — teks biasa untuk diolah di QGIS, R, Python atau apa pun yang tim
+            Anda pakai. Koordinat dalam desimal WGS 84.
+          </p>
+          <p style={{ fontSize: 13.5, opacity: 0.85 }}>
+            Belum ada ekspor Shapefile atau File Geodatabase, dan belum ada integrasi langsung ke
+            ArcGIS. Kalau itu yang Anda butuhkan, <Link href="/contact">beri tahu kami</Link> — lebih
+            berguna mendengarnya dari Anda daripada menebak.
+          </p>
+        </div>
+      </section>
+
+      <section className="mk-close">
+        <h2>Coba dengan data Anda sendiri.</h2>
+        <p>Tiga proyek pertama gratis. Tidak perlu kartu kredit.</p>
+        <div className="mk-h-cta">
+          <Link href="/login" className="mk-btn mk-btn-primary">
+            Mulai gratis
+          </Link>
+          <Link href="/pricing" className="mk-btn mk-btn-outline">
+            Lihat harga
+          </Link>
+        </div>
+      </section>
     </>
   )
 }
