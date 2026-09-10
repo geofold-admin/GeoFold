@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import { ANDROID_MIN, BUSINESS } from '@/lib/business'
 import { PREMIUM_DAYS, PREMIUM_PRICE_LABEL } from '@/lib/pricing'
 import { LangSwitch } from '../LangSwitch'
+import { getLocale } from '@/lib/i18n.server'
 
 export const metadata: Metadata = {
   title: 'FAQ — GeoFold',
@@ -566,7 +567,11 @@ function Groups({ groups }: { groups: Group[] }) {
   )
 }
 
-export default function FaqPage() {
+export default async function FaqPage() {
+  /* Seeds which of the two documents is shown first. Both are still in the HTML —
+     see the header of LangSwitch. Indonesian remains the governing version. */
+  const locale = await getLocale()
+
   return (
     <>
       <div className="mk-hero pad-b-sm">
@@ -580,7 +585,7 @@ export default function FaqPage() {
       </div>
 
       <div className="mk-section tight">
-        <LangSwitch id={<Groups groups={GROUPS_ID} />} en={<Groups groups={GROUPS_EN} />} />
+        <LangSwitch initial={locale} id={<Groups groups={GROUPS_ID} />} en={<Groups groups={GROUPS_EN} />} />
       </div>
 
       <div className="mk-section tight" style={{ borderTop: '1px solid var(--mk-line)' }}>

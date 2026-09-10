@@ -1,0 +1,849 @@
+/* =====================================================================================
+   GeoFold marketing — "Paper". A full re-skin, 2026-09-10.
+
+   Replaces the Topographic skin in overhaul.css (which replaced a near-black one before it).
+   overhaul.css is no longer imported; it is left on disk so the previous design is one line in
+   (marketing)/layout.tsx away from coming back.
+
+   THE BRIEF: professional, minimalist, heavily animated. Those pull against each other, and
+   every decision below is where that tension landed.
+
+   1. ONE GROUND, NO TEXTURE. The old skin drew a four-step surface ladder plus a topographic
+      texture — two tinted radial fields over a coordinate grid — on every page. It was well
+      argued for a tool that wants to feel like an instrument, but it is the opposite of
+      minimal: nothing is ever plain, so nothing is ever quiet. There is now one ground (white),
+      one raised band (#f6f6f7) used sparingly, and structure is carried by 1px hairlines and
+      whitespace alone. No shadows anywhere on the marketing site.
+   2. TYPE DOES THE WORK INSTEAD. With the texture gone, the display sizes carry the page:
+      Inter Tight at weight 300, tracking -0.035em, up to 132px. Inter Tight rather than Inter
+      because its tighter fitting is what holds a 300-weight headline together at that size —
+      Inter proper opens up and reads as thin rather than large.
+   3. MOTION IS THE ORNAMENT. Everything decorative was deleted, so the page earns its interest
+      by moving: character reveals, pinned scrub scenes, staggered rows, counters, a marquee,
+      parallax. All of it is GSAP, all of it inside a gsap.matchMedia() reduced-motion branch,
+      and NONE of it is hidden by CSS — see the motion note at the bottom of this file.
+
+   WHY COBALT. #1b4dff is 5.9:1 on white, so it clears AA as text at any size, and it is far
+   enough from the survey-pin blue the app draws with that the site reads as a brand rather than
+   as a screenshot of the product. Terracotta #c2410c (5.05:1) survives from the old system with
+   its rule intact: aerial and drone material only, nowhere else.
+
+   HOW IT ATTACHES. marketing.css tokenises the whole site on --mk-* custom properties, so the
+   block below re-points those tokens and every existing page — /terms, /faq, /pricing, /about,
+   the login card — adopts the new palette without touching its own rules. Below that are the
+   places a token swap cannot reach (the type scale, the chrome, the button shapes), and then
+   the `pg-` components the rebuilt landing page is made of.
+
+   COMPLIANCE PAGES. /terms, /refund-policy, /faq and /contact carry the prose a payment gateway
+   reads word by word. On this ground that is #52525b on #ffffff — 7.6:1, up from 8.6:1 on a
+   tinted ground, and the ground itself is now pure white. That constraint got easier, not
+   harder; it is still the reason --mk-prose exists as its own token.
+   ===================================================================================== */
+
+.mk {
+  /* ---- the new palette, written into the old token names ---- */
+  --mk-bg: #ffffff;
+  --mk-raise: #f6f6f7;
+  --mk-panel: #ffffff;
+  --mk-line: #e7e7ea;
+  --mk-input-line: #d4d4d8;
+
+  --mk-ink: #0b0b0c;    /* 18.9:1 */
+  --mk-prose: #52525b;  /*  7.6:1 — long-form: terms, refund policy, FAQ answers */
+  --mk-muted: #71717a;  /*  4.9:1 — lede, card body */
+  --mk-faint: #71717a;  /*  4.9:1 — micro-labels. Same value as muted on purpose: these are the
+                                    smallest type on the site, so they get the same ratio as
+                                    body text, never less. */
+
+  /* Accent. The name says green for the same reason it did before — renaming it touches forty
+     rules across three files for no visual result. It holds cobalt now. */
+  --mk-green: #1b4dff;      /* 5.9:1 on white */
+  --mk-green-2: #1339cc;    /* hover */
+  --mk-green-line: #c7d2fe;
+  --mk-on-green: #ffffff;   /* 5.9:1 on the accent fill */
+  --mk-on-green-dim: #dbe3ff;
+
+  /* Aerial / drone only. Unchanged rule, new value for the new ground. */
+  --mk-amber: #c2410c;      /* 5.05:1 on white */
+
+  /* The one deep band per page. Near-black rather than navy: on a pure white site the band
+     should read as the absence of the page, not as a second colour. */
+  --mk-deep: #0b0b0c;
+  --mk-deep-line: #27272a;
+  --mk-deep-ink: #fafafa;
+  --mk-deep-prose: #d4d4d8;  /* 13.6:1 on the band */
+  --mk-deep-accent: #93aeff; /* 8.9:1 on the band — cobalt is far too dark to read there */
+
+  --mk-sand: #f6f6f7;
+  --mk-sand-ink: #1b4dff;
+
+  /* Minimalism, literally: the shadow token is emptied rather than deleted, so the forty rules
+     that reference it keep working and simply draw nothing. Hairlines carry every edge. */
+  --mk-shadow: none;
+
+  /* ---- the new faces ---- */
+  --font-sans: var(--font-inter);
+  --font-cond: var(--font-tight);
+  /* Space Mono is not loaded on this skin. Numbers that need to line up use Inter's own
+     tabular figures instead — one family fewer, and a grotesque set of tabular numerals is a
+     quieter readout than a retro mono was. */
+  --font-mono: var(--font-inter);
+
+  --pg-max: 1280px;
+
+  background: var(--mk-bg);
+  color: var(--mk-ink);
+  /* The topographic texture is gone. Stated explicitly because marketing.css does not set it —
+     overhaul.css did, and this file has to unset it rather than simply not repeat it. */
+  background-image: none;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-synthesis-weight: none;
+}
+
+.mk ::selection { background: rgba(27, 77, 255, .16); color: #0b0b0c; }
+
+/* A single visible focus treatment for the whole site, rather than each control inventing one. */
+.mk :focus-visible {
+  outline: 2px solid var(--mk-green);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* =====================================================================================
+   TYPE SCALE
+   Fluid from the phone to 1440 with clamp(), so there are no breakpoint steps in the headline
+   sizes and no separate mobile scale to keep in sync.
+   ===================================================================================== */
+
+.mk h1, .mk h2, .mk h3, .mk h4 {
+  font-family: var(--font-tight), sans-serif;
+  color: var(--mk-ink);
+  text-transform: none;
+  font-synthesis-weight: none;
+}
+
+/* Display weight is 300 everywhere it is large, 500 where it is small: a 300 at 20px is limp,
+   and a 500 at 120px is a wall. The size decides the weight. */
+.mk .pg-d1 {
+  font-size: clamp(44px, 8.6vw, 132px);
+  font-weight: 300; letter-spacing: -.035em; line-height: .92; margin: 0;
+}
+.mk .pg-d2 {
+  font-size: clamp(30px, 4.6vw, 66px);
+  font-weight: 300; letter-spacing: -.03em; line-height: 1; margin: 0;
+}
+.mk .pg-d3 {
+  font-size: clamp(21px, 2vw, 28px);
+  font-weight: 500; letter-spacing: -.015em; line-height: 1.2; margin: 0;
+}
+.mk .pg-lede {
+  font-family: var(--font-inter), sans-serif;
+  font-size: clamp(16.5px, 1.35vw, 20px);
+  font-weight: 400; line-height: 1.55; color: var(--mk-prose); margin: 0; max-width: 54ch;
+}
+.mk .pg-body { font-size: 16px; line-height: 1.65; color: var(--mk-prose); margin: 0; }
+
+/* The micro-label. One treatment, used for every eyebrow, kicker, column head and legend on the
+   site, so a small uppercase label always means the same thing. */
+.mk .pg-micro {
+  font-family: var(--font-inter), sans-serif;
+  font-size: 10.5px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--mk-faint); margin: 0;
+}
+.mk .pg-micro.accent { color: var(--mk-green); }
+.mk .pg-micro.aerial { color: var(--mk-amber); }
+
+/* Tabular figures for anything that is a measurement, so a counter animating from 0 does not
+   shift the layout under itself on every frame. */
+.mk .pg-num { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum' 1; }
+
+/* =====================================================================================
+   CHROME — nav, footer, buttons
+   ===================================================================================== */
+
+/* OPAQUE, NOT GLASS. This started as rgba(255,255,255,.82) over a backdrop blur. backdrop-filter
+   is not honoured in every engine this site is viewed in (it computes to `none` in the embedded
+   browser it was checked in), and where it is missing an 82% white bar over the near-black band
+   further down the page leaves the band's body copy legibly showing through the nav links. A
+   sticky bar has to be readable without a progressive enhancement, so the alpha now carries it
+   alone and the blur is decoration on top of an already-solid surface. */
+.mk-nav {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(255, 255, 255, .94);
+  backdrop-filter: blur(14px) saturate(1.4); -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  border-bottom: 1px solid transparent;
+  padding: 20px var(--mk-pad);
+  transition: padding .3s cubic-bezier(.22, .61, .36, 1), border-color .3s ease,
+              background-color .3s ease;
+}
+/* Added by the motion module past ~40px of scroll: the bar tightens, goes fully opaque and its
+   rule appears, so the page has a sense of having been scrolled without a second sticky element
+   to say so. */
+.mk-nav.is-stuck {
+  padding: 12px var(--mk-pad); border-bottom-color: var(--mk-line); background: #ffffff;
+}
+
+.mk-wordmark {
+  font-family: var(--font-tight), sans-serif;
+  font-weight: 500; font-size: 20px; letter-spacing: -.02em; text-transform: none;
+  color: var(--mk-ink);
+}
+/* The status pip survives the re-skin: this is still a field tool and it should still look
+   powered on. It is the only decorative mark left in the chrome. */
+.mk-wordmark::after {
+  content: ''; display: inline-block; width: 5px; height: 5px; border-radius: 100px;
+  background: var(--mk-green); margin-left: 6px; vertical-align: middle;
+}
+.mk-nav-links a {
+  font-size: 14px; font-weight: 400; letter-spacing: -.005em; color: var(--mk-muted);
+  padding: 4px 0; position: relative; transition: color .2s ease;
+}
+.mk-nav-links a:hover { color: var(--mk-ink); opacity: 1; }
+.mk-nav-links a[aria-current='page'] { color: var(--mk-ink); font-weight: 500; }
+.mk-nav-links a[aria-current='page']::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: -3px; height: 1px;
+  background: var(--mk-ink);
+}
+
+/* ---- buttons: 6px radius, no shadow, no gradient ---- */
+.mk .mk-btn, .mk .pg-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font-family: var(--font-inter), sans-serif; font-size: 15px; font-weight: 500;
+  letter-spacing: -.005em; border-radius: 6px; padding: 13px 22px; border: 1px solid transparent;
+  cursor: pointer; text-decoration: none;
+  transition: background-color .2s ease, border-color .2s ease, color .2s ease, transform .2s ease;
+}
+.mk .mk-btn-primary, .mk .pg-btn-primary {
+  background: var(--mk-green); color: var(--mk-on-green); border-color: var(--mk-green);
+  box-shadow: none;
+}
+.mk .mk-btn-primary:hover, .mk .pg-btn-primary:hover {
+  background: var(--mk-green-2); border-color: var(--mk-green-2); opacity: 1;
+}
+.mk .mk-btn-outline, .mk .pg-btn-outline {
+  background: transparent; color: var(--mk-ink); border-color: var(--mk-line);
+}
+.mk .mk-btn-outline:hover, .mk .pg-btn-outline:hover {
+  border-color: var(--mk-ink); color: var(--mk-ink); opacity: 1;
+}
+.mk .mk-btn-ghost, .mk .pg-btn-ghost {
+  color: var(--mk-ink); background: transparent; border-color: transparent; padding-inline: 8px;
+}
+.mk .mk-btn-ghost:hover, .mk .pg-btn-ghost:hover { color: var(--mk-green); background: transparent; opacity: 1; }
+
+.mk-portal {
+  border: 1px solid var(--mk-line); color: var(--mk-ink); border-radius: 6px;
+  padding: 8px 15px; font-size: 13.5px; font-weight: 500; letter-spacing: -.005em;
+  transition: border-color .2s ease, background-color .2s ease;
+}
+.mk-portal:hover { background: var(--mk-ink); border-color: var(--mk-ink); color: #fff; opacity: 1; }
+
+/* ---- footer ---- */
+.mk-footer { background: var(--mk-bg); border-top: 1px solid var(--mk-line); color: var(--mk-muted); }
+.mk-footer-brand {
+  font-family: var(--font-tight), sans-serif; font-weight: 500; font-size: 19px;
+  letter-spacing: -.02em; text-transform: none; color: var(--mk-ink);
+}
+.mk-footer-col span {
+  color: var(--mk-faint); font-family: var(--font-inter), sans-serif; font-size: 10.5px;
+  font-weight: 500; letter-spacing: .14em; text-transform: uppercase;
+}
+.mk-footer-col a { color: var(--mk-muted); font-size: 14px; transition: color .2s ease; }
+.mk-footer-col a:hover { color: var(--mk-ink); opacity: 1; }
+.mk-copy { color: var(--mk-faint); font-size: 13px; line-height: 1.6; }
+.mk-copy a { color: var(--mk-muted); }
+
+/* =====================================================================================
+   THE EXISTING PAGES — /about, /product, /pricing, /faq, /terms, /contact, /login
+   These keep their own markup; what follows is the minimum needed for the new palette and the
+   new faces to land on them correctly rather than approximately.
+   ===================================================================================== */
+
+.mk .mk-hero h1, .mk .mk-h-title {
+  font-family: var(--font-tight), sans-serif; font-weight: 300;
+  text-transform: none; letter-spacing: -.032em; line-height: .96; color: var(--mk-ink);
+  font-size: clamp(38px, 6.4vw, 84px);
+}
+.mk .mk-h-title em { color: var(--mk-green); font-style: normal; font-weight: 400; }
+.mk .mk-sec-head h2, .mk .mk-close h2, .mk .mk-centered-h2 {
+  font-family: var(--font-tight), sans-serif; font-weight: 300;
+  text-transform: none; letter-spacing: -.03em; line-height: 1;
+  font-size: clamp(28px, 4.2vw, 56px); color: var(--mk-ink);
+}
+
+.mk-h-eyebrow, .mk-kick, .mk-cap-kick, .mk-price-name, .mk-facts dt, .mk-eyebrow, .mk-label,
+.mk-row dt, .mk-faq-group > h2 {
+  font-family: var(--font-inter), sans-serif !important;
+  font-size: 10.5px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase;
+}
+.mk-h-eyebrow {
+  display: inline-block; background: transparent; border: 1px solid var(--mk-line);
+  color: var(--mk-faint); border-radius: 100px; padding: 6px 13px;
+}
+.mk-kick, .mk-cap-kick, .mk-eyebrow { color: var(--mk-green); }
+.mk-cap-kick.aerial { color: var(--mk-amber); }
+.mk-label, .mk-row dt, .mk-faq-group > h2, .mk-price-name, .mk-facts dt { color: var(--mk-faint); }
+
+/* Cards lose their shadow and keep a hairline. Radius goes to 8px across the board. */
+.mk-cap, .mk-rec, .mk-price-card, .mk-meta, .mk-plan, .mk-tags li, .mk-recs, .mk-rows,
+.mk-aside, .mk-card {
+  background: var(--mk-panel); border-color: var(--mk-line); box-shadow: none; border-radius: 8px;
+}
+.mk-tags li { border-radius: 100px; padding: 9px 16px; font-size: 14px; color: var(--mk-prose); }
+.mk-tags li:hover { border-color: var(--mk-ink); color: var(--mk-ink); }
+.mk-steps2-n { background: var(--mk-raise); color: var(--mk-green); }
+
+.mk-sec-tint { background: var(--mk-raise); border-block: 1px solid var(--mk-line); }
+.mk-sec-dark { background: var(--mk-deep); border-block: 0; color: var(--mk-deep-prose); }
+/* The old skin put an accent spine down the left of the deep band. On a white minimal site that
+   spine is one mark too many; the band's own edge is the statement. */
+.mk-sec-dark::before { display: none; }
+.mk-sec-dark .mk-sec-head h2 { color: var(--mk-deep-ink); }
+.mk-kick.on-dark { color: var(--mk-deep-accent); }
+
+.mk-price-card.feat { background: var(--mk-ink); border-color: var(--mk-ink); }
+.mk-price-card.feat .mk-price-name { color: var(--mk-deep-accent); }
+.mk-price-card.feat .mk-price-num, .mk-price-card.feat .mk-price-num small { color: #fafafa; }
+.mk-price-card.feat p { color: var(--mk-deep-prose); }
+.mk .mk-price-card.feat .mk-btn-primary { background: #fff; color: var(--mk-ink); border-color: #fff; }
+.mk .mk-price-card.feat .mk-btn-primary:hover { background: var(--mk-deep-prose); border-color: var(--mk-deep-prose); }
+.mk-price-num {
+  font-family: var(--font-tight), sans-serif; font-weight: 300; letter-spacing: -.03em;
+  color: var(--mk-ink); font-size: clamp(34px, 3.6vw, 50px);
+}
+
+.mk-input { border-radius: 6px; border-color: var(--mk-input-line); }
+.mk-input:focus { border-color: var(--mk-green); box-shadow: 0 0 0 3px rgba(27, 77, 255, .12); }
+.mk-send, .mk-submit { border-radius: 6px; font-family: var(--font-inter), sans-serif; font-weight: 500; }
+.mk-error { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+.mk-callout { background: var(--mk-raise); border-left-color: var(--mk-green); }
+.mk-note { background: var(--mk-raise); border-left-color: var(--mk-green); }
+.mk-oauth-btn { border-radius: 6px; border-color: var(--mk-input-line); }
+.mk-lang button { border-radius: 100px; border-color: var(--mk-line); }
+.mk-car-arrow { border-radius: 100px; border-color: var(--mk-line); }
+.mk-car-dots button.on { background: var(--mk-ink); }
+
+/* The phone frame in PhoneMock keeps its dark body — a phone is dark — but loses its cast
+   shadow, since nothing else on this site has one. */
+.mk-phone-frame { box-shadow: none; border-color: #27272a; }
+
+/* =====================================================================================
+   THE LANDING PAGE — `pg-` components
+   ===================================================================================== */
+
+.mk .pg-wrap { max-width: var(--pg-max); margin: 0 auto; padding-inline: var(--mk-pad); width: 100%; }
+.mk .pg-sec { padding-block: clamp(72px, 11vw, 150px); position: relative; }
+.mk .pg-sec-tint { background: var(--mk-raise); }
+/* --mk-deep, NOT --mk-ink. Both are near-black in the light theme, so painting this band with
+   the ink token looked identical and shipped that way. In dark they part company: --mk-ink
+   inverts to near-white (it is a TEXT colour), so the band turned into a white slab while its
+   prose stayed light grey — 1.5:1, and the bolded words vanished outright. --mk-deep is the
+   token that means "the one emphasis band on this page", and it is the one that was already
+   being re-pointed for dark. .mk-sec-dark on /product had it right; this rule did not. */
+.mk .pg-sec-dark { background: var(--mk-deep); color: var(--mk-deep-prose); }
+.mk .pg-sec-dark h2, .mk .pg-sec-dark h3 { color: var(--mk-deep-ink); }
+.mk .pg-sec-dark .pg-micro { color: var(--mk-deep-accent); }
+.mk .pg-rule { border: 0; border-top: 1px solid var(--mk-line); margin: 0; }
+
+/* A section header: micro-label, rule, heading. The rule is the whole visual system in one
+   element — structure by hairline, not by box. */
+.mk .pg-head { display: grid; gap: 22px; margin-bottom: clamp(40px, 5vw, 72px); }
+.mk .pg-head-top {
+  display: flex; align-items: baseline; gap: 16px;
+  padding-bottom: 16px; border-bottom: 1px solid var(--mk-line);
+}
+.mk .pg-head-top .pg-num-tag { margin-left: auto; }
+.mk .pg-head h2 { max-width: 22ch; }
+.mk .pg-sec-dark .pg-head-top { border-bottom-color: var(--mk-deep-line); }
+
+/* ---------- hero ---------- */
+.mk .pg-hero { padding-top: clamp(56px, 9vw, 112px); padding-bottom: clamp(60px, 7vw, 104px); }
+.mk .pg-hero-grid { display: grid; gap: clamp(32px, 4vw, 56px); }
+.mk .pg-hero h1 { max-width: 15ch; }
+.mk .pg-hero-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
+
+/* The stat strip that closes the hero. Four measurements on one rule. */
+.mk .pg-stats {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 28px 20px;
+  margin: clamp(48px, 6vw, 84px) 0 0; padding-top: 26px; border-top: 1px solid var(--mk-line);
+}
+.mk .pg-stat dt { margin-bottom: 8px; }
+.mk .pg-stat dd {
+  margin: 0; font-family: var(--font-tight), sans-serif; font-weight: 300;
+  font-size: clamp(26px, 2.6vw, 38px); letter-spacing: -.03em; color: var(--mk-ink);
+  line-height: 1;
+}
+.mk .pg-stat dd small { font-size: .46em; font-weight: 400; color: var(--mk-muted); margin-left: 9px; letter-spacing: 0; }
+
+/* ---------- marquee ---------- */
+/* A single strip of who this is for, moving continuously. It is the one piece of ambient motion
+   on the page: everything else is triggered by scroll and then stops. */
+.mk .pg-marquee {
+  border-block: 1px solid var(--mk-line); padding: 20px 0; overflow: hidden;
+  display: flex; gap: 0; user-select: none;
+}
+.mk .pg-marquee-row { display: flex; gap: 44px; padding-right: 44px; flex: none; align-items: center; }
+.mk .pg-marquee-item {
+  font-size: 14px; color: var(--mk-muted); white-space: nowrap; display: inline-flex;
+  align-items: center; gap: 44px;
+}
+.mk .pg-marquee-item::after {
+  content: ''; width: 4px; height: 4px; border-radius: 100px; background: var(--mk-line); flex: none;
+}
+
+/* ---------- capability rows ---------- */
+/* The old design put these five in a horizontal carousel, which hides four of them behind an
+   interaction and gives scroll nothing to reveal. As full-width rows they are the spine of the
+   page and each one gets its own entrance. */
+.mk .pg-rows { display: grid; }
+.mk .pg-row {
+  display: grid; gap: 28px; padding-block: clamp(40px, 5vw, 72px);
+  border-top: 1px solid var(--mk-line); align-items: center;
+}
+.mk .pg-row:last-child { border-bottom: 1px solid var(--mk-line); }
+.mk .pg-row-copy { display: grid; gap: 14px; align-content: start; }
+.mk .pg-row-copy p { max-width: 46ch; }
+.mk .pg-row-n {
+  font-family: var(--font-tight), sans-serif; font-weight: 300; font-size: 13px;
+  color: var(--mk-faint); letter-spacing: 0;
+}
+.mk .pg-row-art {
+  border: 1px solid var(--mk-line); border-radius: 8px; background: var(--mk-raise);
+  overflow: hidden; aspect-ratio: 4 / 3; display: grid; place-items: center; padding: 22px;
+}
+.mk .pg-sec-tint .pg-row-art { background: var(--mk-panel); }
+
+/* ---------- the pinned scene ---------- */
+/* Three steps. The left column pins and its heading swaps as the right column scrolls past it.
+   Below 900px it degrades to three ordinary stacked blocks and the pin never engages. */
+.mk .pg-scene { display: grid; gap: 40px; }
+.mk .pg-scene-fixed { display: grid; gap: 18px; align-content: start; }
+.mk .pg-scene-steps { display: grid; gap: 20px; }
+.mk .pg-step {
+  border: 1px solid var(--mk-line); border-radius: 8px; padding: 26px;
+  background: var(--mk-panel); display: grid; gap: 12px; align-content: start;
+}
+.mk .pg-step-n {
+  width: 30px; height: 30px; border-radius: 100px; display: grid; place-items: center;
+  border: 1px solid var(--mk-line); font-size: 12px; font-weight: 500; color: var(--mk-faint);
+  font-variant-numeric: tabular-nums; transition: border-color .35s ease, color .35s ease, background-color .35s ease;
+}
+/* The active step is marked by the scrub, not by hover: it is a readout of scroll position. */
+.mk .pg-step.is-active { border-color: var(--mk-ink); }
+.mk .pg-step.is-active .pg-step-n { background: var(--mk-ink); border-color: var(--mk-ink); color: #fff; }
+
+/* ---------- pull quote band ---------- */
+.mk .pg-quote { max-width: 20ch; }
+.mk .pg-quote-body { display: grid; gap: 18px; max-width: 60ch; }
+.mk .pg-quote-body p { color: var(--mk-deep-prose); font-size: clamp(15.5px, 1.3vw, 18px); line-height: 1.7; margin: 0; }
+.mk .pg-quote-body strong { color: var(--mk-deep-ink); font-weight: 500; }
+
+/* ---------- pricing ---------- */
+.mk .pg-price { display: grid; gap: 20px; }
+.mk .pg-price-card {
+  border: 1px solid var(--mk-line); border-radius: 10px; padding: clamp(26px, 3vw, 38px);
+  display: grid; gap: 16px; align-content: start; background: var(--mk-panel);
+}
+/* Same fix, same reason: the featured card is a SURFACE, so it takes the surface token. In dark
+   this card is deliberately inverted back to near-white further down the file — but explicitly,
+   as a decision, rather than as a side effect of a text colour flipping. */
+.mk .pg-price-card.feat { background: var(--mk-deep); border-color: var(--mk-deep); }
+.mk .pg-price-card.feat .pg-micro { color: var(--mk-deep-accent); }
+.mk .pg-price-card.feat .pg-price-fig, .mk .pg-price-card.feat h3 { color: #fafafa; }
+.mk .pg-price-card.feat p { color: var(--mk-deep-prose); }
+.mk .pg-price-fig {
+  font-family: var(--font-tight), sans-serif; font-weight: 300; letter-spacing: -.035em;
+  font-size: clamp(38px, 4.4vw, 60px); line-height: 1; color: var(--mk-ink);
+}
+.mk .pg-price-fig small { font-size: .3em; font-weight: 400; letter-spacing: 0; color: var(--mk-muted); margin-left: 8px; }
+.mk .pg-price-card.feat .pg-price-fig small { color: var(--mk-deep-prose); }
+.mk .pg-price-note { color: var(--mk-muted); font-size: 14px; margin: 26px 0 0; }
+.mk .pg-price-note a { color: var(--mk-ink); text-decoration: underline; text-underline-offset: 3px; }
+
+/* ---------- closer ---------- */
+.mk .pg-close { text-align: center; display: grid; gap: 26px; justify-items: center; }
+.mk .pg-close h2 { max-width: 16ch; }
+
+/* ---------- figures ---------- */
+/* The schematic drawings. Same argument as PhoneMock: real captures show real coordinates of
+   real field sites, and they need retaking every time the UI moves. */
+.mk .pg-fig { width: 100%; height: auto; display: block; color: var(--mk-ink); }
+.mk .pg-fig-line { stroke: currentColor; fill: none; opacity: .28; }
+.mk .pg-fig-accent { stroke: var(--mk-green); fill: none; }
+.mk .pg-fig-fill { fill: var(--mk-green); }
+.mk .pg-fig-aerial { stroke: var(--mk-amber); fill: none; }
+.mk .pg-fig-aerial-fill { fill: var(--mk-amber); }
+.mk .pg-fig-soft { fill: var(--mk-ink); opacity: .06; }
+.mk .pg-fig-label {
+  font-family: var(--font-inter), sans-serif; font-size: 7px; font-weight: 500; letter-spacing: .14em;
+  fill: var(--mk-faint); text-transform: uppercase;
+}
+
+/* =====================================================================================
+   WIDEN
+   ===================================================================================== */
+
+@media (min-width: 760px) {
+  .mk .pg-stats { grid-template-columns: repeat(4, 1fr); }
+  .mk .pg-price { grid-template-columns: repeat(2, 1fr); gap: 24px; }
+  .mk .pg-row { grid-template-columns: 1fr 1fr; gap: 56px; }
+  /* Alternating sides. The figure leads on even rows, the copy on odd ones, so scrolling the
+     list has a rhythm instead of a single left edge repeated five times. */
+  .mk .pg-row:nth-child(even) .pg-row-copy { order: 2; }
+}
+
+@media (min-width: 1000px) {
+  .mk .pg-hero-grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); align-items: end; }
+  .mk .pg-scene { grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 64px; align-items: start; }
+  .mk .pg-scene-steps { gap: 24px; }
+  .mk .pg-row { grid-template-columns: 1.05fr .95fr; gap: 80px; }
+}
+
+/* =====================================================================================
+   MOTION
+
+   NOTHING ON THIS PAGE IS HIDDEN BY CSS. Every entrance is a GSAP `.from()`, which means the
+   start state is written by script at runtime and the served HTML is the finished page. If the
+   bundle never arrives, or JS is off, or GSAP throws, the visitor gets the whole site with no
+   animation — rather than a blank white column, which is what a CSS-hidden reveal degrades to
+   and is the single most common way a heavily animated marketing page fails in the field.
+
+   The cost of that choice is one frame: the hero renders, then the tween sets its start state
+   on the next tick. It is sub-frame in practice and it is the right trade against the failure
+   mode above.
+
+   The rules below are only the states GSAP toggles between, plus the reduced-motion stop.
+   ===================================================================================== */
+
+.mk .pg-marquee-row { will-change: transform; }
+.mk [data-anim] { will-change: transform, opacity; }
+/* Dropped once the entrance has played, so a long page is not holding dozens of layers. */
+.mk [data-anim].anim-done { will-change: auto; }
+
+/* SplitText's `mask: 'lines'` wraps each line in a clipping box sized to the LINE BOX, and the
+   display sizes here run at line-height .92-1.0 — tighter than Inter Tight's own ascent + descent
+   (~1.21em). So the box is roughly .15em shorter than the glyphs on each side. Capitals and
+   ascenders reach only ~.73em and are safe; descenders are not, and every g, y and p in the
+   headline had its tail sliced off.
+
+   The line gets the missing .16em as padding so the descender is inside the clip box, and the
+   mask takes the same amount back as negative margin so line spacing is unchanged. The cost is
+   that a rising character becomes visible .16em early at the bottom edge — about 14px of travel
+   at the largest size, at 0.8s. That is a far better trade than cropped descenders on the one
+   line of type the whole page is built around. */
+.mk .pg-split-line { overflow: hidden; display: block; padding-bottom: .16em; }
+.mk .pg-split-line-mask { margin-bottom: -.16em; }
+
+@media (prefers-reduced-motion: reduce) {
+  /* The motion module reads the same query through gsap.matchMedia() and never builds the
+     timelines. This block is the backstop for any transition declared above, which GSAP does
+     not manage. */
+  .mk *, .mk *::before, .mk *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* =====================================================================================
+   NARROW SCREENS — two things the desktop composition hid
+   ===================================================================================== */
+
+/* 1. THE HERO FIGURE WAS THE SAME DRAWING TWICE. The hero's art is a decorative repeat of
+      capability row 01, which is fine side-by-side at 1000px+ where the two are a screen apart,
+      and not fine stacked, where the identical schematic appears twice within one thumb-scroll.
+      It is aria-hidden decoration, so removing it below the two-column breakpoint costs nothing
+      semantic and leaves the mobile hero as type and two buttons — which is the strongest
+      version of it anyway. */
+@media (max-width: 999px) {
+  .mk .pg-hero .pg-row-art { display: none; }
+}
+
+/* 2. THE NAV STRIP READ AS CLIPPED TEXT, NOT AS MORE CONTENT. marketing.css wraps the links to
+      their own full-width row and lets it scroll horizontally below 680px. The row stopped at
+      the page padding with "Contact" sliced mid-word against a visible scrollbar, which looks
+      like a layout bug rather than an affordance. It now bleeds to both screen edges, hides the
+      scrollbar, and fades its trailing edge so the cut is deliberate. */
+@media (max-width: 680px) {
+  .mk .mk-nav { gap: 14px; }
+  .mk .mk-nav-links {
+    margin-inline: calc(var(--mk-pad) * -1);
+    padding-inline: var(--mk-pad);
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 40px), transparent 100%);
+    -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 40px), transparent 100%);
+  }
+  .mk .mk-nav-links::-webkit-scrollbar { display: none; }
+
+  /* The pinned scene never engages here (the module checks for 1000px), so the steps are just
+     cards and the heading above them does not need the pinned column's extra room. */
+  .mk .pg-scene { gap: 30px; }
+}
+
+/* Two spacing carry-overs the shared pages needed once the display face changed. Both are the
+   same root cause: marketing.css set these margins against Archivo at 34-40px and 1.08 leading,
+   and the new face runs at up to 84px and .96, so the same gap is now visually about half what
+   it was. */
+/* Two selectors, because the three inner pages are not consistent about which one they use:
+   /faq, /terms and the other documents wrap the heading in `.mk-hero`, while /about, /pricing and
+   /product use `.mk-h` with a `.mk-h-title` heading. The second was computing to margin-bottom 0
+   — `.mk h1` here (0,1,1) outranks home.css's `.mk-h-title` (0,1,0) and carries no margin, so the
+   declaration that actually landed was globals.css's blanket `h1 { margin: 0 }`. At .96 leading
+   that put the lede directly against the descenders. */
+.mk .mk-hero h1, .mk .mk-h-title { margin-bottom: 22px; }
+.mk .mk-price-num small { margin-left: 9px; font-size: .3em; letter-spacing: 0; font-weight: 400; }
+
+/* =====================================================================================
+   DARK MODE + THE NAV CONTROLS. 2026-09-10.
+
+   WHY THIS IS SAFE NOW, WHEN THE OLD DARK SKIN WAS NOT. A near-black marketing site shipped
+   here once and was pulled the same day; the file it was pulled from records the reason, and
+   the reason was contrast, not darkness. Its long-form prose ran grey-green on near-black at
+   roughly 3:1, on exactly the pages a payment gateway's verification team reads word by word.
+   The palette below puts body text at 7.6:1 and headings at 18.9:1 — the same ratios the light
+   theme uses, mirrored. Every figure here is computed, not estimated.
+
+   HOW IT SWITCHES. The root layout already writes `data-theme` onto <html> from a pre-paint
+   inline script: a saved choice if there is one, otherwise the OS setting. So the attribute is
+   authoritative and there is no flash. The @media block that follows is the no-JS fallback, and
+   it is a verbatim copy of the token block above it — if you change one, change both. CSS has
+   no way to share a declaration list between a selector and a media query, and a half-applied
+   palette is worse than none.
+
+   WHAT COULD NOT JUST BE RE-TOKENISED. Three things invert rather than shift, and they are
+   spelled out under the token block: the deep band (near-black on near-black is not a band),
+   the featured price card (a black card needs to become a white one), and the nav's own
+   surface. Everything else on the site rides the --mk-* tokens and follows automatically —
+   including the figures, which were written against tokens and currentColor precisely so this
+   would be possible.
+   ===================================================================================== */
+
+html[data-theme='dark'] .mk {
+  color-scheme: dark;
+
+  --mk-bg: #0a0a0b;
+  --mk-raise: #141416;
+  --mk-panel: #101012;
+  --mk-line: #26262a;
+  --mk-input-line: #35353b;
+
+  --mk-ink: #fafafa;    /* 18.9:1 on the ground — the light theme's ratio, mirrored */
+  --mk-prose: #a1a1aa;  /*  7.6:1 — long-form: terms, refund policy, FAQ answers */
+  --mk-muted: #8b8b94;  /*  5.8:1 — lede, card body */
+  --mk-faint: #8b8b94;  /*  5.8:1 — micro-labels get body-text contrast, never less */
+
+  /* Cobalt at #1b4dff is 1.6:1 on this ground — unreadable. The accent lightens instead of
+     staying put, and the fill inverts: light plate, dark label. */
+  --mk-green: #8ba6ff;      /* 8.4:1 as text on the ground */
+  --mk-green-2: #a8bcff;    /* hover */
+  --mk-green-line: #35427a;
+  --mk-on-green: #0a0a0b;   /* 8.4:1 on the accent fill */
+  --mk-on-green-dim: #2a3055;
+
+  --mk-amber: #fb923c;      /* 8.6:1 — still aerial and drone material only */
+
+  /* The deep band becomes the raised surface: on a near-black page the emphasis has to come
+     from being lighter than the ground, not darker than it. */
+  --mk-deep: #141416;
+  --mk-deep-line: #26262a;
+  --mk-deep-ink: #fafafa;
+  --mk-deep-prose: #a1a1aa;  /* 7.2:1 on the band */
+  --mk-deep-accent: #8ba6ff; /* 7.9:1 on the band */
+
+  --mk-sand: #141416;
+  --mk-sand-ink: #8ba6ff;
+  --mk-shadow: none;
+}
+
+/* Verbatim copy of the block above, for a visitor with scripting off whose OS is set to dark.
+   Keep the two in sync. */
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme='light']) .mk {
+    color-scheme: dark;
+
+    --mk-bg: #0a0a0b;
+    --mk-raise: #141416;
+    --mk-panel: #101012;
+    --mk-line: #26262a;
+    --mk-input-line: #35353b;
+
+    --mk-ink: #fafafa;
+    --mk-prose: #a1a1aa;
+    --mk-muted: #8b8b94;
+    --mk-faint: #8b8b94;
+
+    --mk-green: #8ba6ff;
+    --mk-green-2: #a8bcff;
+    --mk-green-line: #35427a;
+    --mk-on-green: #0a0a0b;
+    --mk-on-green-dim: #2a3055;
+
+    --mk-amber: #fb923c;
+
+    --mk-deep: #141416;
+    --mk-deep-line: #26262a;
+    --mk-deep-ink: #fafafa;
+    --mk-deep-prose: #a1a1aa;
+    --mk-deep-accent: #8ba6ff;
+
+    --mk-sand: #141416;
+    --mk-sand-ink: #8ba6ff;
+    --mk-shadow: none;
+  }
+}
+
+/* ---------- the three things that invert rather than shift ---------- */
+
+/* 1. The deep band. It is now lighter than the page, so it needs edges to read as a band. */
+html[data-theme='dark'] .mk .pg-sec-dark,
+html[data-theme='dark'] .mk .mk-sec-dark {
+  border-block: 1px solid var(--mk-line);
+}
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme='light']) .mk .pg-sec-dark,
+  html:not([data-theme='light']) .mk .mk-sec-dark {
+    border-block: 1px solid var(--mk-line);
+  }
+}
+
+/* 2. The featured price card. In light it is the one black object on a white page; the same
+      emphasis in dark is the one white object on a black page. Its inner colours are written
+      literally rather than tokenised, because on this card they are deliberately the OTHER
+      theme's values — a token would follow the page and undo the inversion. */
+html[data-theme='dark'] .mk .pg-price-card.feat,
+html[data-theme='dark'] .mk .mk-price-card.feat {
+  background: #fafafa; border-color: #fafafa;
+}
+html[data-theme='dark'] .mk .pg-price-card.feat h3,
+html[data-theme='dark'] .mk .pg-price-card.feat .pg-price-fig,
+html[data-theme='dark'] .mk .mk-price-card.feat .mk-price-num { color: #0b0b0c; }
+html[data-theme='dark'] .mk .pg-price-card.feat p,
+html[data-theme='dark'] .mk .mk-price-card.feat p,
+html[data-theme='dark'] .mk .mk-price-card.feat .mk-plist li { color: #52525b; }
+html[data-theme='dark'] .mk .pg-price-card.feat .pg-micro,
+html[data-theme='dark'] .mk .mk-price-card.feat .mk-price-name { color: #1b4dff; }
+html[data-theme='dark'] .mk .pg-price-card.feat .pg-price-fig small,
+html[data-theme='dark'] .mk .mk-price-card.feat .mk-price-num small { color: #52525b; }
+html[data-theme='dark'] .mk .pg-price-card.feat .pg-btn-primary,
+html[data-theme='dark'] .mk .mk-price-card.feat .mk-btn-primary {
+  background: #0b0b0c; color: #fafafa; border-color: #0b0b0c;
+}
+html[data-theme='dark'] .mk .pg-price-card.feat .pg-btn-primary:hover,
+html[data-theme='dark'] .mk .mk-price-card.feat .mk-btn-primary:hover {
+  background: #33333a; border-color: #33333a;
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme='light']) .mk .pg-price-card.feat,
+  html:not([data-theme='light']) .mk .mk-price-card.feat {
+    background: #fafafa; border-color: #fafafa;
+  }
+  html:not([data-theme='light']) .mk .pg-price-card.feat h3,
+  html:not([data-theme='light']) .mk .pg-price-card.feat .pg-price-fig,
+  html:not([data-theme='light']) .mk .mk-price-card.feat .mk-price-num { color: #0b0b0c; }
+  html:not([data-theme='light']) .mk .pg-price-card.feat p,
+  html:not([data-theme='light']) .mk .mk-price-card.feat p,
+  html:not([data-theme='light']) .mk .mk-price-card.feat .mk-plist li { color: #52525b; }
+  html:not([data-theme='light']) .mk .pg-price-card.feat .pg-micro,
+  html:not([data-theme='light']) .mk .mk-price-card.feat .mk-price-name { color: #1b4dff; }
+  html:not([data-theme='light']) .mk .pg-price-card.feat .pg-price-fig small,
+  html:not([data-theme='light']) .mk .mk-price-card.feat .mk-price-num small { color: #52525b; }
+  html:not([data-theme='light']) .mk .pg-price-card.feat .pg-btn-primary,
+  html:not([data-theme='light']) .mk .mk-price-card.feat .mk-btn-primary {
+    background: #0b0b0c; color: #fafafa; border-color: #0b0b0c;
+  }
+}
+
+/* 3. The nav surface, and the few literals elsewhere that a token could not reach. */
+html[data-theme='dark'] .mk-nav { background: rgba(10, 10, 11, .94); }
+html[data-theme='dark'] .mk-nav.is-stuck { background: #0a0a0b; }
+html[data-theme='dark'] .mk ::selection { background: rgba(139, 166, 255, .26); color: #fafafa; }
+html[data-theme='dark'] .mk .mk-input:focus { box-shadow: 0 0 0 3px rgba(139, 166, 255, .18); }
+html[data-theme='dark'] .mk .mk-error { background: #2a1416; border-color: #5c2a2f; color: #fca5a5; }
+/* A dark phone body on a dark page loses its silhouette, so the frame keeps a visible edge. */
+html[data-theme='dark'] .mk .mk-phone-frame { border-color: #3a3a42; }
+html[data-theme='dark'] .mk .mk-portal:hover { background: rgba(139, 166, 255, .12); }
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme='light']) .mk-nav { background: rgba(10, 10, 11, .94); }
+  html:not([data-theme='light']) .mk-nav.is-stuck { background: #0a0a0b; }
+  html:not([data-theme='light']) .mk ::selection { background: rgba(139, 166, 255, .26); color: #fafafa; }
+  html:not([data-theme='light']) .mk .mk-input:focus { box-shadow: 0 0 0 3px rgba(139, 166, 255, .18); }
+  html:not([data-theme='light']) .mk .mk-error { background: #2a1416; border-color: #5c2a2f; color: #fca5a5; }
+  html:not([data-theme='light']) .mk .mk-phone-frame { border-color: #3a3a42; }
+  html:not([data-theme='light']) .mk .mk-portal:hover { background: rgba(139, 166, 255, .12); }
+}
+
+/* =====================================================================================
+   THE PORTAL BUTTON
+
+   It used to fill solid ink on hover — a black slab dropped into a white header, which is the
+   loudest possible response to a pointer passing over a tertiary link, and the only place on
+   the site where a hover changed a whole surface. It now does what every other outline control
+   here does: the edge and the label take the accent, over a wash of it. Same affordance, at the
+   weight the control actually deserves.
+   ===================================================================================== */
+.mk .mk-portal {
+  transition: border-color .2s ease, background-color .2s ease, color .2s ease;
+}
+.mk .mk-portal:hover {
+  background: rgba(27, 77, 255, .07);
+  border-color: var(--mk-green);
+  color: var(--mk-green);
+}
+
+/* =====================================================================================
+   NAV CONTROLS — language segment + theme button
+   ===================================================================================== */
+
+.mk .mk-nav-tools { display: flex; align-items: center; gap: 10px; flex: none; }
+
+/* ---- language ---- */
+.mk .mk-lang-seg {
+  display: inline-flex; align-items: center;
+  border: 1px solid var(--mk-line); border-radius: 6px; overflow: hidden;
+}
+.mk .mk-lang-seg[data-pending] { opacity: .55; pointer-events: none; }
+.mk .mk-lang-seg button {
+  appearance: none; border: 0; background: transparent; cursor: pointer;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 11px; font-weight: 500; letter-spacing: .08em;
+  padding: 7px 9px; color: var(--mk-faint); line-height: 1;
+  transition: color .2s ease, background-color .2s ease;
+}
+.mk .mk-lang-seg button:hover { color: var(--mk-ink); }
+.mk .mk-lang-seg button.on { background: var(--mk-ink); color: var(--mk-bg); }
+/* The divider only exists between the two off states; once one is filled it is redundant. */
+.mk .mk-lang-seg button + button { border-left: 1px solid var(--mk-line); }
+.mk .mk-lang-seg button.on + button, .mk .mk-lang-seg button:has(+ button.on) { border-left-color: transparent; }
+
+/* ---- theme ---- */
+.mk .mk-theme-btn {
+  appearance: none; cursor: pointer; display: inline-grid; place-items: center;
+  width: 32px; height: 32px; padding: 0;
+  border: 1px solid var(--mk-line); border-radius: 6px;
+  background: transparent; color: var(--mk-muted);
+  transition: color .2s ease, border-color .2s ease, background-color .2s ease;
+}
+.mk .mk-theme-btn:hover { color: var(--mk-ink); border-color: var(--mk-input-line); }
+/* Both icons ship in the HTML and CSS picks; no state, no effect, correct in the first frame.
+   See the comment on ThemeToggle in NavControls.tsx. */
+.mk .mk-theme-btn .mk-icon-sun { display: none; }
+.mk .mk-theme-btn .mk-icon-moon { display: block; }
+html[data-theme='dark'] .mk .mk-theme-btn .mk-icon-sun { display: block; }
+html[data-theme='dark'] .mk .mk-theme-btn .mk-icon-moon { display: none; }
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme='light']) .mk .mk-theme-btn .mk-icon-sun { display: block; }
+  html:not([data-theme='light']) .mk .mk-theme-btn .mk-icon-moon { display: none; }
+}
+
+/* The nav is wordmark | links | tools. marketing.css gives .mk-nav-links `flex: 1`, so the tools
+   sit hard right on their own. Below 680px the links wrap to their own row and the tools stay up
+   top beside the wordmark, which is where a language and theme control belong on a phone. */
+@media (max-width: 680px) {
+  .mk .mk-nav-tools { gap: 8px; margin-left: auto; }
+  .mk .mk-lang-seg button { padding: 6px 8px; font-size: 10.5px; }
+  .mk .mk-theme-btn { width: 30px; height: 30px; }
+}

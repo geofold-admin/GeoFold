@@ -4,8 +4,14 @@ import { Work_Sans } from 'next/font/google'
 import '@/styles/marketing.css'
 import '@/styles/home.css'
 // Loaded last: re-skins the whole marketing site at the token layer. See the file header.
-import '@/styles/overhaul.css'
+//
+// This was '@/styles/overhaul.css' (the "Topographic" skin) until the Paper re-skin. That file is
+// still on disk and still self-consistent — swapping this one line back restores the previous
+// design in full, minus the landing page, whose markup was rebuilt around `pg-` components.
+import '@/styles/paper.css'
 import { ADDRESS_ONE_LINE, BUSINESS, OPERATOR } from '@/lib/business'
+import { chrome } from '@/lib/i18n'
+import { getLocale } from '@/lib/i18n.server'
 import { MarketingNav } from './MarketingNav'
 
 // Body face for the marketing site. Headings stay on Archivo (--font-sans), which
@@ -16,10 +22,20 @@ const workSans = Work_Sans({
   weight: ['400', '500', '600'],
 })
 
-export default function MarketingLayout({ children }: { children: ReactNode }) {
+export default async function MarketingLayout({ children }: { children: ReactNode }) {
+  const locale = await getLocale()
+  const c = chrome[locale]
+
   return (
-    <div className={`mk ${workSans.variable}`}>
-      <MarketingNav />
+    /*
+     * `lang` goes on this wrapper rather than on <html>. The root layout is shared with the
+     * signed-in app, which is English-only, so flipping the document language from a marketing
+     * cookie would mislabel every screen behind the login as Indonesian — telling a screen
+     * reader to pronounce English UI with Indonesian phonetics. Scoping it here is valid HTML
+     * and describes exactly the subtree that actually changes language.
+     */
+    <div className={`mk ${workSans.variable}`} lang={locale}>
+      <MarketingNav locale={locale} />
       {children}
       {/* The Legal and Help columns are load-bearing: a payment gateway verifying this merchant
           looks for FAQ, Terms, Refund Policy and Contact reachable from every page. Keep all four
@@ -28,7 +44,7 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
         <div>
           <div className="mk-footer-brand">Geofold</div>
           <div className="mk-copy">
-            © {new Date().getFullYear()} {OPERATOR}. All rights reserved.
+            © {new Date().getFullYear()} {OPERATOR}. {c.footer.rights}
             <br />
             {ADDRESS_ONE_LINE}
             <br />
@@ -38,31 +54,35 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
         </div>
         <div className="mk-footer-cols">
           <div className="mk-footer-col">
-            <span>Product</span>
-            <Link href="/product">Features</Link>
-            <Link href="/pricing">Pricing</Link>
-            <Link href="/download">Download app</Link>
+            <span>{c.footer.product}</span>
+            <Link href="/product">{c.footer.features}</Link>
+            <Link href="/pricing">{c.footer.pricing}</Link>
+            <Link href="/download">{c.footer.download}</Link>
           </div>
           <div className="mk-footer-col">
-            <span>Company</span>
-            <Link href="/about">About</Link>
-            <Link href="/contact">Contact</Link>
+            <span>{c.footer.company}</span>
+            <Link href="/about">{c.footer.about}</Link>
+            <Link href="/contact">{c.footer.contact}</Link>
           </div>
           <div className="mk-footer-col">
-            <span>Account</span>
-            <Link href="/login">Portal login</Link>
+            <span>{c.footer.account}</span>
+            <Link href="/login">{c.footer.login}</Link>
           </div>
           <div className="mk-footer-col">
-            <span>Help</span>
-            <Link href="/faq">FAQ</Link>
-            <Link href="/support">Support</Link>
-            <Link href="/contact">Contact</Link>
+            <span>{c.footer.help}</span>
+            <Link href="/faq">{c.footer.faq}</Link>
+            <Link href="/support">{c.footer.support}</Link>
+            <Link href="/contact">{c.footer.contact}</Link>
           </div>
           <div className="mk-footer-col">
-            <span>Legal</span>
+            <span>{c.footer.legal}</span>
+            {/* The Terms link keeps its Indonesian name in both languages: that is the title of
+                the document a verifier is looking for on the merchant record, and renaming it in
+                the English view would make the two versions of this footer disagree about what
+                the page is called. */}
             <Link href="/terms">Syarat &amp; Ketentuan</Link>
-            <Link href="/refund-policy">Refund Policy</Link>
-            <Link href="/privacy">Privacy</Link>
+            <Link href="/refund-policy">{c.footer.refund}</Link>
+            <Link href="/privacy">{c.footer.privacy}</Link>
           </div>
         </div>
       </footer>

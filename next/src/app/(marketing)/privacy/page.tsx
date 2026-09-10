@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ADDRESS_ONE_LINE, BUSINESS, OPERATOR } from '@/lib/business'
 import { LangSwitch } from '../LangSwitch'
+import { getLocale } from '@/lib/i18n.server'
 
 export const metadata: Metadata = {
   title: 'Kebijakan Privasi (Privacy Policy) — GeoFold',
@@ -265,7 +266,11 @@ function English() {
   )
 }
 
-export default function PrivacyPage() {
+export default async function PrivacyPage() {
+  /* Seeds which of the two documents is shown first. Both are still in the HTML —
+     see the header of LangSwitch. Indonesian remains the governing version. */
+  const locale = await getLocale()
+
   return (
     <>
       <div className="mk-hero pad-b-sm">
@@ -279,7 +284,7 @@ export default function PrivacyPage() {
       </div>
 
       <div className="mk-section tight">
-        <LangSwitch id={<Indonesian />} en={<English />} />
+        <LangSwitch initial={locale} id={<Indonesian />} en={<English />} />
       </div>
     </>
   )

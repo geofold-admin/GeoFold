@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ANDROID_MIN, APP_DOWNLOADS, BUSINESS } from '@/lib/business'
 import { LangSwitch } from '../LangSwitch'
+import { getLocale } from '@/lib/i18n.server'
 
 export const metadata: Metadata = {
   title: 'Unduh aplikasi Android — GeoFold',
@@ -200,7 +201,11 @@ function English() {
   )
 }
 
-export default function DownloadPage() {
+export default async function DownloadPage() {
+  /* Seeds which of the two documents is shown first. Both are still in the HTML —
+     see the header of LangSwitch. Indonesian remains the governing version. */
+  const locale = await getLocale()
+
   return (
     <>
       <div className="mk-hero pad-b-sm">
@@ -229,7 +234,7 @@ export default function DownloadPage() {
             </div>
           </div>
         )}
-        <LangSwitch id={<Indonesian />} en={<English />} />
+        <LangSwitch initial={locale} id={<Indonesian />} en={<English />} />
       </div>
     </>
   )

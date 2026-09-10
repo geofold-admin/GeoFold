@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { ADDRESS_ONE_LINE, BUSINESS, OPERATOR } from '@/lib/business'
 import { PREMIUM_DAYS, PREMIUM_PRICE_LABEL } from '@/lib/pricing'
 import { LangSwitch } from '../LangSwitch'
+import { getLocale } from '@/lib/i18n.server'
 
 export const metadata: Metadata = {
   title: 'Syarat & Ketentuan (Terms & Conditions) — GeoFold',
@@ -339,7 +340,11 @@ function English() {
   )
 }
 
-export default function TermsPage() {
+export default async function TermsPage() {
+  /* Seeds which of the two documents is shown first. Both are still in the HTML —
+     see the header of LangSwitch. Indonesian remains the governing version. */
+  const locale = await getLocale()
+
   return (
     <>
       <div className="mk-hero pad-b-sm">
@@ -353,7 +358,7 @@ export default function TermsPage() {
       </div>
 
       <div className="mk-section tight">
-        <LangSwitch id={<Indonesian />} en={<English />} />
+        <LangSwitch initial={locale} id={<Indonesian />} en={<English />} />
       </div>
     </>
   )

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
-import { Archivo, Barlow, Barlow_Condensed, Space_Mono } from 'next/font/google'
+import { Archivo, Barlow, Barlow_Condensed, Inter, Inter_Tight, Space_Mono } from 'next/font/google'
 import './globals.css'
 import { Providers } from './providers'
 
@@ -35,6 +35,28 @@ const spaceMono = Space_Mono({
   weight: ['400', '700'],
 })
 
+// The marketing site's own faces, added with the "Paper" re-skin. Inter Tight carries the display
+// sizes (its tighter fitting is what makes a 300-weight headline hold together at 120px, where
+// Inter proper opens up and reads as thin rather than large); Inter carries everything else.
+// Archivo / Barlow / Barlow Condensed / Space Mono all stay: marketing.css, home.css and the
+// whole (app) chrome still reference them, and this re-skin only layers over those.
+//
+// NOT named --font-display: globals.css already aliases that to Barlow Condensed for the app
+// chrome, on :root, and wins the cascade over next/font's own variable class. A headline asking
+// for --font-display silently renders in Barlow Condensed instead, at the right weight and size,
+// which is a hard thing to see in a screenshot and an easy one to see in a computed style.
+const interTight = Inter_Tight({
+  variable: '--font-tight',
+  subsets: ['latin'],
+  weight: ['300', '400', '500'],
+})
+
+const inter = Inter({
+  variable: '--font-inter',
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+})
+
 export const metadata: Metadata = {
   title: 'GeoFold — Field GPS survey tool',
   description: 'Turn a phone into a field survey kit: geo-tagged photos, offline capture, and every point on a map you can export and report from.',
@@ -55,7 +77,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html
       lang="en"
-      className={`${archivo.variable} ${barlow.variable} ${barlowCondensed.variable} ${spaceMono.variable}`}
+      className={`${archivo.variable} ${barlow.variable} ${barlowCondensed.variable} ${spaceMono.variable} ${interTight.variable} ${inter.variable}`}
       suppressHydrationWarning
     >
       <head>

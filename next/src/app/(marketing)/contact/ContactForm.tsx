@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import type { Locale } from '@/lib/i18n'
 
 type State =
   | { kind: 'idle' }
@@ -8,18 +9,85 @@ type State =
   | { kind: 'sent'; reference: string }
   | { kind: 'error'; message: string }
 
-const MESSAGES: Record<string, string> = {
-  invalid_input: 'Please check the highlighted fields and try again.',
-  rate_limited: 'Too many messages from this connection. Please try again in an hour, or email us directly.',
-}
-
 /**
  * Posts to /api/contact, which stores the message server-side and returns a reference.
  *
  * It used to open a mailto: link instead, which meant a visitor without a configured mail client
  * — including anyone verifying the site from a browser — had no way to reach us at all.
+ *
+ * THE LABELS FOLLOW THE LOCALE; THE IDENTITY TABLE ON THE PAGE DOES NOT. Every label here used to
+ * read "Nama / Name", and the error strings were English while the success note was both. A form
+ * is something you fill in, so it should be in one language — the reader's. The business identity
+ * block above it keeps its dual labels on purpose, for the reason set out in page.tsx.
  */
-export function ContactForm({ inbox }: { inbox: string }) {
+
+type FormCopy = {
+  errInvalid: string
+  errRate: string
+  errGeneric: string
+  errNetwork: (inbox: string) => string
+  sentTitle: string
+  sentRefBefore: string
+  sentRefAfter: string
+  sendAnother: string
+  name: string
+  email: string
+  org: string
+  subject: string
+  subjectPlaceholder: string
+  message: string
+  sending: string
+  send: string
+  noCard: string
+}
+
+const copy: Record<Locale, FormCopy> = {
+  id: {
+    errInvalid: 'Periksa kembali isian yang ditandai, lalu coba lagi.',
+    errRate:
+      'Terlalu banyak pesan dari koneksi ini. Coba lagi dalam satu jam, atau kirim email langsung.',
+    errGeneric: 'Pesan tidak bisa dikirim. Silakan coba lagi.',
+    errNetwork: (inbox) => `Server tidak bisa dihubungi. Silakan kirim email ke ${inbox}.`,
+    sentTitle: 'Terima kasih — pesan Anda sudah kami terima.',
+    sentRefBefore: 'Nomor referensi: ',
+    sentRefAfter:
+      '. Kami membalas ke alamat email yang Anda isikan, umumnya dalam 1 hari kerja.',
+    sendAnother: 'Kirim pesan lain',
+    name: 'Nama',
+    email: 'Email',
+    org: 'Organisasi',
+    subject: 'Subjek',
+    subjectPlaceholder: 'Pertanyaan umum, pembayaran, refund, dukungan teknis…',
+    message: 'Pesan',
+    sending: 'Mengirim…',
+    send: 'Kirim pesan',
+    noCard: 'Kami tidak pernah meminta nomor kartu, CVV, PIN, atau OTP melalui formulir ini.',
+  },
+  en: {
+    errInvalid: 'Please check the highlighted fields and try again.',
+    errRate:
+      'Too many messages from this connection. Please try again in an hour, or email us directly.',
+    errGeneric: 'Could not send the message. Please try again.',
+    errNetwork: (inbox) => `Could not reach the server. Please email ${inbox} instead.`,
+    sentTitle: 'Thank you — your message has been received.',
+    sentRefBefore: 'Reference: ',
+    sentRefAfter: '. We reply to the email address you gave, usually within one business day.',
+    sendAnother: 'Send another message',
+    name: 'Name',
+    email: 'Email',
+    org: 'Organization',
+    subject: 'Subject',
+    subjectPlaceholder: 'General question, payment, refund, technical support…',
+    message: 'Message',
+    sending: 'Sending…',
+    send: 'Send message',
+    noCard: 'We never ask for a card number, CVV, PIN or OTP through this form.',
+  },
+}
+
+export function ContactForm({ inbox, locale }: { inbox: string; locale: Locale }) {
+  const c = copy[locale]
+
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [org, setOrg] = useState('')
@@ -44,10 +112,15 @@ export function ContactForm({ inbox }: { inbox: string }) {
 
       if (!res.ok) {
         setBad(Array.isArray(data.fields) ? data.fields : [])
-        setState({
-          kind: 'error',
-          message: MESSAGES[data.error] ?? data.message ?? 'Could not send the message. Please try again.',
-        })
+        /* The API's own `message` is deliberately NOT shown any more: it is written in one
+           language on the server and would contradict whichever one the visitor is reading. The
+           error *code* is what gets translated; anything the code does not cover falls back to
+           the generic line rather than leaking a server string. */
+        const byCode: Record<string, string> = {
+          invalid_input: c.errInvalid,
+          rate_limited: c.errRate,
+        }
+        setState({ kind: 'error', message: byCode[data.error] ?? c.errGeneric })
         return
       }
 
@@ -58,10 +131,7 @@ export function ContactForm({ inbox }: { inbox: string }) {
       setSubject('')
       setMessage('')
     } catch {
-      setState({
-        kind: 'error',
-        message: `Could not reach the server. Please email ${inbox} instead.`,
-      })
+      setState({ kind: 'error', message: c.errNetwork(inbox) })
     }
   }
 
@@ -69,20 +139,19 @@ export function ContactForm({ inbox }: { inbox: string }) {
     return (
       <div className="mk-form">
         <div className="mk-note">
-          <strong>Terima kasih — pesan Anda sudah kami terima.</strong>
-          <br />
-          Thank you — your message has been received.
+          <strong>{c.sentTitle}</strong>
           {state.reference && (
             <>
               <br />
               <br />
-              Nomor referensi / reference: <strong>{state.reference}</strong>. Kami membalas ke{' '}
-              alamat email yang Anda isikan, umumnya dalam 1 hari kerja.
+              {c.sentRefBefore}
+              <strong>{state.reference}</strong>
+              {c.sentRefAfter}
             </>
           )}
         </div>
         <button type="button" className="mk-send" onClick={() => setState({ kind: 'idle' })}>
-          Send another message
+          {c.sendAnother}
         </button>
       </div>
     )
@@ -97,7 +166,7 @@ export function ContactForm({ inbox }: { inbox: string }) {
 
       <div>
         <label className="mk-label" htmlFor="c-name">
-          Nama / Name <span aria-hidden="true">*</span>
+          {c.name} <span aria-hidden="true">*</span>
         </label>
         <input
           id="c-name"
@@ -112,7 +181,7 @@ export function ContactForm({ inbox }: { inbox: string }) {
 
       <div>
         <label className="mk-label" htmlFor="c-email">
-          Email <span aria-hidden="true">*</span>
+          {c.email} <span aria-hidden="true">*</span>
         </label>
         <input
           id="c-email"
@@ -128,7 +197,7 @@ export function ContactForm({ inbox }: { inbox: string }) {
 
       <div>
         <label className="mk-label" htmlFor="c-org">
-          Organisasi / Organization
+          {c.org}
         </label>
         <input
           id="c-org"
@@ -141,20 +210,20 @@ export function ContactForm({ inbox }: { inbox: string }) {
 
       <div>
         <label className="mk-label" htmlFor="c-subject">
-          Subjek / Subject
+          {c.subject}
         </label>
         <input
           id="c-subject"
           className="mk-input"
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
-          placeholder="Pertanyaan umum, pembayaran, refund, dukungan teknis…"
+          placeholder={c.subjectPlaceholder}
         />
       </div>
 
       <div>
         <label className="mk-label" htmlFor="c-msg">
-          Pesan / Message <span aria-hidden="true">*</span>
+          {c.message} <span aria-hidden="true">*</span>
         </label>
         <textarea
           id="c-msg"
@@ -167,7 +236,9 @@ export function ContactForm({ inbox }: { inbox: string }) {
         />
       </div>
 
-      {/* Honeypot — hidden from people, filled in by bots. Not `type=hidden`: bots skip those. */}
+      {/* Honeypot — hidden from people, filled in by bots. Not `type=hidden`: bots skip those.
+          The label stays untranslated: nobody reads it, and a bot matching on "Website" should
+          keep matching whichever language the page is in. */}
       <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px' }}>
         <label htmlFor="c-website">Website</label>
         <input
@@ -180,11 +251,11 @@ export function ContactForm({ inbox }: { inbox: string }) {
       </div>
 
       <button type="submit" className="mk-send" disabled={sending}>
-        {sending ? 'Mengirim…' : 'Kirim pesan / Send message'}
+        {sending ? c.sending : c.send}
       </button>
 
       <div className="mk-card-foot" style={{ textAlign: 'left' }}>
-        Kami tidak pernah meminta nomor kartu, CVV, PIN, atau OTP melalui formulir ini.
+        {c.noCard}
       </div>
     </form>
   )
