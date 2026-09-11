@@ -2,13 +2,38 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { BUSINESS, OPERATOR } from '@/lib/business'
 import { PREMIUM_DAYS, PREMIUM_PRICE_LABEL } from '@/lib/pricing'
-import { LangSwitch } from '../LangSwitch'
+import { BilingualDoc } from '../BilingualDoc'
+import type { Locale } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'
 
-export const metadata: Metadata = {
-  title: 'Kebijakan Pengembalian Dana (Refund Policy) — GeoFold',
-  description:
-    'Syarat, pengecualian, tata cara, dan jangka waktu pengembalian dana untuk pembelian GeoFold Premium.',
+/*
+ * The chrome around the document — heading, lede, page title — follows the visitor's language.
+ * The DOCUMENT ITSELF does not: BilingualDoc renders both versions into the HTML and only takes
+ * the site language decides which one is visible, so a verifier still gets the whole document
+ * in the first paint. Indonesian remains the governing version. See BilingualDoc.tsx.
+ */
+const chrome: Record<Locale, { title: string; description: string; eyebrow: string; h1: string; lede: string }> = {
+  id: {
+    title: 'Kebijakan Pengembalian Dana (Refund Policy) — GeoFold',
+    description:
+      'Syarat, pengecualian, tata cara, dan jangka waktu pengembalian dana untuk pembelian GeoFold Premium.',
+    eyebrow: 'Pengembalian Dana',
+    h1: 'Kebijakan Pengembalian Dana.',
+    lede: 'Kapan dana dikembalikan, apa yang tidak, cara mengajukan, dan berapa lama prosesnya.',
+  },
+  en: {
+    title: 'Refund Policy — GeoFold',
+    description:
+      'Conditions, exclusions, procedure and timeframes for refunds on GeoFold Premium purchases.',
+    eyebrow: 'Refund Policy',
+    h1: 'Refund Policy.',
+    lede: 'When we refund, when we do not, how to ask, and how long it takes.',
+  },
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const c = chrome[await getLocale()]
+  return { title: c.title, description: c.description }
 }
 
 const UPDATED_ID = '7 September 2026'
@@ -410,24 +435,23 @@ function English() {
 }
 
 export default async function RefundPolicyPage() {
-  /* Seeds which of the two documents is shown first. Both are still in the HTML —
-     see the header of LangSwitch. Indonesian remains the governing version. */
+  /* Chooses which of the two documents is visible. Both are still in the HTML — see the header
+     of BilingualDoc. Indonesian remains the governing version. */
   const locale = await getLocale()
+  const c = chrome[locale]
 
   return (
     <>
       <div className="mk-hero pad-b-sm">
-        <span className="mk-eyebrow">Refund Policy</span>
-        <h1 style={{ maxWidth: 700 }}>Kebijakan Pengembalian Dana.</h1>
+        <span className="mk-eyebrow">{c.eyebrow}</span>
+        <h1 style={{ maxWidth: 700 }}>{c.h1}</h1>
         <p className="mk-lede" style={{ maxWidth: 560 }}>
-          Kapan dana dikembalikan, apa yang tidak, cara mengajukan, dan berapa lama prosesnya.
-          <br />
-          When we refund, when we do not, how to ask, and how long it takes.
+          {c.lede}
         </p>
       </div>
 
       <div className="mk-section tight">
-        <LangSwitch initial={locale} id={<Indonesian />} en={<English />} />
+        <BilingualDoc locale={locale} id={<Indonesian />} en={<English />} />
       </div>
     </>
   )

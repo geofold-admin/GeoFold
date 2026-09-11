@@ -2,13 +2,38 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ADDRESS_ONE_LINE, BUSINESS, OPERATOR } from '@/lib/business'
 import { PREMIUM_DAYS, PREMIUM_PRICE_LABEL } from '@/lib/pricing'
-import { LangSwitch } from '../LangSwitch'
+import { BilingualDoc } from '../BilingualDoc'
+import type { Locale } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'
 
-export const metadata: Metadata = {
-  title: 'Syarat & Ketentuan (Terms & Conditions) — GeoFold',
-  description:
-    'Syarat dan ketentuan penggunaan layanan GeoFold: akun, penggunaan yang diperbolehkan, kepemilikan data, harga, pembayaran, pengembalian dana, dan hukum yang berlaku.',
+/*
+ * The chrome around the document — heading, lede, page title — follows the visitor's language.
+ * The DOCUMENT ITSELF does not: BilingualDoc renders both versions into the HTML and only takes
+ * the site language decides which one is visible, so a verifier still gets the whole document
+ * in the first paint. Indonesian remains the governing version. See BilingualDoc.tsx.
+ */
+const chrome: Record<Locale, { title: string; description: string; eyebrow: string; h1: string; lede: string }> = {
+  id: {
+    title: 'Syarat & Ketentuan (Terms & Conditions) — GeoFold',
+    description:
+      'Syarat dan ketentuan penggunaan layanan GeoFold: akun, penggunaan yang diperbolehkan, kepemilikan data, harga, pembayaran, pengembalian dana, dan hukum yang berlaku.',
+    eyebrow: 'Legal',
+    h1: 'Syarat & Ketentuan.',
+    lede: 'Ketentuan penggunaan layanan GeoFold, termasuk harga, pembayaran, dan pengembalian dana.',
+  },
+  en: {
+    title: 'Terms & Conditions — GeoFold',
+    description:
+      'The terms you use GeoFold under: accounts, acceptable use, data ownership, pricing, payment, refunds and governing law.',
+    eyebrow: 'Legal',
+    h1: 'Terms & Conditions.',
+    lede: 'The terms you use GeoFold under, including pricing, payment and refunds.',
+  },
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const c = chrome[await getLocale()]
+  return { title: c.title, description: c.description }
 }
 
 const UPDATED = '7 September 2026'
@@ -341,24 +366,23 @@ function English() {
 }
 
 export default async function TermsPage() {
-  /* Seeds which of the two documents is shown first. Both are still in the HTML —
-     see the header of LangSwitch. Indonesian remains the governing version. */
+  /* Chooses which of the two documents is visible. Both are still in the HTML — see the header
+     of BilingualDoc. Indonesian remains the governing version. */
   const locale = await getLocale()
+  const c = chrome[locale]
 
   return (
     <>
       <div className="mk-hero pad-b-sm">
-        <span className="mk-eyebrow">Legal</span>
-        <h1 style={{ maxWidth: 700 }}>Syarat &amp; Ketentuan.</h1>
+        <span className="mk-eyebrow">{c.eyebrow}</span>
+        <h1 style={{ maxWidth: 700 }}>{c.h1}</h1>
         <p className="mk-lede" style={{ maxWidth: 560 }}>
-          Ketentuan penggunaan layanan GeoFold, termasuk harga, pembayaran, dan pengembalian dana.
-          <br />
-          The terms you use GeoFold under, including pricing, payment and refunds.
+          {c.lede}
         </p>
       </div>
 
       <div className="mk-section tight">
-        <LangSwitch initial={locale} id={<Indonesian />} en={<English />} />
+        <BilingualDoc locale={locale} id={<Indonesian />} en={<English />} />
       </div>
     </>
   )

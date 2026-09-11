@@ -16,8 +16,8 @@ import { ContactForm } from './ContactForm'
  * merchant record: a payment gateway's verification team, and an Indonesian consumer-protection
  * reader, both have to be able to find the operator's legal name, address, phone and hours
  * without changing a setting or clicking anything. Making it depend on a cookie means half the
- * record is missing for whoever is looking — which is exactly the failure the LangSwitch on
- * /terms was built to avoid. Duplication in that table is the feature.
+ * record is missing for whoever is looking — which is exactly the failure BilingualDoc on /terms
+ * is built to avoid. Duplication in that table is the feature.
  */
 
 type Copy = {

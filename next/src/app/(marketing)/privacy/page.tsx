@@ -1,13 +1,38 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ADDRESS_ONE_LINE, BUSINESS, OPERATOR } from '@/lib/business'
-import { LangSwitch } from '../LangSwitch'
+import { BilingualDoc } from '../BilingualDoc'
+import type { Locale } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'
 
-export const metadata: Metadata = {
-  title: 'Kebijakan Privasi (Privacy Policy) — GeoFold',
-  description:
-    'Data apa yang GeoFold kumpulkan, untuk apa digunakan, di mana disimpan, dengan siapa dibagikan, dan hak Anda atasnya.',
+/*
+ * The chrome around the document — heading, lede, page title — follows the visitor's language.
+ * The DOCUMENT ITSELF does not: BilingualDoc renders both versions into the HTML and only takes
+ * the site language decides which one is visible, so a verifier still gets the whole document
+ * in the first paint. Indonesian remains the governing version. See BilingualDoc.tsx.
+ */
+const chrome: Record<Locale, { title: string; description: string; eyebrow: string; h1: string; lede: string }> = {
+  id: {
+    title: 'Kebijakan Privasi (Privacy Policy) — GeoFold',
+    description:
+      'Data apa yang GeoFold kumpulkan, untuk apa digunakan, di mana disimpan, dengan siapa dibagikan, dan hak Anda atasnya.',
+    eyebrow: 'Legal',
+    h1: 'Kebijakan Privasi.',
+    lede: 'Data apa yang kami kumpulkan, untuk apa, di mana disimpan, dan hak Anda atasnya.',
+  },
+  en: {
+    title: 'Privacy Policy — GeoFold',
+    description:
+      'What data GeoFold collects, what it is used for, where it is stored, who it is shared with, and your rights over it.',
+    eyebrow: 'Legal',
+    h1: 'Privacy Policy.',
+    lede: 'What we collect, why, where it lives, and what you can ask us to do with it.',
+  },
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const c = chrome[await getLocale()]
+  return { title: c.title, description: c.description }
 }
 
 const UPDATED = '7 September 2026'
@@ -267,24 +292,23 @@ function English() {
 }
 
 export default async function PrivacyPage() {
-  /* Seeds which of the two documents is shown first. Both are still in the HTML —
-     see the header of LangSwitch. Indonesian remains the governing version. */
+  /* Chooses which of the two documents is visible. Both are still in the HTML — see the header
+     of BilingualDoc. Indonesian remains the governing version. */
   const locale = await getLocale()
+  const c = chrome[locale]
 
   return (
     <>
       <div className="mk-hero pad-b-sm">
-        <span className="mk-eyebrow">Legal</span>
-        <h1 style={{ maxWidth: 700 }}>Kebijakan Privasi.</h1>
+        <span className="mk-eyebrow">{c.eyebrow}</span>
+        <h1 style={{ maxWidth: 700 }}>{c.h1}</h1>
         <p className="mk-lede" style={{ maxWidth: 560 }}>
-          Data apa yang kami kumpulkan, untuk apa, di mana disimpan, dan hak Anda atasnya.
-          <br />
-          What we collect, why, where it lives, and what you can ask us to do with it.
+          {c.lede}
         </p>
       </div>
 
       <div className="mk-section tight">
-        <LangSwitch initial={locale} id={<Indonesian />} en={<English />} />
+        <BilingualDoc locale={locale} id={<Indonesian />} en={<English />} />
       </div>
     </>
   )

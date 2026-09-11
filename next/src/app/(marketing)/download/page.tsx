@@ -1,13 +1,61 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ANDROID_MIN, APP_DOWNLOADS, BUSINESS } from '@/lib/business'
-import { LangSwitch } from '../LangSwitch'
+import { BilingualDoc } from '../BilingualDoc'
+import type { Locale } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'
 
-export const metadata: Metadata = {
-  title: 'Unduh aplikasi Android — GeoFold',
-  description:
-    'Unduh aplikasi Android GeoFold: survei lapangan berbasis GPS, bekerja offline, sinkron otomatis. Termasuk versi drone DJI.',
+/*
+ * The chrome around the download list — heading, lede, page title, and the "still stuck" block below —
+ * follows the visitor's language. The INSTRUCTIONS THEMSELVES do not: BilingualDoc renders both versions
+ * into the HTML and only takes the site language decides which set is visible, so nothing is behind
+ * a click for a reader who cannot run scripts. See BilingualDoc.tsx.
+ */
+const chrome: Record<Locale, {
+  title: string
+  description: string
+  eyebrow: string
+  h1: string
+  lede: string
+  noLinks: { strong: string; before: string; mid: string; link: string; after: string }
+}> = {
+  id: {
+    title: 'Unduh aplikasi Android — GeoFold',
+    description:
+      'Unduh aplikasi Android GeoFold: survei lapangan berbasis GPS, bekerja offline, sinkron otomatis. Termasuk versi drone DJI.',
+    eyebrow: 'Unduh',
+    h1: 'Aplikasi Android GeoFold.',
+    lede:
+      'Survei lapangan berbasis GPS yang bekerja penuh secara offline, lalu menyinkronkan sendiri begitu ada sinyal.',
+    noLinks: {
+      strong: 'Belum ada tautan unduhan publik.',
+      before: ' Berkas pemasangan dikirim langsung atas permintaan — email ',
+      mid: ' dan sebutkan versi mana yang Anda butuhkan. Versi web tersedia sekarang di ',
+      link: 'halaman masuk',
+      after: ' dan menjalankan seluruh fungsi kecuali pengambilan data di lapangan.',
+    },
+  },
+  en: {
+    title: 'Download the Android app — GeoFold',
+    description:
+      'Download the GeoFold Android app: GPS field survey, works offline, syncs automatically. Includes the DJI drone build.',
+    eyebrow: 'Download',
+    h1: 'GeoFold for Android.',
+    lede:
+      'GPS field survey that works fully offline, then syncs itself the moment there is a signal.',
+    noLinks: {
+      strong: 'There is no public download link yet.',
+      before: ' The installer is sent directly on request — email ',
+      mid: ' and say which build you need. The web version is available now at the ',
+      link: 'sign-in page',
+      after: ' and does everything except capture in the field.',
+    },
+  },
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const c = chrome[await getLocale()]
+  return { title: c.title, description: c.description }
 }
 
 const anyPublished = APP_DOWNLOADS.some((d) => d.url)
@@ -202,20 +250,18 @@ function English() {
 }
 
 export default async function DownloadPage() {
-  /* Seeds which of the two documents is shown first. Both are still in the HTML —
-     see the header of LangSwitch. Indonesian remains the governing version. */
+  /* Chooses which of the two documents is visible. Both are still in the HTML — see the header
+     of BilingualDoc. Indonesian remains the governing version. */
   const locale = await getLocale()
+  const c = chrome[locale]
 
   return (
     <>
       <div className="mk-hero pad-b-sm">
-        <span className="mk-eyebrow">Unduh / Download</span>
-        <h1 style={{ maxWidth: 700 }}>Aplikasi Android GeoFold.</h1>
+        <span className="mk-eyebrow">{c.eyebrow}</span>
+        <h1 style={{ maxWidth: 700 }}>{c.h1}</h1>
         <p className="mk-lede" style={{ maxWidth: 560 }}>
-          Survei lapangan berbasis GPS yang bekerja penuh secara offline, lalu menyinkronkan sendiri
-          begitu ada sinyal.
-          <br />
-          GPS field survey that works fully offline and syncs itself once there is signal.
+          {c.lede}
         </p>
       </div>
 
@@ -224,17 +270,17 @@ export default async function DownloadPage() {
           <div className="mk-doc" style={{ marginBottom: 32 }}>
             <div className="mk-callout">
               <p>
-                <strong>Belum ada tautan unduhan publik.</strong> Berkas pemasangan dikirim langsung
-                atas permintaan — email{' '}
-                <a href={`mailto:${BUSINESS.email.support}`}>{BUSINESS.email.support}</a> dan
-                sebutkan versi mana yang Anda butuhkan. Versi web tersedia sekarang di{' '}
-                <Link href="/login">halaman masuk</Link> dan menjalankan seluruh fungsi kecuali
-                pengambilan data di lapangan.
+                <strong>{c.noLinks.strong}</strong>
+                {c.noLinks.before}
+                <a href={`mailto:${BUSINESS.email.support}`}>{BUSINESS.email.support}</a>
+                {c.noLinks.mid}
+                <Link href="/login">{c.noLinks.link}</Link>
+                {c.noLinks.after}
               </p>
             </div>
           </div>
         )}
-        <LangSwitch initial={locale} id={<Indonesian />} en={<English />} />
+        <BilingualDoc locale={locale} id={<Indonesian />} en={<English />} />
       </div>
     </>
   )

@@ -3,13 +3,65 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { ANDROID_MIN, BUSINESS } from '@/lib/business'
 import { PREMIUM_DAYS, PREMIUM_PRICE_LABEL } from '@/lib/pricing'
-import { LangSwitch } from '../LangSwitch'
+import { BilingualDoc } from '../BilingualDoc'
+import type { Locale } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'
 
-export const metadata: Metadata = {
-  title: 'FAQ — GeoFold',
-  description:
-    'Pertanyaan yang sering diajukan tentang GeoFold: akun, harga, metode pembayaran, pengembalian dana, data dan dukungan.',
+/*
+ * The chrome around the answers — heading, lede, page title, and the "still stuck" block below —
+ * follows the visitor's language. The ANSWERS THEMSELVES do not: BilingualDoc renders both sets
+ * into the HTML and only takes the site language decides which set is visible, so nothing is behind
+ * a click for a reader who cannot run scripts. See BilingualDoc.tsx.
+ */
+const chrome: Record<Locale, {
+  title: string
+  description: string
+  eyebrow: string
+  h1: string
+  lede: string
+  stuck: string
+  email: string
+  phone: string
+  other: string
+  otherBefore: string
+  otherLink: string
+  otherAfter: string
+}> = {
+  id: {
+    title: 'FAQ — GeoFold',
+    description:
+      'Pertanyaan yang sering diajukan tentang GeoFold: akun, harga, metode pembayaran, pengembalian dana, data dan dukungan.',
+    eyebrow: 'FAQ',
+    h1: 'Pertanyaan yang sering diajukan.',
+    lede: 'Akun, harga, pembayaran, pengembalian dana, dan data — dijawab lengkap.',
+    stuck: 'Tidak menemukan jawabannya?',
+    email: 'Email',
+    phone: 'Telepon / WhatsApp',
+    other: 'Lainnya',
+    otherBefore: 'Lihat ',
+    otherLink: 'halaman kontak',
+    otherAfter: ' untuk alamat usaha dan jam operasional.',
+  },
+  en: {
+    title: 'FAQ — GeoFold',
+    description:
+      'Frequently asked questions about GeoFold: accounts, pricing, payment methods, refunds, data and support.',
+    eyebrow: 'FAQ',
+    h1: 'Frequently asked questions.',
+    lede: 'Accounts, pricing, payment, refunds and your data — answered in full.',
+    stuck: 'Did not find your answer?',
+    email: 'Email',
+    phone: 'Phone / WhatsApp',
+    other: 'Anything else',
+    otherBefore: 'See the ',
+    otherLink: 'contact page',
+    otherAfter: ' for the business address and opening hours.',
+  },
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const c = chrome[await getLocale()]
+  return { title: c.title, description: c.description }
 }
 
 type QA = { q: string; a: ReactNode }
@@ -568,45 +620,45 @@ function Groups({ groups }: { groups: Group[] }) {
 }
 
 export default async function FaqPage() {
-  /* Seeds which of the two documents is shown first. Both are still in the HTML —
-     see the header of LangSwitch. Indonesian remains the governing version. */
+  /* Chooses which of the two documents is visible. Both are still in the HTML — see the header
+     of BilingualDoc. Indonesian remains the governing version. */
   const locale = await getLocale()
+  const c = chrome[locale]
 
   return (
     <>
       <div className="mk-hero pad-b-sm">
-        <span className="mk-eyebrow">FAQ</span>
-        <h1 style={{ maxWidth: 700 }}>Pertanyaan yang sering diajukan.</h1>
+        <span className="mk-eyebrow">{c.eyebrow}</span>
+        <h1 style={{ maxWidth: 700 }}>{c.h1}</h1>
         <p className="mk-lede" style={{ maxWidth: 560 }}>
-          Akun, harga, pembayaran, pengembalian dana, dan data — dijawab lengkap.
-          <br />
-          Accounts, pricing, payment, refunds and your data — answered in full.
+          {c.lede}
         </p>
       </div>
 
       <div className="mk-section tight">
-        <LangSwitch initial={locale} id={<Groups groups={GROUPS_ID} />} en={<Groups groups={GROUPS_EN} />} />
+        <BilingualDoc locale={locale} id={<Groups groups={GROUPS_ID} />} en={<Groups groups={GROUPS_EN} />} />
       </div>
 
       <div className="mk-section tight" style={{ borderTop: '1px solid var(--mk-line)' }}>
         <div className="mk-inner">
-          <h2 className="mk-centered-h2">Tidak menemukan jawabannya?</h2>
+          <h2 className="mk-centered-h2">{c.stuck}</h2>
           <div className="mk-meta-grid">
             <div className="mk-meta">
-              <div className="mk-meta-t">Email</div>
+              <div className="mk-meta-t">{c.email}</div>
               <div className="mk-meta-b">{mail(BUSINESS.email.support)}</div>
             </div>
             <div className="mk-meta">
-              <div className="mk-meta-t">Telepon / WhatsApp</div>
+              <div className="mk-meta-t">{c.phone}</div>
               <div className="mk-meta-b">
                 <a href={`tel:${BUSINESS.phoneHref}`}>{BUSINESS.phone}</a>
               </div>
             </div>
             <div className="mk-meta">
-              <div className="mk-meta-t">Lainnya</div>
+              <div className="mk-meta-t">{c.other}</div>
               <div className="mk-meta-b">
-                Lihat <Link href="/contact">halaman kontak</Link> untuk alamat usaha dan jam
-                operasional.
+                {c.otherBefore}
+                <Link href="/contact">{c.otherLink}</Link>
+                {c.otherAfter}
               </div>
             </div>
           </div>

@@ -76,11 +76,13 @@ export default async function MarketingLayout({ children }: { children: ReactNod
           </div>
           <div className="mk-footer-col">
             <span>{c.footer.legal}</span>
-            {/* The Terms link keeps its Indonesian name in both languages: that is the title of
-                the document a verifier is looking for on the merchant record, and renaming it in
-                the English view would make the two versions of this footer disagree about what
-                the page is called. */}
-            <Link href="/terms">Syarat &amp; Ketentuan</Link>
+            {/* This used to stay "Syarat & Ketentuan" in both languages, on the theory that a
+                verifier looks for that exact title. It was wrong: a verifier reading the site in
+                Indonesian still sees the Indonesian name, and one reading in English was getting a
+                single stray Indonesian word in an otherwise English footer with no way to tell it
+                was a link to the terms. The document is identified by its URL, not by the footer
+                label, and /terms still opens on the Indonesian text for an Indonesian reader. */}
+            <Link href="/terms">{c.footer.terms}</Link>
             <Link href="/refund-policy">{c.footer.refund}</Link>
             <Link href="/privacy">{c.footer.privacy}</Link>
           </div>
