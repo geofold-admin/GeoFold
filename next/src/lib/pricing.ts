@@ -1,10 +1,14 @@
 /**
- * What a premium period costs and how long it lasts — the one place that decides it.
+ * What a premium period costs, how long it lasts, and how much storage it carries — the one place
+ * that decides it.
  *
- * Kept out of `midtrans.ts` so the marketing, pricing, FAQ and refund pages can read the real
- * configured numbers without importing the payment client (and `node:crypto` with it). A price
- * quoted on a public page that disagrees with what the checkout charges is a consumer-protection
- * problem, so nothing here should be duplicated as a literal anywhere else.
+ * Kept out of the gateway clients (`ipaymu.ts`, `midtrans.ts`) so the marketing, pricing, FAQ and
+ * refund pages can read the real configured numbers without importing a payment client (and
+ * `node:crypto` with it). A price quoted on a public page that disagrees with what the checkout
+ * charges is a consumer-protection problem, so nothing here should be duplicated as a literal
+ * anywhere else.
+ *
+ * Repriced 2026-09-14: Rp 35.000 for 30 days, every feature, 5 GB of cloud storage.
  */
 
 const asPositiveInt = (v: string | undefined, fallback: number) => {
@@ -13,15 +17,47 @@ const asPositiveInt = (v: string | undefined, fallback: number) => {
 }
 
 /** Price of one premium period, in whole rupiah. */
-export const PREMIUM_PRICE_IDR = asPositiveInt(process.env.PREMIUM_PRICE_IDR, 49000)
+export const PREMIUM_PRICE_IDR = asPositiveInt(process.env.PREMIUM_PRICE_IDR, 35000)
 
 /** Days of premium granted per payment. */
 export const PREMIUM_DAYS = asPositiveInt(process.env.PREMIUM_DAYS, 30)
 
-/** 49000 → "Rp 49.000". Indonesian grouping, no decimals — rupiah has no subunit in practice. */
+/**
+ * Cloud storage included with a premium period, in gigabytes.
+ *
+ * ⚠️ This is a real ceiling, not a marketing number: `lib/quota.ts` refuses a photo upload that
+ * would push the workspace past it. Premium is therefore "every feature, unmetered counts, 5 GB of
+ * stored photos" — which is what the pricing page must say. It is *not* unlimited, and any page
+ * that still claims unlimited storage is claiming something the code will not honour.
+ */
+export const PREMIUM_STORAGE_GB = asPositiveInt(process.env.PREMIUM_STORAGE_GB, 5)
+
+/** The same ceiling in bytes. Binary GB (GiB), matching how object stores report usage. */
+export const PREMIUM_STORAGE_BYTES = PREMIUM_STORAGE_GB * 1024 * 1024 * 1024
+
+/** 35000 → "Rp 35.000". Indonesian grouping, no decimals — rupiah has no subunit in practice. */
 export function formatIdr(amount: number): string {
   return `Rp ${new Intl.NumberFormat('id-ID').format(Math.round(amount))}`
 }
 
-/** The headline price, formatted: "Rp 49.000". */
+/** The headline price, formatted: "Rp 35.000". */
 export const PREMIUM_PRICE_LABEL = formatIdr(PREMIUM_PRICE_IDR)
+
+/** The included storage, formatted: "5 GB". */
+export const PREMIUM_STORAGE_LABEL = `${PREMIUM_STORAGE_GB} GB`
+
+/** Bytes → "1,4 GB" / "820 MB" / "12 KB", for usage readouts. Indonesian decimal comma. */
+export function formatBytes(bytes: number): string {
+  const units: Array<[number, string, number]> = [
+    [1024 ** 3, 'GB', 1],
+    [1024 ** 2, 'MB', 0],
+    [1024, 'KB', 0],
+  ]
+  for (const [size, unit, digits] of units) {
+    if (bytes >= size) {
+      const n = bytes / size
+      return `${new Intl.NumberFormat('id-ID', { maximumFractionDigits: digits }).format(n)} ${unit}`
+    }
+  }
+  return `${Math.max(0, Math.round(bytes))} B`
+}

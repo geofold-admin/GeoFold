@@ -20,14 +20,21 @@ export const BUSINESS = {
   /** Legal form, if any — e.g. 'PT', 'CV', or 'Perorangan' (sole trader). */
   legalForm: 'Perorangan',
 
-  /** Registered business address, as supplied by the operator 2026-09-07. A verifier reads this
-   *  off the contact page, so it must stay in step with the address on the merchant account. */
+  /** Registered business address, as supplied by the operator. Corrected 2026-09-14 — the
+   *  operator moved from Pontianak to Sintang. A verifier reads this off the contact page, so it
+   *  must stay in step with the address on the iPaymu and Midtrans merchant accounts; update it
+   *  there too, or verification fails on the mismatch rather than on anything being wrong.
+   *
+   *  ⚠️ `postcode` is deliberately empty: the operator gave the address without one, and a
+   *  guessed postcode on a page a payment gateway verifies is worse than an absent one. Every
+   *  consumer filters empty parts out, so the address renders correctly without it — but fill it
+   *  in (Kec. Sintang is in the 786xx range) before submitting for merchant verification. */
   address: {
-    line1: 'Jl. 28 Oktober',
-    line2: 'Siantan Hulu, Kec. Jongkat',
-    city: 'Kota Pontianak',
+    line1: 'Dusun Lalang Baru',
+    line2: 'Kec. Sintang',
+    city: 'Kabupaten Sintang',
     province: 'Kalimantan Barat',
-    postcode: '78241',
+    postcode: '',
     country: 'Indonesia',
   },
 

@@ -18,8 +18,18 @@ export interface SubscriptionMe {
     photosPerProject: number | null
     dailySurveys: number | null
     dailyPhotos: number | null
+    /** Storage ceiling in bytes. Set on premium, null on free. */
+    storageBytes: number | null
   }
-  usage: { projects: number; surveysToday: number; photosToday: number }
+  usage: { projects: number; surveysToday: number; photosToday: number; storageBytes: number }
+  /** What the checkout will charge, resolved server-side. See api/subscriptions/me. */
+  offer: {
+    priceIdr: number
+    priceLabel: string
+    days: number
+    storageBytes: number
+    storageLabel: string
+  }
 }
 
 export interface FormField {

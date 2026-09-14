@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { PREMIUM_DAYS, PREMIUM_PRICE_LABEL } from '@/lib/pricing'
+import { PREMIUM_DAYS, PREMIUM_PRICE_LABEL, PREMIUM_STORAGE_LABEL } from '@/lib/pricing'
 import { BUSINESS } from '@/lib/business'
 import type { Locale } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'
@@ -65,11 +65,12 @@ const copy: Record<Locale, Copy> = {
       blurb: 'Untuk tim yang aktif di lapangan.',
       cta: 'Ambil Premium',
       items: [
-        'Proyek, survei dan foto tanpa batas',
+        'Semua fitur terbuka',
+        'Proyek, survei dan foto tanpa batas jumlah',
+        `Penyimpanan cloud ${PREMIUM_STORAGE_LABEL}`,
         'Tanpa batas harian',
         'Peta survei (satelit & jalan)',
         'Grid kuadrat untuk mengukur cakupan',
-        'Semua yang ada di paket Gratis',
       ],
     },
     note: {
@@ -83,6 +84,10 @@ const copy: Record<Locale, Copy> = {
       {
         q: 'Ini langganan bulanan?',
         a: `Bukan. Premium adalah pembelian sekali bayar untuk ${PREMIUM_DAYS} hari. Tidak ada penagihan berulang, tidak ada auto-debit, dan tidak ada yang perlu dibatalkan — masa aktifnya berakhir dengan sendirinya.`,
+      },
+      {
+        q: `Apa yang dihitung terhadap penyimpanan ${PREMIUM_STORAGE_LABEL}?`,
+        a: `Foto survei yang tersimpan di cloud. Jumlah proyek, survei dan foto tidak dibatasi — yang dibatasi adalah total ukurannya, ${PREMIUM_STORAGE_LABEL}. Kalau penuh, data lama tetap aman dan bisa diekspor; unggahan baru berhenti sampai Anda menghapus foto atau proyek yang tidak diperlukan.`,
       },
       {
         q: 'Apa yang terjadi kalau masa Premium habis?',
@@ -139,11 +144,12 @@ const copy: Record<Locale, Copy> = {
       blurb: 'For teams working in the field.',
       cta: 'Get Premium',
       items: [
-        'Unlimited projects, surveys and photos',
+        'Every feature unlocked',
+        'No limit on how many projects, surveys or photos',
+        `${PREMIUM_STORAGE_LABEL} of cloud storage`,
         'No daily limits',
         'Survey map (satellite & street)',
         'Quadrat grid for measuring coverage',
-        'Everything in the Free plan',
       ],
     },
     note: {
@@ -157,6 +163,10 @@ const copy: Record<Locale, Copy> = {
       {
         q: 'Is this a monthly subscription?',
         a: `No. Premium is a one-off purchase for ${PREMIUM_DAYS} days. There is no recurring billing, no auto-debit and nothing to cancel — the period simply ends on its own.`,
+      },
+      {
+        q: `What counts towards the ${PREMIUM_STORAGE_LABEL}?`,
+        a: `Survey photos held in the cloud. There is no cap on how many projects, surveys or photos you create — the cap is on their combined size, ${PREMIUM_STORAGE_LABEL}. When it is full, everything already stored stays safe and exportable; new uploads stop until you delete photos or projects you no longer need.`,
       },
       {
         q: 'What happens when Premium runs out?',

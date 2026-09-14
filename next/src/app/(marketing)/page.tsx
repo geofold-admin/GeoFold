@@ -5,7 +5,7 @@ import { FigAerial, FigCapture, FigExport, FigMap, FigOffline } from './Figures'
 import { Motion } from './Motion'
 import type { Locale } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'
-import { PREMIUM_DAYS, PREMIUM_PRICE_LABEL } from '@/lib/pricing'
+import { PREMIUM_DAYS, PREMIUM_PRICE_LABEL, PREMIUM_STORAGE_LABEL } from '@/lib/pricing'
 
 /*
  * Every claim on this page is one the app actually does today.
@@ -138,7 +138,7 @@ const copy: Record<Locale, Copy> = {
     premium: {
       name: 'Premium',
       per: `/ ${PREMIUM_DAYS} hari`,
-      body: 'Tanpa batas proyek, foto dan survei. Peta survei terbuka. Sekali bayar.',
+      body: `Semua fitur terbuka, tanpa batas jumlah proyek, foto dan survei. Penyimpanan ${PREMIUM_STORAGE_LABEL}. Sekali bayar.`,
       cta: 'Lihat detail',
     },
     priceNote: {
@@ -248,7 +248,7 @@ const copy: Record<Locale, Copy> = {
     premium: {
       name: 'Premium',
       per: `/ ${PREMIUM_DAYS} days`,
-      body: 'No limit on projects, photos or surveys. Survey map unlocked. One payment.',
+      body: `Every feature unlocked, no limit on how many projects, photos or surveys. ${PREMIUM_STORAGE_LABEL} of storage. One payment.`,
       cta: 'See details',
     },
     priceNote: {

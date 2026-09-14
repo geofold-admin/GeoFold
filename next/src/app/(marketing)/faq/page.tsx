@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { ANDROID_MIN, BUSINESS } from '@/lib/business'
-import { PREMIUM_DAYS, PREMIUM_PRICE_LABEL } from '@/lib/pricing'
+import { PREMIUM_DAYS, PREMIUM_PRICE_LABEL, PREMIUM_STORAGE_LABEL } from '@/lib/pricing'
 import { BilingualDoc } from '../BilingualDoc'
 import type { Locale } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'
@@ -149,7 +149,7 @@ const GROUPS_ID: Group[] = [
       },
       {
         q: 'Apa yang saya dapatkan dengan Premium?',
-        a: 'Proyek, survei, dan foto tanpa batas; tidak ada batas harian; akses peta survei (tampilan satelit dan jalan); serta dukungan prioritas.',
+        a: `Semua fitur terbuka: jumlah proyek, survei dan foto tidak dibatasi; tidak ada batas harian; akses peta survei (tampilan satelit dan jalan); penyimpanan cloud ${PREMIUM_STORAGE_LABEL}; serta dukungan prioritas.`,
       },
       {
         q: 'Metode pembayaran apa saja yang diterima?',
@@ -416,7 +416,7 @@ const GROUPS_EN: Group[] = [
       },
       {
         q: 'What does Premium include?',
-        a: 'Unlimited projects, surveys and photos; no daily caps; access to the survey map (satellite and street); and priority support.',
+        a: `Every feature unlocked: no limit on how many projects, surveys or photos you create; no daily caps; access to the survey map (satellite and street); ${PREMIUM_STORAGE_LABEL} of cloud storage; and priority support.`,
       },
       {
         q: 'Which payment methods do you accept?',

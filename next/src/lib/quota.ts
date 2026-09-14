@@ -1,13 +1,18 @@
 import sql from './db'
+import { PREMIUM_STORAGE_BYTES } from './pricing'
 
 /**
- * Quota model per docs/migration-002-subscription.sql. Replaces the old free tier
- * (100 surveys/month + 500 MB storage are retired).
+ * Quota model per docs/migration-002-subscription.sql.
  *
  *   free    = FREE_PROJECTS projects, then +1 more every PROJECT_COOLDOWN_HOURS,
  *             FREE_PHOTOS_PER_PROJECT photos per project, plus daily caps on surveys
  *             captured and photos uploaded.
- *   premium = unlimited on every axis, while PremiumUntilUtc is in the future.
+ *   premium = unmetered on every count axis while PremiumUntilUtc is in the future, bounded by
+ *             PREMIUM_STORAGE_BYTES of stored photos (5 GB — see lib/pricing.ts).
+ *
+ * The storage ceiling applies to premium only. The free plan has no byte limit because its counts
+ * already impose one: 3 projects x 20 photos is well under a gigabyte at any realistic photo size,
+ * so a second limit there would be a number nobody could reach.
  *
  * ⚠️ TUNE THESE. The project/photo numbers come straight from the product decision in the
  * migration; the two DAILY caps were not specified, so these are sensible defaults — set them
@@ -103,6 +108,18 @@ async function countPhotosInProject(userId: string, surveyId: string): Promise<n
   return r.c
 }
 
+// Bytes stored across every non-failed photo the user owns. `SizeBytes` is written at initiate
+// from the client's declared size and corrected at complete from the object store's real size, so
+// this tracks what the bucket actually holds rather than what a client claimed.
+async function storageUsedBytes(userId: string): Promise<number> {
+  const [r] = await sql<{ b: string | null }[]>`
+    SELECT COALESCE(SUM(sp."SizeBytes"), 0)::bigint AS b
+    FROM survey_photos sp
+    JOIN surveys s ON s."Id" = sp."SurveyId"
+    WHERE s."UserId" = ${userId} AND sp."UploadStatus" <> 'failed'`
+  return Number(r?.b ?? 0)
+}
+
 async function todayUsage(userId: string): Promise<{ surveys: number; photos: number }> {
   const [r] = await sql<{ s: number; p: number }[]>`
     SELECT COALESCE("SurveysCount", 0)::int AS s, COALESCE("PhotosCount", 0)::int AS p
@@ -183,11 +200,24 @@ export async function checkSurveyCreation(userId: string): Promise<QuotaCheck> {
   return { allowed: true }
 }
 
-export async function checkPhotoUpload(userId: string, surveyId: string): Promise<QuotaCheck> {
+export async function checkPhotoUpload(userId: string, surveyId: string, sizeBytes = 0): Promise<QuotaCheck> {
   const w = await getWorkspace(userId)
   const frozen = await checkFrozen(userId, w)
   if (!frozen.allowed) return frozen
-  if (premiumActive(w)) return { allowed: true }
+
+  if (premiumActive(w)) {
+    // Premium lifts every count limit but not the storage ceiling. Checked with the incoming photo
+    // included, so the cap is never crossed rather than merely noticed afterwards.
+    const used = await storageUsedBytes(userId)
+    if (used + sizeBytes > PREMIUM_STORAGE_BYTES) {
+      const gb = (n: number) => `${(n / 1024 ** 3).toFixed(2)} GB`
+      return {
+        allowed: false,
+        message: `Storage full — ${gb(used)} of ${gb(PREMIUM_STORAGE_BYTES)} used. Delete photos or projects you no longer need to free up space.`,
+      }
+    }
+    return { allowed: true }
+  }
 
   const inProject = await countPhotosInProject(userId, surveyId)
   if (inProject >= FREE_PHOTOS_PER_PROJECT) {
@@ -233,14 +263,20 @@ export interface WorkspaceSummary {
     photosPerProject: number | null
     dailySurveys: number | null
     dailyPhotos: number | null
+    /** Storage ceiling in bytes. Set on premium, null on free — see the note at the top. */
+    storageBytes: number | null
   }
-  usage: { projects: number; surveysToday: number; photosToday: number }
+  usage: { projects: number; surveysToday: number; photosToday: number; storageBytes: number }
 }
 
 export async function getWorkspaceSummary(userId: string): Promise<WorkspaceSummary> {
   const w = await getWorkspace(userId)
   const active = premiumActive(w)
-  const [projects, usage] = await Promise.all([countActiveProjects(userId), todayUsage(userId)])
+  const [projects, usage, storage] = await Promise.all([
+    countActiveProjects(userId),
+    todayUsage(userId),
+    storageUsedBytes(userId),
+  ])
   return {
     workspaceType: w?.workspaceType ?? 'free',
     premiumActive: active,
@@ -249,8 +285,8 @@ export async function getWorkspaceSummary(userId: string): Promise<WorkspaceSumm
     // from live state (not just the lazily-set flag) so the banner is right before any write.
     frozen: !active && w?.workspaceType === 'premium' && (!!w.frozenAtUtc || projects > FREE_PROJECTS),
     limits: active
-      ? { maxProjects: null, photosPerProject: null, dailySurveys: null, dailyPhotos: null }
-      : { maxProjects: FREE_PROJECTS, photosPerProject: FREE_PHOTOS_PER_PROJECT, dailySurveys: FREE_DAILY_SURVEYS, dailyPhotos: FREE_DAILY_PHOTOS },
-    usage: { projects, surveysToday: usage.surveys, photosToday: usage.photos },
+      ? { maxProjects: null, photosPerProject: null, dailySurveys: null, dailyPhotos: null, storageBytes: PREMIUM_STORAGE_BYTES }
+      : { maxProjects: FREE_PROJECTS, photosPerProject: FREE_PHOTOS_PER_PROJECT, dailySurveys: FREE_DAILY_SURVEYS, dailyPhotos: FREE_DAILY_PHOTOS, storageBytes: null },
+    usage: { projects, surveysToday: usage.surveys, photosToday: usage.photos, storageBytes: storage },
   }
 }

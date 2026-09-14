@@ -30,8 +30,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const path = existing?.StoragePath ?? storagePath
 
   if (!existing) {
-    // Free plan caps photos per project and per UTC day; premium is unlimited.
-    const quota = await checkPhotoUpload(userId, surveyId)
+    // Free plan caps photos per project and per UTC day; premium lifts those but is bounded by
+    // its storage ceiling, so the declared size goes in and is counted before the URL is issued.
+    const quota = await checkPhotoUpload(userId, surveyId, Number(b.sizeBytes))
     if (!quota.allowed) return quotaExceeded(quota.message)
 
     await sql`

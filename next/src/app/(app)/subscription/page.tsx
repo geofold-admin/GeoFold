@@ -3,18 +3,33 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '@/lib/api-client'
 import { DEMO_MODE } from '@/lib/demo'
+import { formatBytes } from '@/lib/pricing'
 import type { SubscriptionMe } from '@/lib/types'
 
-function Meter({ label, used, limit, unit = '' }: { label: string; used: number; limit: number | null; unit?: string }) {
+function Meter({
+  label,
+  used,
+  limit,
+  unit = '',
+  format,
+}: {
+  label: string
+  used: number
+  limit: number | null
+  unit?: string
+  /** Renders the raw numbers for display. Storage passes formatBytes; counts need nothing. */
+  format?: (n: number) => string
+}) {
   const unlimited = limit === null
   const pct = unlimited || limit === 0 ? 0 : Math.min(100, Math.round((used / limit) * 100))
   const near = pct >= 90
+  const show = (n: number) => (format ? format(n) : `${n}${unit}`)
   return (
     <div className={`meter${near ? ' warn' : ''}`}>
       <div className="row" style={{ marginBottom: 6 }}>
         <span style={{ fontSize: 14 }}>{label}</span>
         <span className="hint" style={{ fontFamily: 'var(--font-mono)' }}>
-          {used}{unit} {unlimited ? '· unlimited' : `/ ${limit}${unit}`}
+          {show(used)} {unlimited ? '· unlimited' : `/ ${show(limit)}`}
         </span>
       </div>
       <div className="bar"><span style={{ width: `${pct}%` }} /></div>
@@ -35,7 +50,22 @@ export default function SubscriptionPage() {
   )
 
   useEffect(() => {
-    void loadMe()
+    // Coming back from the gateway's hosted page, the callback may not have landed yet — or may
+    // never land, since iPaymu validates the caller's IP and ours is not static. Ask the server to
+    // reconcile this user's pending payments first, so a completed payment shows as Premium on the
+    // page the customer is already looking at rather than after a support email.
+    const returningFromCheckout =
+      typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('order')
+
+    const run = async () => {
+      if (returningFromCheckout && !DEMO_MODE) {
+        await api('/api/payments/ipaymu/sync', { method: 'POST' }).catch(() => {
+          // Reconciling is best-effort; the plan state below is loaded either way.
+        })
+      }
+      await loadMe()
+    }
+    void run()
   }, [loadMe])
 
   if (error) return <p className="error">{error}</p>
@@ -67,20 +97,29 @@ export default function SubscriptionPage() {
         )}
       </div>
       <div className="card">
-        <div className="card-title">Usage today</div>
+        <div className="card-title">Usage</div>
         <Meter label="Projects" used={me.usage.projects} limit={me.limits.maxProjects} />
         <Meter label="Surveys today" used={me.usage.surveysToday} limit={me.limits.dailySurveys} />
         <Meter label="Photos today" used={me.usage.photosToday} limit={me.limits.dailyPhotos} />
+        <Meter
+          label="Cloud storage"
+          used={me.usage.storageBytes}
+          limit={me.limits.storageBytes}
+          format={formatBytes}
+        />
         {me.limits.photosPerProject != null && (
           <p className="hint" style={{ marginTop: 10, marginBottom: 0 }}>Up to {me.limits.photosPerProject} photos per project on the free plan.</p>
         )}
       </div>
-      {!me.premiumActive && <GoPremium onGranted={loadMe} />}
+      {!me.premiumActive && <GoPremium offer={me.offer} onGranted={loadMe} />}
     </div>
   )
 }
 
-function GoPremium({ onGranted }: { onGranted: () => Promise<unknown> }) {
+// `offer` comes from the server rather than from lib/pricing, because the price lives in a
+// server-only env var: imported here it would fall back to the default and could quote a figure
+// the checkout does not charge.
+function GoPremium({ offer, onGranted }: { offer: SubscriptionMe['offer']; onGranted: () => Promise<unknown> }) {
   const [key, setKey] = useState('')
   const [busy, setBusy] = useState<null | 'redeem' | 'pay'>(null)
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
@@ -119,7 +158,8 @@ function GoPremium({ onGranted }: { onGranted: () => Promise<unknown> }) {
     setBusy('pay')
     try {
       const r = await api<{ redirectUrl: string }>('/api/payments/checkout', { method: 'POST' })
-      // Redirect to Midtrans Snap — the hosted page listing every payment method you've enabled.
+      // Off to the gateway's hosted page, which lists every channel enabled on the merchant
+      // account. Which gateway that is (iPaymu or Midtrans) is the server's choice, not ours.
       window.location.href = r.redirectUrl
     } catch (err) {
       setMsg({ ok: false, text: err instanceof Error ? err.message : 'Gagal memulai pembayaran.' })
@@ -146,10 +186,11 @@ function GoPremium({ onGranted }: { onGranted: () => Promise<unknown> }) {
       <div className="hint" style={{ margin: '14px 0 10px', textAlign: 'center' }}>or</div>
 
       <button type="button" onClick={startCheckout} disabled={busy !== null} style={{ width: '100%' }}>
-        {busy === 'pay' ? 'Membuka pembayaran…' : 'Upgrade ke Premium'}
+        {busy === 'pay' ? 'Membuka pembayaran…' : `Upgrade ke Premium — ${offer.priceLabel}`}
       </button>
       <p className="hint" style={{ marginTop: 8, marginBottom: 0, textAlign: 'center' }}>
-        Bisa kartu, transfer bank / VA, GoPay, ShopeePay, QRIS, dan lainnya.
+        {offer.days} hari, semua fitur, penyimpanan {offer.storageLabel}. Bisa QRIS, transfer bank / VA,
+        dompet digital, kartu, dan gerai ritel.
       </p>
 
       {msg && (

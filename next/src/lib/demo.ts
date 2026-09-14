@@ -18,8 +18,9 @@ const projects: ProjectResponse[] = [
 
 const me: SubscriptionMe = {
   workspaceType: 'free', premiumActive: false, premiumUntilUtc: null, frozen: false,
-  limits: { maxProjects: 3, photosPerProject: 20, dailySurveys: 30, dailyPhotos: 60 },
-  usage: { projects: 2, surveysToday: 4, photosToday: 7 },
+  limits: { maxProjects: 3, photosPerProject: 20, dailySurveys: 30, dailyPhotos: 60, storageBytes: null },
+  usage: { projects: 2, surveysToday: 4, photosToday: 7, storageBytes: 41_943_040 },
+  offer: { priceIdr: 35000, priceLabel: 'Rp 35.000', days: 30, storageBytes: 5 * 1024 ** 3, storageLabel: '5 GB' },
 }
 
 const demoPhoto =

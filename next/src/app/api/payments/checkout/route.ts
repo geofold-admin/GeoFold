@@ -1,20 +1,39 @@
 import crypto from 'node:crypto'
 import { NextResponse } from 'next/server'
 import sql from '@/lib/db'
-import { getUserId, unauthorized } from '@/lib/auth'
+import { getIdentity, unauthorized } from '@/lib/auth'
 import { ensureProfile } from '@/lib/profile'
-import { midtransConfig, createSnapTransaction, PREMIUM_PRICE_IDR, PREMIUM_DAYS } from '@/lib/midtrans'
+import { midtransConfig, createSnapTransaction } from '@/lib/midtrans'
+import { ipaymuConfig, createRedirectPayment } from '@/lib/ipaymu'
+import { PREMIUM_PRICE_IDR, PREMIUM_DAYS, PREMIUM_STORAGE_LABEL } from '@/lib/pricing'
 
-// Start a Midtrans Snap checkout (all enabled payment methods). Returns a redirect URL; the
-// client sends the user there. Premium is granted only by the webhook after real settlement.
+/**
+ * Start a hosted checkout and return the URL to send the customer to. Premium is never granted
+ * here — only the provider's verified callback grants it, after real settlement.
+ *
+ * Two gateways are wired up. `PAYMENT_PROVIDER` picks one explicitly ('ipaymu' | 'midtrans');
+ * with it unset, iPaymu is preferred when configured and Midtrans is the fallback, so a deploy
+ * that only has Midtrans credentials keeps working untouched.
+ */
+type Provider = 'ipaymu' | 'midtrans'
+
+function chooseProvider(): Provider | null {
+  const wanted = process.env.PAYMENT_PROVIDER?.trim().toLowerCase()
+  if (wanted === 'ipaymu') return ipaymuConfig() ? 'ipaymu' : null
+  if (wanted === 'midtrans') return midtransConfig() ? 'midtrans' : null
+  if (ipaymuConfig()) return 'ipaymu'
+  if (midtransConfig()) return 'midtrans'
+  return null
+}
+
 export async function POST(req: Request) {
-  const userId = await getUserId(req)
-  if (!userId) return unauthorized()
+  const me = await getIdentity(req)
+  if (!me) return unauthorized()
 
-  const cfg = midtransConfig()
-  if (!cfg) return NextResponse.json({ error: 'payments_not_configured' }, { status: 503 })
+  const provider = chooseProvider()
+  if (!provider) return NextResponse.json({ error: 'payments_not_configured' }, { status: 503 })
 
-  await ensureProfile(userId)
+  await ensureProfile(me.id)
 
   const orderId = `GF-${Date.now().toString(36)}-${crypto.randomBytes(4).toString('hex')}`.toUpperCase()
   const amount = PREMIUM_PRICE_IDR
@@ -22,27 +41,49 @@ export async function POST(req: Request) {
 
   const host = req.headers.get('x-forwarded-host') ?? req.headers.get('host') ?? new URL(req.url).host
   const proto = req.headers.get('x-forwarded-proto') ?? 'https'
-  const finishUrl = `${proto}://${host}/subscription`
+  const origin = `${proto}://${host}`
 
-  // Reserve the payment row before calling Midtrans so the webhook always has a row to settle.
+  // Reserve the payment row before calling the gateway so the callback always has a row to settle.
+  const method = provider === 'ipaymu' ? 'redirect' : 'snap'
   await sql`
     INSERT INTO payments ("Id","UserId","Provider","ProviderOrderId","Method","AmountIdr","GrantsDays","Status")
-    VALUES (gen_random_uuid(), ${userId}, 'midtrans', ${orderId}, 'snap', ${amount}, ${days}, 'pending')`
+    VALUES (gen_random_uuid(), ${me.id}, ${provider}, ${orderId}, ${method}, ${amount}, ${days}, 'pending')`
 
-  let snap
+  let redirectUrl: string
+  let raw: unknown
   try {
-    snap = await createSnapTransaction(cfg, orderId, amount, finishUrl)
+    if (provider === 'ipaymu') {
+      const payment = await createRedirectPayment(ipaymuConfig()!, {
+        orderId,
+        amountIdr: amount,
+        productName: `GeoFold Premium ${days} hari`,
+        description: `Semua fitur, penyimpanan ${PREMIUM_STORAGE_LABEL}, berlaku ${days} hari`,
+        returnUrl: `${origin}/subscription?order=${orderId}`,
+        cancelUrl: `${origin}/subscription?order=${orderId}&cancelled=1`,
+        notifyUrl: `${origin}/api/payments/ipaymu/callback`,
+        buyerEmail: me.email ?? undefined,
+      })
+      redirectUrl = payment.url
+      raw = payment.raw
+    } else {
+      const snap = await createSnapTransaction(midtransConfig()!, orderId, amount, `${origin}/subscription`)
+      redirectUrl = snap.redirectUrl
+      raw = snap.raw
+    }
   } catch (e) {
+    console.error('[checkout] gateway call failed', { provider, orderId, error: String(e) })
     await sql`
       UPDATE payments SET "Status" = 'denied', "RawPayload" = ${sql.json({ error: String(e) })}
       WHERE "ProviderOrderId" = ${orderId}`
     return NextResponse.json({ error: 'charge_failed', message: 'Gagal memulai pembayaran. Coba lagi.' }, { status: 502 })
   }
 
+  // The stored payload is what the iPaymu callback reads the session id back out of, so it has to
+  // be the gateway's own response, saved verbatim.
   await sql`
-    UPDATE payments SET "QrUrl" = ${snap.redirectUrl},
-      "RawPayload" = ${sql.json(snap.raw as Parameters<typeof sql.json>[0])}
+    UPDATE payments SET "QrUrl" = ${redirectUrl},
+      "RawPayload" = ${sql.json(raw as Parameters<typeof sql.json>[0])}
     WHERE "ProviderOrderId" = ${orderId}`
 
-  return NextResponse.json({ orderId, redirectUrl: snap.redirectUrl, amountIdr: amount, grantsDays: days })
+  return NextResponse.json({ provider, orderId, redirectUrl, amountIdr: amount, grantsDays: days })
 }

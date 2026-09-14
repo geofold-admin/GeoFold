@@ -135,6 +135,13 @@ const copy: Record<Locale, Copy> = {
 
 const { address } = BUSINESS
 
+// "Kabupaten Sintang, Kalimantan Barat 78611", minus whichever parts are blank. The postcode is
+// optional in lib/business.ts, and joining it in unconditionally leaves a dangling separator or a
+// trailing space on the one line of this page a payment gateway's verifier actually reads.
+const LOCALITY_LINE = [[address.city, address.province].filter(Boolean).join(', '), address.postcode]
+  .filter(Boolean)
+  .join(' ')
+
 export async function generateMetadata(): Promise<Metadata> {
   const c = copy[await getLocale()]
   return { title: c.meta.title, description: c.meta.description }
@@ -178,7 +185,7 @@ export default async function ContactPage() {
                   <br />
                   {address.line2}
                   <br />
-                  {address.city}, {address.province} {address.postcode}
+                  {LOCALITY_LINE}
                   <br />
                   {address.country}
                 </address>
@@ -281,7 +288,7 @@ export default async function ContactPage() {
                   <br />
                   {address.line2}
                   <br />
-                  {address.city}, {address.province} {address.postcode}
+                  {LOCALITY_LINE}
                   <br />
                   {address.country}
                 </address>
