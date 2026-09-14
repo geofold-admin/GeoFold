@@ -284,28 +284,51 @@ English toggle), linked from the nav and the footer of every marketing page, and
       checkout all read it. A public page quoting a price the checkout disagrees with is a
       consumer-protection problem, so this must stay unduplicated.
 
-## 🔴 LIVE SITE CANNOT TAKE PAYMENTS RIGHT NOW (found 2026-09-15)
+## ✅ Deployed to production 2026-09-15 — commit `76aa52c`
 
-The Vercel environment was switched to iPaymu, but **the iPaymu code was never deployed** — nothing
-is committed; `HEAD` is still `2254841` and contains no `ipaymu` files. Verified against the live
-site, not assumed. The result is a half-switched deployment:
+Merged to `main` and live on `geofold.sayba.id`. Verified against the deployed site, not assumed:
 
-- `MIDTRANS_SERVER_KEY` is now unset — `POST /api/payments/midtrans/webhook` answers **503
-  `payments_not_configured`**, where it used to answer `invalid_signature`. The deployed checkout
-  is Midtrans-only and calls `midtransConfig()` first, so **every upgrade attempt now fails**.
-- `/api/payments/ipaymu/callback` does not exist there. Worse than missing: this deployment serves
-  unmatched routes as **HTTP 200** with an HTML 404 body (`X-Matched-Path: /_not-found`), so iPaymu
-  would read a delivered notification and **stop retrying** — silently dropping real payments.
-- `/pricing` already quotes **Rp 35.000** (that figure comes from env, which the old code does
-  read) while still promising *"Unlimited projects, surveys and photos"* and never mentioning 5 GB.
-  The price moved; the claims it was supposed to move with did not.
+| Check | Result |
+| --- | --- |
+| `POST /api/payments/ipaymu/callback` | `400 {"error":"missing_reference"}` |
+| `POST /api/payments/ipaymu/sync` | `401 unauthorized` |
+| `GET /api/payments/ipaymu/diagnose` | `401` (exists, auth-gated) |
+| `/pricing` | Rp 35.000 · "Every feature unlocked" · "No limit on how many…" · "5 GB of cloud storage" |
+| `/contact` | Sintang address, including the meta description |
 
-- [ ] 🔴 **Deploy the branch.** Nothing else in this file matters until then. Until it
-      ships, either roll `MIDTRANS_SERVER_KEY` back so checkout works again, or accept that
-      upgrades are down.
-- [ ] 🔴 **Do not register the iPaymu callback URL until the code is live.** Pointing it
-      at a route that answers 200-with-a-404-page is the one configuration that loses payments
-      without any error to notice.
+**The callback endpoint is now safe to register.** Before this deploy it answered `200` with an HTML
+404 body, which iPaymu would have read as a successful delivery and stopped retrying — losing real
+payments with nothing to notice. It now returns a real JSON `400`.
+
+**The credentials are set in Vercel.** Deduced, not guessed: the callback answered `missing_reference`
+rather than `payments_not_configured`, and the config check runs first — so `IPAYMU_VA` and
+`IPAYMU_API_KEY` are both populated in production.
+
+- [ ] 🔴 **Confirm which mode Vercel is in — this is the next thing that will bite.**
+      `IPAYMU_IS_PRODUCTION` cannot be read from outside, and both plausible settings are wrong
+      right now:
+      - `true` + production credentials → calls go to `my.ipaymu.com`, where the account is still
+        **unverified** and Vercel's egress IP is **not static**. Expect rejection.
+      - `false` + production credentials → `401 unauthorized signature`, because the two
+        environments are separate accounts.
+
+      Sign in and open `/api/payments/ipaymu/diagnose`: a `404` means production mode, a JSON body
+      means sandbox and tells you whether the credentials authenticate.
+- [ ] 🔴 **For merchant verification, run the site on SANDBOX.** iPaymu's verification
+      guide is written for the Sandbox environment, and their team tests the live site until the
+      iPaymu payment page appears. Sandbox is also **exempt from the static-IP rule**, so it
+      sidesteps the one production risk we cannot fix from here. Register at
+      <https://sandbox.ipaymu.com/>, put that pair in Vercel with `IPAYMU_IS_PRODUCTION=false`,
+      and switch to production only after approval.
+- [ ] **The payment page is behind sign-in.** The verifier can only reach iPaymu's page from
+      `/subscription`, which needs an account. Either give them a test account in the verification
+      notes, or expose an unauthenticated path to a payment page.
+- [ ] **Account name must match the KTP** (verification rejection point 1). That has a knock-on
+      effect here: `business.ts` publishes the operator as "Sayba Arc (Perorangan)" on `/contact`,
+      `/terms` and `/refund-policy` — the pages the verifier reads. Once the iPaymu account is
+      renamed, set `legalName` to the KTP name and let "Sayba Arc" be the trading name; `brand` is
+      already a separate field. A name mismatch fails verification the same way an address
+      mismatch does.
 
 ## 💳 iPaymu gateway — built 2026-09-15, not yet proven against the live API
 
