@@ -4,7 +4,7 @@ import sql from '@/lib/db'
 import { getIdentity, unauthorized } from '@/lib/auth'
 import { ensureProfile } from '@/lib/profile'
 import { midtransConfig, createSnapTransaction } from '@/lib/midtrans'
-import { ipaymuConfig, createRedirectPayment } from '@/lib/ipaymu'
+import { checkoutFailure, ipaymuConfig, createRedirectPayment } from '@/lib/ipaymu'
 import { PREMIUM_PRICE_IDR, PREMIUM_DAYS, PREMIUM_STORAGE_LABEL } from '@/lib/pricing'
 
 /**
@@ -75,6 +75,10 @@ export async function POST(req: Request) {
     await sql`
       UPDATE payments SET "Status" = 'denied', "RawPayload" = ${sql.json({ error: String(e) })}
       WHERE "ProviderOrderId" = ${orderId}`
+    if (provider === 'ipaymu') {
+      const failure = checkoutFailure(ipaymuConfig()!, e)
+      return NextResponse.json({ error: failure.code, message: failure.message }, { status: 502 })
+    }
     return NextResponse.json({ error: 'charge_failed', message: 'Gagal memulai pembayaran. Coba lagi.' }, { status: 502 })
   }
 

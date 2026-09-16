@@ -28,6 +28,40 @@ export interface IpaymuConfig {
   isProduction: boolean
 }
 
+/** A customer-safe explanation for a failed call to iPaymu. Never return the raw gateway body. */
+export function checkoutFailure(cfg: IpaymuConfig, error: unknown): { code: string; message: string } {
+  const detail = String(error).toLowerCase()
+  const prefix = cfg.isProduction ? 'ipaymu' : 'sandbox'
+
+  // Sandbox and Production credentials are separate. A bad VA/key pair and a mismatched
+  // signature are both reported by iPaymu as an authentication failure, so neither raw response
+  // nor the credentials themselves should reach the browser.
+  if (detail.includes('unauthorized') || detail.includes('signature') || detail.includes('401')) {
+    return {
+      code: `${prefix}_credentials_rejected`,
+      message: cfg.isProduction
+        ? 'iPaymu menolak kredensial Production. Periksa VA dan API Key dari my.ipaymu.com → Integration → API Key.'
+        : 'Kredensial ditolak oleh iPaymu Sandbox. Gunakan VA dan API Key dari sandbox.ipaymu.com → Integration → API Key; kredensial my.ipaymu.com tidak bisa dipakai saat IPAYMU_IS_PRODUCTION=false.',
+    }
+  }
+
+  if (detail.includes('domain') || /\bip\b/.test(detail) || detail.includes('whitelist') || detail.includes('allowlist')) {
+    return {
+      code: `${prefix}_origin_rejected`,
+      message: cfg.isProduction
+        ? 'iPaymu menolak domain atau server ini. Periksa Domain dan IP Validation pada dashboard Production iPaymu.'
+        : 'iPaymu menolak domain atau server ini. Periksa Domain Validation pada dashboard Sandbox iPaymu.',
+    }
+  }
+
+  return {
+    code: `${prefix}_gateway_rejected`,
+    message: cfg.isProduction
+      ? 'iPaymu menolak pembuatan checkout. Periksa Integration, Domain Validation, dan IP Validation pada dashboard Production.'
+      : 'iPaymu Sandbox menolak pembuatan checkout. Periksa Integration → API Key pada dashboard Sandbox, lalu coba lagi.',
+  }
+}
+
 export function ipaymuConfig(): IpaymuConfig | null {
   const va = process.env.IPAYMU_VA?.trim()
   const apiKey = process.env.IPAYMU_API_KEY?.trim()
