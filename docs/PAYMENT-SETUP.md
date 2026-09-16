@@ -2,8 +2,8 @@
 
 Gateway utama sekarang **iPaymu**, pakai **Redirect Payment** → customer dilempar ke halaman
 checkout iPaymu yang sudah berisi semua channel yang kamu aktifin (QRIS, transfer/VA, e-wallet,
-kartu, gerai ritel). **Midtrans masih tertanam sebagai cadangan** dan bisa dihidupkan lagi kapan
-saja lewat satu env var.
+kartu, gerai ritel). Midtrans tetap tersedia sebagai gateway **alternatif eksplisit** bila dipilih
+lewat `PAYMENT_PROVIDER`.
 
 Ada juga **Activation Key** (kode redeem) buat jualan manual/reseller — lihat bagian bawah.
 
@@ -29,15 +29,15 @@ usaha dan **tidak kena aturan IP statis**.
 > milik SDK resmi iPaymu sendiri (`signature_test.go`) dan hasilnya identik, POST maupun GET.
 
 **2. Production butuh IP statis + domain terdaftar.**
-iPaymu memvalidasi IP server yang memanggil API-nya (docs → *IP & Domain Validation*). **Vercel
-tidak punya IP egress yang statis.** Artinya panggilan production dari Vercel bisa ditolak walaupun
-kredensialnya benar. Ini harus diberesin ke support iPaymu **sebelum** go-live — daftarkan domain,
-tanyakan opsi untuk platform tanpa IP tetap. Kalau tidak bisa, opsinya proxy lewat server ber-IP
-statis, atau tetap di Midtrans.
+iPaymu memvalidasi IP server yang memanggil API-nya (docs → *IP & Domain Validation*). Vercel
+Hobby memakai egress IP dinamis, jadi panggilan production bisa ditolak walaupun kredensialnya
+benar. Sebelum go-live, gunakan **Vercel Pro + Static IPs** atau proxy lewat server ber-IP statis,
+lalu daftarkan IP dan domain itu di iPaymu. Kalau tidak bisa, gunakan gateway lain yang sesuai.
 
-**3. Callback bisa tidak sampai.**
-Karena poin 2, dan karena `notifyUrl` ke localhost memang tidak terjangkau saat development,
-customer bisa saja sudah bayar tapi Premium tidak aktif. Makanya ada **rute rekonsiliasi**:
+**3. Callback bisa terlambat atau tidak sampai.**
+Callback dapat tertunda atau gagal (dan `notifyUrl` ke localhost memang tidak terjangkau saat
+development), sehingga customer bisa saja sudah bayar tapi Premium belum langsung aktif. Makanya
+ada **rute rekonsiliasi**:
 halaman `/subscription` otomatis memanggil `POST /api/payments/ipaymu/sync` begitu customer balik
 dari halaman checkout. Rute itu bertanya langsung ke iPaymu dan mengaktifkan Premium kalau memang
 sudah dibayar. Jadi callback hilang = cukup refresh, bukan tiket support.
@@ -65,8 +65,10 @@ sudah dibayar. Jadi callback hilang = cukup refresh, bukan tiket support.
 | `IPAYMU_VA` | VA kamu (tandai **Sensitive**) |
 | `IPAYMU_API_KEY` | API Key kamu (tandai **Sensitive**) |
 | `IPAYMU_IS_PRODUCTION` | `false` dulu buat tes, `true` pas go-live |
+| `IPAYMU_LIVE_CHECKOUT_ENABLED` | `false` dulu; `true` hanya setelah IP + domain Production disetujui |
 | `IPAYMU_FEE_DIRECTION` | `MERCHANT` |
 | `IPAYMU_EXPIRY_HOURS` | `24` |
+| `IPAYMU_TIMEOUT_MS` | `15000` |
 | `PREMIUM_PRICE_IDR` | `35000` |
 | `PREMIUM_DAYS` | `30` |
 | `PREMIUM_STORAGE_GB` | `5` |
@@ -146,9 +148,10 @@ lama tidak bisa dicocokkan lagi dengan dashboard Midtrans.
 > dibiarkan kosong untuk `DB_PASSWORD` dkk — untuk tes lokal penuh, tempel dulu kredensial database
 > dari Vercel.
 
-Kalau muncul **"Gagal memulai pembayaran"**, lihat log Vercel — pesannya spesifik:
-- `ipaymu_error: 401 ...` → VA / API Key salah, atau salah campur sandbox vs production.
-- `ipaymu_bad_response: ...` → biasanya IP belum terdaftar (lihat FASE 6) atau salah host.
+Kalau checkout gagal, GeoFold menampilkan kode aman tanpa membocorkan kredensial:
+- `sandbox_credentials_rejected` / `ipaymu_credentials_rejected` → VA / API Key salah, atau salah campur sandbox vs production.
+- `sandbox_origin_rejected` / `ipaymu_origin_rejected` → domain atau IP belum divalidasi.
+- `sandbox_gateway_timeout` / `ipaymu_gateway_timeout` → iPaymu tidak merespons tepat waktu; coba lagi.
 - `payments_not_configured` (503) → `IPAYMU_VA` / `IPAYMU_API_KEY` belum keisi.
 
 ## FASE 6 — GO LIVE
@@ -157,18 +160,24 @@ Kalau muncul **"Gagal memulai pembayaran"**, lihat log Vercel — pesannya spesi
     Alamat usaha yang diverifikasi harus **sama persis** dengan yang tercetak di halaman
     `/contact` — sumbernya satu file: [`next/src/lib/business.ts`](../next/src/lib/business.ts).
 18. Urus **IP statis + domain** ke support iPaymu (lihat "Yang harus dibaca duluan" poin 2).
-19. Ganti `IPAYMU_VA` + `IPAYMU_API_KEY` ke nilai **production**, set
-    `IPAYMU_IS_PRODUCTION=true` → Redeploy.
-20. Daftarkan ulang URL callback di dashboard **Production** (setting-nya terpisah dari sandbox).
-21. Tes sekali dengan nominal beneran, lalu cek uangnya masuk.
+    Vercel Hobby tidak punya static egress IP. Pilih **Vercel Pro + Static IPs** atau jalankan
+    panggilan API iPaymu melalui service/relay yang mempunyai IP statis; tidak ada env var yang
+    dapat membuat IP Hobby menjadi tetap.
+19. Daftarkan `https://geofold.sayba.id` di **Domain Validation Production** dan IP statis tadi di
+    **IP Validation Production**. Tunggu status approved.
+20. Ganti `IPAYMU_VA` + `IPAYMU_API_KEY` ke nilai **Production**, set
+    `IPAYMU_IS_PRODUCTION=true` dan `IPAYMU_LIVE_CHECKOUT_ENABLED=true` → Redeploy Production.
+    Scope dua secret tersebut ke **Production**, bukan Preview.
+21. Daftarkan ulang URL callback di dashboard **Production** (setting-nya terpisah dari sandbox).
+22. Tes sekali dengan nominal beneran, lalu cek uangnya masuk dan Premium aktif.
 
 ---
 
 ## Balik ke Midtrans
 
 Set `PAYMENT_PROVIDER=midtrans` di Vercel + isi `MIDTRANS_SERVER_KEY` → Redeploy. Selesai; kode
-Midtrans (`/api/payments/midtrans/webhook`) tidak dihapus dan masih jalan. Kalau `PAYMENT_PROVIDER`
-dikosongkan, checkout pakai iPaymu bila terkonfigurasi, dan jatuh ke Midtrans bila tidak.
+Midtrans (`/api/payments/midtrans/webhook`) tidak dihapus dan masih jalan. `PAYMENT_PROVIDER` wajib
+ditulis secara eksplisit supaya checkout tidak pernah diam-diam berpindah merchant.
 
 Pembayaran lama tetap tercatat: kolom `payments."Provider"` menyimpan gateway mana yang dipakai,
 jadi riwayat dua gateway bisa hidup berdampingan.
@@ -193,8 +202,8 @@ membayar ke merchant ini secara teori bisa memalsukan callback yang lolos verifi
 
 Jadi alurnya:
 
-1. Tanda tangan `X-Signature` tetap dicek, tapi **hanya sebagai sinyal tamper** dan dicatat di log.
-   Ia tidak menentukan apa pun.
+1. Tanda tangan `X-Signature` dicek untuk menyaring request rusak/palsu sebelum aplikasi menghubungi
+   iPaymu. Ia **bukan** bukti pembayaran final karena VA dapat terlihat di halaman checkout.
 2. Reference id dicocokkan dulu ke baris `payments` lokal. Reference yang tidak dikenal langsung
    ditolak **tanpa** memanggil iPaymu — supaya endpoint ini tidak bisa dipakai sebagai amplifier.
 3. Yang menentukan adalah panggilan server-ke-server `POST /api/v2/transaction` yang

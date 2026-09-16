@@ -50,8 +50,7 @@ export default function SubscriptionPage() {
   )
 
   useEffect(() => {
-    // Coming back from the gateway's hosted page, the callback may not have landed yet — or may
-    // never land, since iPaymu validates the caller's IP and ours is not static. Ask the server to
+    // Coming back from the gateway's hosted page, the callback may be delayed. Ask the server to
     // reconcile this user's pending payments first, so a completed payment shows as Premium on the
     // page the customer is already looking at rather than after a support email.
     const returningFromCheckout =

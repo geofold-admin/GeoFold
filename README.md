@@ -286,7 +286,9 @@ Environment variables (see `next/.env.example`):
 | `SUPABASE_JWT_SECRET` | legacy HS256 secret — see below |
 | `SUPABASE_STORAGE_BUCKET` | `survey-photos` |
 | `DB_HOST` `DB_PORT` `DB_NAME` `DB_USER` `DB_PASSWORD` | Supabase pooler; port `6543` on serverless |
-| `WEBHOOKS_SHARED_SECRET` | long random string |
+| `PAYMENT_PROVIDER` | `ipaymu` or `midtrans`; checkout requires an explicit choice |
+| `IPAYMU_VA` `IPAYMU_API_KEY` | server-only iPaymu credentials; see `docs/PAYMENT-SETUP.md` |
+| `IPAYMU_IS_PRODUCTION` `IPAYMU_LIVE_CHECKOUT_ENABLED` | both must be deliberately enabled only after Production IP/domain approval |
 
 Discrete `DB_*` variables are used instead of a connection URL so the password never has to be
 URL-encoded, and `prepare: false` keeps the driver safe behind Supabase's transaction pooler.

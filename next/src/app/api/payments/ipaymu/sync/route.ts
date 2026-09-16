@@ -8,11 +8,10 @@ import { settleIpaymuOrder } from '@/lib/ipaymu-settle'
  * Reconcile the caller's own pending iPaymu payments against iPaymu, and grant premium for any
  * that have actually been paid.
  *
- * This exists because the callback is not guaranteed to arrive. iPaymu validates the calling
- * server's IP in production and Vercel's egress addresses are not static, and a notifyUrl on
- * localhost is unreachable during development — in both cases a customer can pay and see nothing
- * happen. The subscription page calls this when they come back from the hosted checkout, which
- * turns "the callback was lost" from a support ticket into a page refresh.
+ * This exists because a callback is not guaranteed to arrive on time, and a notifyUrl on localhost
+ * is unreachable during development. The subscription page calls this when the customer comes
+ * back from the hosted checkout, which turns a delayed callback into a page refresh rather than a
+ * support ticket.
  *
  * Safe to call at any time, by anyone signed in: it only ever looks at the caller's own payment
  * rows, and every grant goes through the same `settleIpaymuOrder` checks the callback uses.
@@ -23,6 +22,8 @@ const WINDOW_HOURS = 48
 
 /** Bounded so one request cannot fan out into an unpredictable number of gateway calls. */
 const MAX_ORDERS = 5
+
+export const runtime = 'nodejs'
 
 export async function POST(req: Request) {
   const userId = await getUserId(req)

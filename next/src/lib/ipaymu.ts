@@ -12,13 +12,16 @@ import { PREMIUM_PRICE_IDR, PREMIUM_DAYS } from './pricing'
  *   IPAYMU_VA             — merchant Virtual Account number; required
  *   IPAYMU_API_KEY        — merchant API key; required. Checkout returns 503 without either.
  *   IPAYMU_IS_PRODUCTION  — 'true' hits my.ipaymu.com, otherwise sandbox.ipaymu.com
+ *   IPAYMU_LIVE_CHECKOUT_ENABLED — must be 'true' before a Production checkout can be created
  *   IPAYMU_FEE_DIRECTION  — 'MERCHANT' (default) or 'BUYER'
  *   IPAYMU_EXPIRY_HOURS   — hours a created payment stays payable (default 24)
+ *   IPAYMU_TIMEOUT_MS     — outbound request timeout in milliseconds (default 15000)
  *
  * ⚠️ In production iPaymu requires the calling server to have a **static IP** and a registered
- * domain (docs: IP & Domain Validation). Vercel's egress IPs are not static, so a production
- * Redirect Payment call from a Vercel function can be rejected on that basis alone even with
- * perfect credentials. Register the domain and check with iPaymu support before going live.
+ * domain (docs: IP & Domain Validation). Vercel Hobby has dynamic function egress, so a
+ * production Redirect Payment call can be rejected even with perfect credentials. Use Vercel Pro
+ * Static IPs or a dedicated static-IP relay, register the canonical domain, then enable live
+ * checkout explicitly with IPAYMU_LIVE_CHECKOUT_ENABLED=true.
  */
 
 export interface IpaymuConfig {
@@ -26,6 +29,37 @@ export interface IpaymuConfig {
   apiKey: string
   baseUrl: string
   isProduction: boolean
+}
+
+export type IpaymuCheckoutAvailability =
+  | { available: true }
+  | { available: false; code: string; message: string }
+
+/**
+ * Creating a live checkout is deliberately an explicit second step after switching credentials.
+ * It prevents a staging deploy, an accidental `IPAYMU_IS_PRODUCTION=true`, or a copied live key
+ * from starting real charges before the merchant has approved the domain and egress IP.
+ */
+export function checkoutAvailability(cfg: IpaymuConfig): IpaymuCheckoutAvailability {
+  if (!cfg.isProduction) return { available: true }
+
+  if (process.env.VERCEL_ENV && process.env.VERCEL_ENV !== 'production') {
+    return {
+      available: false,
+      code: 'live_checkout_not_available_in_preview',
+      message: 'Checkout iPaymu Production hanya tersedia di deployment Production.',
+    }
+  }
+
+  if (process.env.IPAYMU_LIVE_CHECKOUT_ENABLED?.trim().toLowerCase() !== 'true') {
+    return {
+      available: false,
+      code: 'live_checkout_not_enabled',
+      message: 'Checkout iPaymu Production belum diaktifkan. Selesaikan validasi IP dan domain, lalu set IPAYMU_LIVE_CHECKOUT_ENABLED=true.',
+    }
+  }
+
+  return { available: true }
 }
 
 /** A customer-safe explanation for a failed call to iPaymu. Never return the raw gateway body. */
@@ -36,21 +70,39 @@ export function checkoutFailure(cfg: IpaymuConfig, error: unknown): { code: stri
   // Sandbox and Production credentials are separate. A bad VA/key pair and a mismatched
   // signature are both reported by iPaymu as an authentication failure, so neither raw response
   // nor the credentials themselves should reach the browser.
-  if (detail.includes('unauthorized') || detail.includes('signature') || detail.includes('401')) {
+  if (
+    detail.includes('ipaymu_auth_rejected') ||
+    detail.includes('unauthorized') ||
+    detail.includes('signature') ||
+    detail.includes('401')
+  ) {
     return {
       code: `${prefix}_credentials_rejected`,
       message: cfg.isProduction
-        ? 'iPaymu menolak kredensial Production. Periksa VA dan API Key dari my.ipaymu.com → Integration → API Key.'
+        ? 'iPaymu menolak kredensial atau signature Production. Periksa VA dan API Key dari my.ipaymu.com → Integration → API Key.'
         : 'Kredensial ditolak oleh iPaymu Sandbox. Gunakan VA dan API Key dari sandbox.ipaymu.com → Integration → API Key; kredensial my.ipaymu.com tidak bisa dipakai saat IPAYMU_IS_PRODUCTION=false.',
     }
   }
 
-  if (detail.includes('domain') || /\bip\b/.test(detail) || detail.includes('whitelist') || detail.includes('allowlist')) {
+  if (
+    detail.includes('ipaymu_origin_rejected') ||
+    detail.includes('domain') ||
+    /\bip\b/.test(detail) ||
+    detail.includes('whitelist') ||
+    detail.includes('allowlist')
+  ) {
     return {
       code: `${prefix}_origin_rejected`,
       message: cfg.isProduction
         ? 'iPaymu menolak domain atau server ini. Periksa Domain dan IP Validation pada dashboard Production iPaymu.'
         : 'iPaymu menolak domain atau server ini. Periksa Domain Validation pada dashboard Sandbox iPaymu.',
+    }
+  }
+
+  if (detail.includes('ipaymu_timeout')) {
+    return {
+      code: `${prefix}_gateway_timeout`,
+      message: 'iPaymu tidak merespons tepat waktu. Coba lagi sebentar lagi.',
     }
   }
 
@@ -111,35 +163,68 @@ interface IpaymuEnvelope {
   Data?: unknown
 }
 
+const DEFAULT_TIMEOUT_MS = 15_000
+const DEFAULT_EXPIRY_HOURS = 24
+
+function timeoutMs(): number {
+  const value = Math.round(Number(process.env.IPAYMU_TIMEOUT_MS ?? DEFAULT_TIMEOUT_MS))
+  return Number.isFinite(value) ? Math.min(30_000, Math.max(1_000, value)) : DEFAULT_TIMEOUT_MS
+}
+
+/** A bounded expiry that is safe to use for both the request and local checkout reuse. */
+export function checkoutExpiryHours(): number {
+  const value = Math.round(Number(process.env.IPAYMU_EXPIRY_HOURS ?? DEFAULT_EXPIRY_HOURS))
+  return Number.isFinite(value) ? Math.min(168, Math.max(1, value)) : DEFAULT_EXPIRY_HOURS
+}
+
+/** Returns a non-sensitive classification suitable for logs and customer-safe failures. */
+function responseFailure(status: number, message: unknown): Error {
+  const detail = String(message ?? '').toLowerCase()
+  if (detail.includes('unauthorized') || detail.includes('signature') || status === 401)
+    return new Error(`ipaymu_auth_rejected: ${status}`)
+  if (detail.includes('domain') || /\bip\b/.test(detail) || detail.includes('whitelist') || detail.includes('allowlist'))
+    return new Error(`ipaymu_origin_rejected: ${status}`)
+  return new Error(`ipaymu_gateway_rejected: ${status}`)
+}
+
 /** POST a signed JSON request and return the parsed envelope. Throws on transport/API failure. */
 async function post(cfg: IpaymuConfig, path: string, body: Record<string, unknown>): Promise<IpaymuEnvelope> {
   const bodyJson = JSON.stringify(body)
-  const res = await fetch(`${cfg.baseUrl}${path}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      va: cfg.va,
-      signature: signRequest(cfg, 'POST', bodyJson),
-      timestamp: timestamp(),
-    },
-    body: bodyJson,
-  })
+  let res: Response
+  try {
+    res = await fetch(`${cfg.baseUrl}${path}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        va: cfg.va,
+        signature: signRequest(cfg, 'POST', bodyJson),
+        timestamp: timestamp(),
+      },
+      body: bodyJson,
+      cache: 'no-store',
+      signal: AbortSignal.timeout(timeoutMs()),
+    })
+  } catch (error) {
+    const name = error instanceof Error ? error.name.toLowerCase() : ''
+    if (name.includes('timeout') || String(error).toLowerCase().includes('timeout')) throw new Error('ipaymu_timeout')
+    throw new Error('ipaymu_network_error')
+  }
 
   const text = await res.text()
   let raw: IpaymuEnvelope | null = null
   try {
     raw = JSON.parse(text) as IpaymuEnvelope
   } catch {
-    // iPaymu answers with an HTML error page when the IP is unregistered or the host is wrong.
-    throw new Error(`ipaymu_bad_response: HTTP ${res.status} ${text.slice(0, 200)}`)
+    // iPaymu can reply with HTML when an IP is unregistered or the host is wrong. Do not put that
+    // response in logs: a proxy could include merchant identifiers in an otherwise harmless page.
+    throw new Error(`ipaymu_bad_response: ${res.status}`)
   }
 
   // iPaymu reports failures in the body with HTTP 200 as often as with a 4xx, so the envelope's
   // own Status is the authority, not res.ok.
-  if (raw.Status !== 200) {
-    const msg = typeof raw.Message === 'string' ? raw.Message : JSON.stringify(raw.Message ?? null)
-    throw new Error(`ipaymu_error: ${raw.Status ?? res.status} ${msg}`)
+  if (raw.Status !== 200 || raw.Success === false) {
+    throw responseFailure(raw.Status ?? res.status, raw.Message)
   }
   return raw
 }
@@ -177,7 +262,7 @@ export async function createRedirectPayment(
   cfg: IpaymuConfig,
   input: RedirectPaymentInput,
 ): Promise<RedirectPayment> {
-  const expiryHours = Math.max(1, Math.round(Number(process.env.IPAYMU_EXPIRY_HOURS ?? 24)) || 24)
+  const expiryHours = checkoutExpiryHours()
   const feeDirection = (process.env.IPAYMU_FEE_DIRECTION ?? 'MERCHANT').toUpperCase() === 'BUYER' ? 'BUYER' : 'MERCHANT'
 
   // Arrays are positional: index 0 of each describes the same line item. Prices go as strings,
@@ -202,6 +287,18 @@ export async function createRedirectPayment(
   const sessionId = typeof data.SessionID === 'string' ? data.SessionID : ''
   const url = typeof data.Url === 'string' ? data.Url : ''
   if (!url) throw new Error('ipaymu_no_checkout_url')
+
+  // The browser receives this URL directly. Only accept iPaymu's own HTTPS host instead of
+  // turning an unexpected gateway response into an open redirect from an authenticated page.
+  try {
+    const checkout = new URL(url)
+    const gateway = new URL(cfg.baseUrl)
+    if (checkout.protocol !== 'https:' || checkout.hostname !== gateway.hostname)
+      throw new Error('ipaymu_untrusted_checkout_url')
+  } catch (error) {
+    if (error instanceof Error && error.message === 'ipaymu_untrusted_checkout_url') throw error
+    throw new Error('ipaymu_untrusted_checkout_url')
+  }
   return { sessionId, url, raw }
 }
 
@@ -244,8 +341,8 @@ export async function checkTransaction(cfg: IpaymuConfig, transactionId: string)
  *
  * `/api/v2/history` has no reference filter, so this pages through recent transactions (newest
  * first) and matches locally. That is the only way to recover a trx_id we were never told about —
- * which is the normal case whenever the callback did not arrive, and callbacks not arriving is a
- * realistic failure here because iPaymu validates the caller's IP and Vercel's egress IPs move.
+ * which is the normal case whenever the callback did not arrive. It also gives the customer a
+ * safe recovery route if iPaymu's callback was delayed or temporarily unavailable.
  *
  * Bounded by `maxPages` so a merchant with a long history cannot turn this into a slow loop.
  * Returns null when no transaction carries that reference.

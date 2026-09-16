@@ -6,9 +6,9 @@ import { PREMIUM_PRICE_IDR, PREMIUM_DAYS } from './pricing'
  * order id and a QR image URL. Configure via env:
  *   MIDTRANS_SERVER_KEY     — required; the charge + webhook are disabled (503) without it
  *   MIDTRANS_IS_PRODUCTION  — 'true' hits api.midtrans.com, otherwise the sandbox
- *   PREMIUM_PRICE_IDR       — price of one premium period in whole rupiah (default 49000)
+ *   PREMIUM_PRICE_IDR       — price of one premium period in whole rupiah (default 35000)
  *   PREMIUM_DAYS            — days of premium granted per payment (default 30)
- * ⚠️ PREMIUM_PRICE_IDR / PREMIUM_DAYS default to Rp 49.000 for 30 days to match the pricing page —
+ * ⚠️ PREMIUM_PRICE_IDR / PREMIUM_DAYS default to Rp 35.000 for 30 days to match the pricing page —
  * confirm both before launch; they define what a customer is charged.
  */
 export interface MidtransConfig {

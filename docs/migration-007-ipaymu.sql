@@ -24,9 +24,10 @@ alter table payments alter column "Method"   set default 'redirect';
 --    so this validates cleanly.
 --
 --    Deliberately NOT applied to subscriptions."Provider": that column also
---    carries 'activation-key', and api/webhooks/[provider] still writes an
---    arbitrary string into it. Constraining it would turn that route's next
---    call into a 500. Retire that route first (see TODO.md), then revisit.
+--    carries 'activation-key'. The old api/webhooks/[provider] route was
+--    retired on 2026-09-17, so it no longer writes arbitrary providers; keep
+--    the subscription column unconstrained until activation-key data is split
+--    into a dedicated type.
 do $$ begin
   alter table payments add constraint payments_provider_check
     check ("Provider" in ('ipaymu', 'midtrans'));
@@ -50,7 +51,7 @@ comment on column payments."QrUrl" is
 comment on column payments."RawPayload" is
   'Gateway payloads for this order, merged rather than replaced. The checkout response lands '
   'under "Data" (iPaymu SessionID is read back from Data.SessionID to prove a callback belongs '
-  'to this order); the callback body and the verified transaction record are added at settlement.';
+  'to this order); a compact callback audit and verified transaction record are added at settlement.';
 
 comment on column subscriptions."StorageQuotaMb" is
   'VESTIGIAL — not read by any code. The storage ceiling is PREMIUM_STORAGE_GB (5 GB) in '

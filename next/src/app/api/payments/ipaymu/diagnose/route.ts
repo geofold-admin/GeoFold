@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server'
 import { getUserId, unauthorized } from '@/lib/auth'
+import { BUSINESS } from '@/lib/business'
 import { ipaymuConfig, createRedirectPayment, checkTransaction } from '@/lib/ipaymu'
 import { PREMIUM_PRICE_IDR, PREMIUM_DAYS, PREMIUM_STORAGE_LABEL } from '@/lib/pricing'
+
+export const runtime = 'nodejs'
 
 /**
  * Sandbox-only smoke test for the iPaymu integration.
@@ -71,7 +74,7 @@ export async function GET(req: Request) {
     }
 
     const orderId = `GF-DIAG-${Date.now().toString(36).toUpperCase()}`
-    const origin = new URL(req.url).origin
+    const origin = BUSINESS.site
     const payment = await createRedirectPayment(cfg, {
       orderId,
       amountIdr: PREMIUM_PRICE_IDR,
@@ -96,11 +99,13 @@ export async function GET(req: Request) {
   } catch (e) {
     const message = String(e)
     // The three failures worth telling apart, because the fix differs completely for each.
-    const diagnosis = message.includes('ipaymu_error: 401')
+    const diagnosis = message.includes('ipaymu_auth_rejected')
       ? 'Credentials rejected. Check for a sandbox key paired with the production host (or the reverse) — the two are separate accounts.'
-      : message.includes('ipaymu_bad_response')
+      : message.includes('ipaymu_origin_rejected') || message.includes('ipaymu_bad_response')
         ? 'iPaymu answered with something other than JSON, which usually means an unregistered IP or a wrong host.'
-        : 'See the message. If it mentions signature, the body was re-serialised somewhere between signing and sending.'
+        : message.includes('ipaymu_timeout')
+          ? 'iPaymu did not respond before the request timed out. Try again shortly.'
+          : 'iPaymu rejected the request. Check the production logs for the safe error code.'
     return NextResponse.json({ ok: false, ...base, ms: Date.now() - started, message, diagnosis }, { status: 502 })
   }
 }

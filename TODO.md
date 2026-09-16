@@ -332,8 +332,8 @@ rather than `payments_not_configured`, and the config check runs first — so `I
 
 ## 💳 iPaymu gateway — built 2026-09-15, not yet proven against the live API
 
-Checkout now runs on **iPaymu Redirect Payment**; Midtrans stays wired as the fallback and is
-selected with `PAYMENT_PROVIDER`. Full setup steps, including the two traps below, are in
+Checkout now runs on **iPaymu Redirect Payment**; Midtrans remains an explicit alternative chosen
+with `PAYMENT_PROVIDER`. Full setup steps, including the two traps below, are in
 [`docs/PAYMENT-SETUP.md`](docs/PAYMENT-SETUP.md).
 
 New files: `next/src/lib/ipaymu.ts` (API client + signatures), `next/src/lib/ipaymu-settle.ts`
@@ -370,9 +370,9 @@ New files: `next/src/lib/ipaymu.ts` (API client + signatures), `next/src/lib/ipa
 - [ ] **Then run one real end-to-end payment** on the deployed site — not localhost, where iPaymu
       cannot reach `notifyUrl` and only the `/sync` path gets exercised.
 - [ ] 🔴 **Production requires a static IP + registered domain** (iPaymu "IP & Domain
-      Validation"). **Vercel has neither.** A production call from a Vercel function can be
-      rejected on that basis alone, with correct credentials. Settle this with iPaymu support
-      before go-live — it is the single most likely reason this fails in production.
+      Validation"). Vercel Hobby has neither; Vercel Pro can supply Static IPs. A production call
+      from a dynamic egress IP can be rejected with correct credentials. Register the assigned IP
+      and `https://geofold.sayba.id` with iPaymu before enabling live checkout.
 - [x] ✅ **Lost callbacks have a recovery path.** `POST /api/payments/ipaymu/sync` reconciles the
       signed-in user's pending payments against iPaymu; `/subscription` calls it automatically when
       the customer returns from checkout. Same checks, same grant function, so it cannot double-grant.
@@ -423,13 +423,10 @@ counting the incoming photo before issuing the upload URL.
 
 ## 🧹 Code cleanup found during audit
 
-- [ ] **Retire or fix the generic webhook.**
+- [x] ✅ **Retired 2026-09-17: the generic webhook no longer writes subscriptions.**
       [`next/src/app/api/webhooks/[provider]/route.ts`](next/src/app/api/webhooks/[provider]/route.ts)
-      predates the new model: it sets `Plan='premium'` but not `WorkspaceType`/`PremiumUntilUtc`, so
-      under the new quota logic it would **not** actually grant premium. It's superseded by the
-      Midtrans webhook + activation keys. Either delete it (and `WEBHOOKS_SHARED_SECRET`) or route it
-      through `grantPremiumDays`. `WEBHOOKS_SHARED_SECRET` **is** set, so the route is live: it fails
-      closed only when the secret is absent.
+      returns `410 Gone`; dedicated iPaymu/Midtrans webhooks verify the gateway before Premium can
+      be granted. `WEBHOOKS_SHARED_SECRET` is no longer used and can be removed from Vercel.
 - [x] ✅ **Fixed 2026-09-07: mobile now collects the profile and terms consent.** The web gates the whole app shell behind
       `RequireProfile` → `/onboarding` (name, WhatsApp, domicile, gender, terms). The mobile app has
       had no equivalent, so a surveyor who signed up on the phone used the app with an empty profile
