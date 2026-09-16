@@ -307,6 +307,21 @@
 .mk-price-card.feat p { color: var(--mk-deep-prose); }
 .mk .mk-price-card.feat .mk-btn-primary { background: #fff; color: var(--mk-ink); border-color: #fff; }
 .mk .mk-price-card.feat .mk-btn-primary:hover { background: var(--mk-deep-prose); border-color: var(--mk-deep-prose); }
+
+/* ---------- iPaymu sandbox verification ---------- */
+.mk .mk-ipaymu-test {
+  margin: 24px auto 0; max-width: 720px; padding: 24px;
+  border: 1px dashed var(--mk-line); border-radius: 10px; background: var(--mk-raise);
+}
+.mk .mk-ipaymu-test h2 { margin: 7px 0 8px; font-size: clamp(21px, 2.4vw, 28px); }
+.mk .mk-ipaymu-test > p { max-width: 60ch; color: var(--mk-muted); margin: 0; }
+.mk .mk-ipaymu-test-action { margin-top: 18px; }
+.mk .mk-ipaymu-test-action .mk-btn { min-height: 44px; }
+.mk .mk-ipaymu-test-action .mk-btn:disabled { cursor: wait; opacity: .65; }
+.mk .mk-ipaymu-test-error { margin: 10px 0 0; color: var(--mk-error, #a33); font-size: 14px; }
+.mk .mk-ipaymu-result { max-width: 680px; display: grid; gap: 18px; }
+.mk .mk-ipaymu-result p { margin: 0; font-size: 17px; line-height: 1.65; color: var(--mk-deep-prose); }
+.mk .mk-ipaymu-result .mk-ipaymu-result-note { color: var(--mk-muted); font-size: 14px; }
 .mk-price-num {
   font-family: var(--font-tight), sans-serif; font-weight: 300; letter-spacing: -.03em;
   color: var(--mk-ink); font-size: clamp(34px, 3.6vw, 50px);

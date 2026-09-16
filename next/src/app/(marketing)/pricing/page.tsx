@@ -1,7 +1,9 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { IpaymuSandboxButton } from './IpaymuSandboxButton'
 import { PREMIUM_DAYS, PREMIUM_PRICE_LABEL, PREMIUM_STORAGE_LABEL } from '@/lib/pricing'
 import { BUSINESS } from '@/lib/business'
+import { ipaymuConfig } from '@/lib/ipaymu'
 import type { Locale } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'
 
@@ -28,6 +30,7 @@ type Copy = {
   free: { name: string; blurb: string; cta: string; items: string[] }
   premium: { name: string; per: string; blurb: string; cta: string; items: string[] }
   note: { before: string; link: string; after: string }
+  sandbox: { kicker: string; title: string; body: string; cta: string; loading: string; error: string }
   faqKick: string
   faqTitle: string
   faqs: Array<{ q: string; a: string }>
@@ -77,6 +80,14 @@ const copy: Record<Locale, Copy> = {
       before: 'Sekali bayar, bukan langganan. Baca ',
       link: 'Kebijakan Pengembalian Dana',
       after: ' sebelum membeli.',
+    },
+    sandbox: {
+      kicker: 'Untuk verifikasi iPaymu',
+      title: 'Uji halaman pembayaran sandbox',
+      body: 'Buka checkout sandbox iPaymu tanpa akun GeoFold. Ini hanya untuk pengujian integrasi dan tidak mengaktifkan Premium.',
+      cta: 'Buka checkout iPaymu sandbox',
+      loading: 'Membuka checkout…',
+      error: 'Checkout sandbox belum siap. Coba lagi nanti.',
     },
     faqKick: 'Pertanyaan',
     faqTitle: 'Yang biasanya ditanyakan.',
@@ -157,6 +168,14 @@ const copy: Record<Locale, Copy> = {
       link: 'Refund Policy',
       after: ' before buying.',
     },
+    sandbox: {
+      kicker: 'For iPaymu verification',
+      title: 'Test the sandbox payment page',
+      body: 'Open iPaymu’s sandbox checkout without a GeoFold account. This only tests the integration and never activates Premium.',
+      cta: 'Open iPaymu sandbox checkout',
+      loading: 'Opening checkout…',
+      error: 'The sandbox checkout is not ready yet. Please try again later.',
+    },
     faqKick: 'Questions',
     faqTitle: 'What people usually ask.',
     faqs: [
@@ -202,6 +221,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function PricingPage() {
   const c = copy[await getLocale()]
+  const ipaymu = ipaymuConfig()
+  const sandboxIpaymu = Boolean(ipaymu && !ipaymu.isProduction)
 
   return (
     <>
@@ -254,6 +275,19 @@ export default async function PricingPage() {
           <Link href="/refund-policy">{c.note.link}</Link>
           {c.note.after}
         </p>
+
+        {sandboxIpaymu && (
+          <aside className="mk-ipaymu-test" aria-labelledby="ipaymu-sandbox-title">
+            <span className="mk-kick">{c.sandbox.kicker}</span>
+            <h2 id="ipaymu-sandbox-title">{c.sandbox.title}</h2>
+            <p>{c.sandbox.body}</p>
+            <IpaymuSandboxButton
+              label={c.sandbox.cta}
+              loadingLabel={c.sandbox.loading}
+              genericError={c.sandbox.error}
+            />
+          </aside>
+        )}
       </section>
 
       <section className="mk-sec mk-sec-tint">

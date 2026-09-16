@@ -121,12 +121,24 @@ lama tidak bisa dicocokkan lagi dengan dashboard Midtrans.
       ketuker. Bukan bug tanda tangan.
     - Tambahkan `?trx=12345` untuk mengecek status satu transaksi.
 
+**Untuk tim verifikasi iPaymu — tanpa harus login ke GeoFold:**
+
+12. Saat Vercel memakai kredensial sandbox, halaman `/pricing` menampilkan blok **“Uji halaman
+    pembayaran sandbox”**. Tombolnya membuat checkout sandbox iPaymu yang bisa dilihat publik
+    tanpa akun GeoFold. Ini adalah jalur yang perlu diberikan kepada reviewer iPaymu saat mereka
+    meminta bukti integrasi.
+    - Tidak membuat user, baris pembayaran, atau Premium di GeoFold.
+    - Callback test dibalas `200 OK`, tetapi sengaja tidak pernah memberi akses Premium.
+    - Tombol dan dua rutenya (`verification-checkout` / `verification-callback`) otomatis memberi
+      `404` saat `IPAYMU_IS_PRODUCTION=true`.
+    - Dibatasi tiga pembuatan checkout per IP per jam untuk menghindari penyalahgunaan.
+
 **Lalu tes alur yang sebenarnya** (ini yang juga menguji penulisan ke database):
 
-12. `geofold.sayba.id` → login → **Subscription → Upgrade ke Premium**.
-13. Harusnya **redirect ke halaman checkout iPaymu** berisi semua channel yang aktif.
-14. Bayar pakai simulator sandbox → callback jalan → **Premium aktif** ✅.
-15. Kalau callback tidak sampai: balik ke `/subscription`, halaman itu otomatis rekonsiliasi.
+13. `geofold.sayba.id` → login → **Subscription → Upgrade ke Premium**.
+14. Harusnya **redirect ke halaman checkout iPaymu** berisi semua channel yang aktif.
+15. Bayar pakai simulator sandbox → callback jalan → **Premium aktif** ✅.
+16. Kalau callback tidak sampai: balik ke `/subscription`, halaman itu otomatis rekonsiliasi.
 
 > **Tes di situs yang sudah dideploy, bukan di localhost.** `notifyUrl` yang menunjuk ke
 > `localhost` tidak bisa dijangkau iPaymu, jadi callback tidak akan pernah datang dan yang teruji
@@ -141,14 +153,14 @@ Kalau muncul **"Gagal memulai pembayaran"**, lihat log Vercel — pesannya spesi
 
 ## FASE 6 — GO LIVE
 
-16. Selesaikan **verifikasi merchant** iPaymu (data usaha + identitas + rekening bank).
+17. Selesaikan **verifikasi merchant** iPaymu (data usaha + identitas + rekening bank).
     Alamat usaha yang diverifikasi harus **sama persis** dengan yang tercetak di halaman
     `/contact` — sumbernya satu file: [`next/src/lib/business.ts`](../next/src/lib/business.ts).
-17. Urus **IP statis + domain** ke support iPaymu (lihat "Yang harus dibaca duluan" poin 2).
-18. Ganti `IPAYMU_VA` + `IPAYMU_API_KEY` ke nilai **production**, set
+18. Urus **IP statis + domain** ke support iPaymu (lihat "Yang harus dibaca duluan" poin 2).
+19. Ganti `IPAYMU_VA` + `IPAYMU_API_KEY` ke nilai **production**, set
     `IPAYMU_IS_PRODUCTION=true` → Redeploy.
-19. Daftarkan ulang URL callback di dashboard **Production** (setting-nya terpisah dari sandbox).
-20. Tes sekali dengan nominal beneran, lalu cek uangnya masuk.
+20. Daftarkan ulang URL callback di dashboard **Production** (setting-nya terpisah dari sandbox).
+21. Tes sekali dengan nominal beneran, lalu cek uangnya masuk.
 
 ---
 
