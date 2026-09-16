@@ -33,6 +33,37 @@ function consumeAttempt(key: string): number | null {
   return null
 }
 
+/**
+ * Keep the real gateway error in Vercel logs, but make the public sandbox verifier actionable.
+ * None of these messages contains the VA, API key, response body, or transaction metadata.
+ */
+function publicFailure(error: unknown): { code: string; message: string } {
+  const detail = String(error).toLowerCase()
+
+  // A production VA/key sent to sandbox.ipaymu.com produces this exact family of errors. The
+  // account environments are completely separate, so having both variables present is not enough.
+  if (detail.includes('unauthorized') || detail.includes('signature') || detail.includes('401')) {
+    return {
+      code: 'sandbox_credentials_rejected',
+      message:
+        'Kredensial ditolak oleh iPaymu Sandbox. Gunakan VA dan API Key dari sandbox.ipaymu.com → Integration → API Key; kredensial my.ipaymu.com tidak bisa dipakai saat IPAYMU_IS_PRODUCTION=false.',
+    }
+  }
+
+  if (detail.includes('domain') || detail.includes('ip ') || detail.includes('whitelist') || detail.includes('allowlist')) {
+    return {
+      code: 'sandbox_origin_rejected',
+      message:
+        'iPaymu menolak domain atau server ini. Tambahkan geofold.sayba.id di Integration → Domain Validation pada dashboard Sandbox, lalu hubungi dukungan iPaymu bila mereka memerlukan solusi untuk IP Vercel yang berubah-ubah.',
+    }
+  }
+
+  return {
+    code: 'sandbox_gateway_rejected',
+    message: 'iPaymu Sandbox menolak pembuatan checkout. Periksa Integration → API Key dan Domain Validation di dashboard Sandbox, lalu coba lagi.',
+  }
+}
+
 export async function POST(req: Request) {
   const cfg = ipaymuConfig()
 
@@ -65,8 +96,9 @@ export async function POST(req: Request) {
   } catch (error) {
     // iPaymu's error can reveal merchant/IP configuration. Keep that out of public page content.
     console.error('[ipaymu verification checkout] failed', { orderId, error: String(error) })
+    const failure = publicFailure(error)
     return NextResponse.json(
-      { error: 'checkout_unavailable', message: 'Checkout sandbox belum siap. Coba lagi nanti.' },
+      { error: failure.code, message: failure.message },
       { status: 502 },
     )
   }
