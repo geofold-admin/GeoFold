@@ -189,8 +189,11 @@ function responseFailure(status: number, message: unknown): Error {
 
 /** POST a signed JSON request and return the parsed envelope. Throws on transport/API failure. */
 async function post(cfg: IpaymuConfig, path: string, body: Record<string, unknown>): Promise<IpaymuEnvelope> {
-  // If VPS proxy is configured, route via VPS static IP (202.155.16.213) to satisfy iPaymu IP validation
-  const vpsUrl = process.env.VPS_STORAGE_URL || process.env.NEXT_PUBLIC_VPS_STORAGE_URL
+  // Route via VPS static IP (202.155.16.213) to satisfy iPaymu IP validation
+  const vpsUrl =
+    process.env.VPS_STORAGE_URL ||
+    process.env.NEXT_PUBLIC_VPS_STORAGE_URL ||
+    'https://api.geofold.sayba.id'
   if (vpsUrl) {
     const res = await fetch(`${vpsUrl}/api/payment/proxy`, {
       method: 'POST',
