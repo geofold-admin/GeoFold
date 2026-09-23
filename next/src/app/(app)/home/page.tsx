@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { Camera } from 'lucide-react'
-import { api, ApiError } from '@/lib/api-client'
+import { api } from '@/lib/api-client'
 import type { ProjectResponse, SubscriptionMe, SurveyFeatureCollection } from '@/lib/types'
 
 const MapView = dynamic(() => import('@/components/MapView'), {
@@ -27,14 +27,13 @@ export default function HomePage() {
   const [projects, setProjects] = useState<ProjectResponse[] | null>(null)
   const [me, setMe] = useState<SubscriptionMe | null>(null)
   const [fc, setFc] = useState<SurveyFeatureCollection | null>(null)
-  const [mapPremium, setMapPremium] = useState(false)
 
   useEffect(() => {
     api<ProjectResponse[]>('/api/projects').then(setProjects).catch(() => setProjects([]))
     api<SubscriptionMe>('/api/subscriptions/me').then(setMe).catch(() => {})
-    api<SurveyFeatureCollection>('/api/surveys/geojson').then(setFc).catch((e) => {
-      if (e instanceof ApiError && e.status === 403) setMapPremium(true)
-    })
+    api<SurveyFeatureCollection>('/api/surveys/geojson')
+      .then(setFc)
+      .catch(() => setFc({ type: 'FeatureCollection', features: [] }))
   }, [])
 
   const features = fc?.features ?? []
@@ -81,13 +80,9 @@ export default function HomePage() {
       <div className="panel">
         <div className="phead">
           <span className="card-title" style={{ margin: 0 }}>Survey locations</span>
-          {!mapPremium && <span className="badge accent">{points} points</span>}
+          <span className="badge accent">{points} points</span>
         </div>
-        {mapPremium ? (
-          <p className="muted" style={{ padding: '0 18px 18px', marginTop: 14 }}>
-            The map is a Premium feature. <Link href="/subscription">Upgrade</Link> to see your points plotted.
-          </p>
-        ) : fc === null ? (
+        {fc === null ? (
           <div className="center" style={{ minHeight: '42vh' }}>Loading…</div>
         ) : (
           <MapView features={features} height="46vh" />
