@@ -139,8 +139,8 @@ const GROUPS_ID: Group[] = [
         q: 'Berapa biaya GeoFold?',
         a: (
           <>
-            Paket <strong>Gratis</strong> berharga Rp 0 selamanya: hingga 3 proyek, 20 foto per
-            proyek, serta batas harian untuk pengambilan dan pengunggahan. Paket{' '}
+            Paket <strong>Gratis</strong> berharga Rp 0 selamanya: hingga 2 proyek, 3 foto per
+            proyek, penyimpanan 10 MB, serta batas harian untuk pengambilan dan pengunggahan. Paket{' '}
             <strong>Premium</strong> berharga <strong>{PREMIUM_PRICE_LABEL}</strong> untuk{' '}
             <strong>{PREMIUM_DAYS} hari</strong>. Rinciannya ada di{' '}
             <Link href="/pricing">halaman harga</Link>.
@@ -407,8 +407,8 @@ const GROUPS_EN: Group[] = [
         q: 'What does GeoFold cost?',
         a: (
           <>
-            The <strong>Free</strong> plan is Rp 0 forever: up to 3 projects, 20 photos per project,
-            and daily caps on capture and upload. <strong>Premium</strong> is{' '}
+            The <strong>Free</strong> plan is Rp 0 forever: up to 2 projects, 3 photos per project,
+            10 MB cloud storage, and daily caps on capture and upload. <strong>Premium</strong> is{' '}
             <strong>{PREMIUM_PRICE_LABEL}</strong> for <strong>{PREMIUM_DAYS} days</strong>. Full
             detail on the <Link href="/pricing">pricing page</Link>.
           </>

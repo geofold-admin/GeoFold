@@ -44,19 +44,20 @@ const copy: Record<Locale, Copy> = {
     meta: {
       title: 'Harga — GeoFold',
       description:
-        'Gratis untuk 3 proyek, selamanya. Premium sekali bayar untuk membuka batasnya — bukan langganan otomatis.',
+        'Gratis untuk 2 proyek, selamanya. Premium sekali bayar untuk membuka batasnya — bukan langganan otomatis.',
     },
     eyebrow: 'Harga',
     h1: { before: 'Gratis dulu. ', em: 'Selamanya', after: ', kalau cukup.' },
     lede:
-      'Tiga proyek tidak dipungut biaya dan tidak akan pernah dipungut. Premium hanya untuk tim yang sudah melewati batas itu.',
+      'Dua proyek tidak dipungut biaya dan tidak akan pernah dipungut. Premium hanya untuk tim yang sudah melewati batas itu.',
     free: {
       name: 'Gratis',
       blurb: 'Untuk proyek percontohan dan tim kecil.',
       cta: 'Mulai',
       items: [
-        '3 proyek aktif (+1 setiap 24 jam)',
-        '20 foto per proyek',
+        '2 proyek aktif (+1 setiap 24 jam)',
+        '3 foto per proyek',
+        'Penyimpanan cloud 10 MB',
         'Batas harian pengambilan & unggah',
         'Pengambilan offline dengan sinkron otomatis',
         'Ekspor CSV & Excel (foto tertanam)',
@@ -131,19 +132,20 @@ const copy: Record<Locale, Copy> = {
     meta: {
       title: 'Pricing — GeoFold',
       description:
-        'Free for 3 projects, forever. Premium is a one-off payment that lifts the limits — not an auto-renewing subscription.',
+        'Free for 2 projects, forever. Premium is a one-off payment that lifts the limits — not an auto-renewing subscription.',
     },
     eyebrow: 'Pricing',
     h1: { before: 'Free first. ', em: 'Forever', after: ', if that is enough.' },
     lede:
-      'Three projects cost nothing and never will. Premium is only for teams that have already gone past that.',
+      'Two projects cost nothing and never will. Premium is only for teams that have already gone past that.',
     free: {
       name: 'Free',
       blurb: 'For pilot projects and small teams.',
       cta: 'Start',
       items: [
-        '3 active projects (+1 every 24 hours)',
-        '20 photos per project',
+        '2 active projects (+1 every 24 hours)',
+        '3 photos per project',
+        '10 MB of cloud storage',
         'Daily capture & upload limits',
         'Offline capture with automatic sync',
         'CSV & Excel export (photos embedded)',

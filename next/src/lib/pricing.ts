@@ -24,10 +24,10 @@ export const PREMIUM_DAYS = asPositiveInt(process.env.PREMIUM_DAYS, 30)
 
 /**
  * Cloud storage included with plans, in megabytes:
- * - Free: 20 MB per account
+ * - Free: 10 MB per account
  * - Pro: 500 MB per account
  */
-export const FREE_STORAGE_MB = asPositiveInt(process.env.FREE_STORAGE_MB, 20)
+export const FREE_STORAGE_MB = asPositiveInt(process.env.FREE_STORAGE_MB, 10)
 export const FREE_STORAGE_BYTES = FREE_STORAGE_MB * 1024 * 1024
 export const FREE_STORAGE_LABEL = `${FREE_STORAGE_MB} MB`
 

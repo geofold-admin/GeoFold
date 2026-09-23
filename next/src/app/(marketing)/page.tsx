@@ -58,7 +58,7 @@ const copy: Record<Locale, Copy> = {
     meta: {
       title: 'GeoFold — Survei lapangan yang tidak hilang',
       description:
-        'Foto ber-koordinat, bekerja penuh offline, sinkron sendiri saat ada sinyal. Ekspor ke Excel dan CSV. Gratis untuk 3 proyek.',
+        'Foto ber-koordinat, bekerja penuh offline, sinkron sendiri saat ada sinyal. Ekspor ke Excel dan CSV. Gratis untuk 2 proyek.',
     },
     eyebrow: 'Survei lapangan · Android & web',
     h1: 'Titik survei yang tidak hilang.',
@@ -133,7 +133,7 @@ const copy: Record<Locale, Copy> = {
     priceTitle: 'Gratis dulu. Bayar kalau memang perlu.',
     free: {
       name: 'Gratis',
-      body: '3 proyek, 20 foto per proyek, batas harian. Selamanya.',
+      body: '2 proyek, 3 foto per proyek, penyimpanan 10 MB, batas harian. Selamanya.',
       cta: 'Mulai',
     },
     premium: {
@@ -149,7 +149,7 @@ const copy: Record<Locale, Copy> = {
     },
     close: {
       title: 'Coba dulu, gratis.',
-      body: 'Tidak perlu kartu kredit. Tiga proyek pertama tidak dipungut biaya.',
+      body: 'Tidak perlu kartu kredit. Dua proyek pertama tidak dipungut biaya.',
       ctaPrimary: 'Buat akun',
       ctaGhost: 'Tanya dulu',
     },
@@ -169,7 +169,7 @@ const copy: Record<Locale, Copy> = {
     meta: {
       title: 'GeoFold — Field surveys that do not go missing',
       description:
-        'Geo-tagged photos, fully offline capture, syncing itself the moment there is a signal. Exports to Excel and CSV. Free for 3 projects.',
+        'Geo-tagged photos, fully offline capture, syncing itself the moment there is a signal. Exports to Excel and CSV. Free for 2 projects.',
     },
     eyebrow: 'Field survey · Android & web',
     h1: 'Survey points that do not go missing.',
@@ -243,7 +243,7 @@ const copy: Record<Locale, Copy> = {
     priceTitle: 'Free first. Pay only if you need to.',
     free: {
       name: 'Free',
-      body: '3 projects, 20 photos per project, daily limits. Forever.',
+      body: '2 projects, 3 photos per project, 10 MB storage, daily limits. Forever.',
       cta: 'Start',
     },
     premium: {
@@ -259,7 +259,7 @@ const copy: Record<Locale, Copy> = {
     },
     close: {
       title: 'Try it first, free.',
-      body: 'No credit card needed. The first three projects cost nothing.',
+      body: 'No credit card needed. The first two projects cost nothing.',
       ctaPrimary: 'Create an account',
       ctaGhost: 'Ask a question',
     },

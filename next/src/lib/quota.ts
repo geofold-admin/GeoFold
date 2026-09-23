@@ -18,9 +18,9 @@ import { PREMIUM_STORAGE_BYTES, FREE_STORAGE_BYTES } from './pricing'
  * migration; the two DAILY caps were not specified, so these are sensible defaults — set them
  * to your real values before launch.
  */
-const FREE_PROJECTS = 3
+const FREE_PROJECTS = 2
 const PROJECT_COOLDOWN_HOURS = 24
-const FREE_PHOTOS_PER_PROJECT = 20
+const FREE_PHOTOS_PER_PROJECT = 3
 const FREE_DAILY_SURVEYS = 30 // ⚠️ placeholder — confirm the real daily cap
 const FREE_DAILY_PHOTOS = 60 // ⚠️ placeholder — confirm the real daily cap
 
