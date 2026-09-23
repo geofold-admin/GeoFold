@@ -1,5 +1,5 @@
 import sql from './db'
-import { PREMIUM_STORAGE_BYTES } from './pricing'
+import { PREMIUM_STORAGE_BYTES, FREE_STORAGE_BYTES } from './pricing'
 
 /**
  * Quota model per docs/migration-002-subscription.sql.
@@ -210,13 +210,23 @@ export async function checkPhotoUpload(userId: string, surveyId: string, sizeByt
     // included, so the cap is never crossed rather than merely noticed afterwards.
     const used = await storageUsedBytes(userId)
     if (used + sizeBytes > PREMIUM_STORAGE_BYTES) {
-      const gb = (n: number) => `${(n / 1024 ** 3).toFixed(2)} GB`
+      const mb = (n: number) => `${(n / (1024 * 1024)).toFixed(1)} MB`
       return {
         allowed: false,
-        message: `Storage full — ${gb(used)} of ${gb(PREMIUM_STORAGE_BYTES)} used. Delete photos or projects you no longer need to free up space.`,
+        message: `Storage full — ${mb(used)} of ${mb(PREMIUM_STORAGE_BYTES)} used. Delete photos or projects you no longer need to free up space.`,
       }
     }
     return { allowed: true }
+  }
+
+  // Free plan has a 20 MB ceiling
+  const used = await storageUsedBytes(userId)
+  if (used + sizeBytes > FREE_STORAGE_BYTES) {
+    const mb = (n: number) => `${(n / (1024 * 1024)).toFixed(1)} MB`
+    return {
+      allowed: false,
+      message: `Storage full — ${mb(used)} of ${mb(FREE_STORAGE_BYTES)} used. Upgrade to Pro for 500 MB storage.`,
+    }
   }
 
   const inProject = await countPhotosInProject(userId, surveyId)
@@ -286,7 +296,7 @@ export async function getWorkspaceSummary(userId: string): Promise<WorkspaceSumm
     frozen: !active && w?.workspaceType === 'premium' && (!!w.frozenAtUtc || projects > FREE_PROJECTS),
     limits: active
       ? { maxProjects: null, photosPerProject: null, dailySurveys: null, dailyPhotos: null, storageBytes: PREMIUM_STORAGE_BYTES }
-      : { maxProjects: FREE_PROJECTS, photosPerProject: FREE_PHOTOS_PER_PROJECT, dailySurveys: FREE_DAILY_SURVEYS, dailyPhotos: FREE_DAILY_PHOTOS, storageBytes: null },
+      : { maxProjects: FREE_PROJECTS, photosPerProject: FREE_PHOTOS_PER_PROJECT, dailySurveys: FREE_DAILY_SURVEYS, dailyPhotos: FREE_DAILY_PHOTOS, storageBytes: FREE_STORAGE_BYTES },
     usage: { projects, surveysToday: usage.surveys, photosToday: usage.photos, storageBytes: storage },
   }
 }

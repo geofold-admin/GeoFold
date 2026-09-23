@@ -189,6 +189,28 @@ function responseFailure(status: number, message: unknown): Error {
 
 /** POST a signed JSON request and return the parsed envelope. Throws on transport/API failure. */
 async function post(cfg: IpaymuConfig, path: string, body: Record<string, unknown>): Promise<IpaymuEnvelope> {
+  // If VPS proxy is configured, route via VPS static IP (202.155.16.213) to satisfy iPaymu IP validation
+  const vpsUrl = process.env.VPS_STORAGE_URL || process.env.NEXT_PUBLIC_VPS_STORAGE_URL
+  if (vpsUrl) {
+    const res = await fetch(`${vpsUrl}/api/payment/proxy`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path, method: 'POST', body }),
+    })
+    const text = await res.text()
+    let raw: IpaymuEnvelope | null = null
+    try {
+      raw = JSON.parse(text) as IpaymuEnvelope
+    } catch {
+      throw new Error(`ipaymu_bad_response: HTTP ${res.status} ${text.slice(0, 200)}`)
+    }
+    if (raw.Status !== 200) {
+      const msg = typeof raw.Message === 'string' ? raw.Message : JSON.stringify(raw.Message ?? null)
+      throw new Error(`ipaymu_error: ${raw.Status ?? res.status} ${msg}`)
+    }
+    return raw
+  }
+
   const bodyJson = JSON.stringify(body)
   let res: Response
   try {

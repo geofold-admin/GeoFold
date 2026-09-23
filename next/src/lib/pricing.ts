@@ -23,17 +23,18 @@ export const PREMIUM_PRICE_IDR = asPositiveInt(process.env.PREMIUM_PRICE_IDR, 35
 export const PREMIUM_DAYS = asPositiveInt(process.env.PREMIUM_DAYS, 30)
 
 /**
- * Cloud storage included with a premium period, in gigabytes.
- *
- * ⚠️ This is a real ceiling, not a marketing number: `lib/quota.ts` refuses a photo upload that
- * would push the workspace past it. Premium is therefore "every feature, unmetered counts, 5 GB of
- * stored photos" — which is what the pricing page must say. It is *not* unlimited, and any page
- * that still claims unlimited storage is claiming something the code will not honour.
+ * Cloud storage included with plans, in megabytes:
+ * - Free: 20 MB per account
+ * - Pro: 500 MB per account
  */
-export const PREMIUM_STORAGE_GB = asPositiveInt(process.env.PREMIUM_STORAGE_GB, 5)
+export const FREE_STORAGE_MB = asPositiveInt(process.env.FREE_STORAGE_MB, 20)
+export const FREE_STORAGE_BYTES = FREE_STORAGE_MB * 1024 * 1024
+export const FREE_STORAGE_LABEL = `${FREE_STORAGE_MB} MB`
 
-/** The same ceiling in bytes. Binary GB (GiB), matching how object stores report usage. */
-export const PREMIUM_STORAGE_BYTES = PREMIUM_STORAGE_GB * 1024 * 1024 * 1024
+export const PREMIUM_STORAGE_MB = asPositiveInt(process.env.PREMIUM_STORAGE_MB, 500)
+export const PREMIUM_STORAGE_BYTES = PREMIUM_STORAGE_MB * 1024 * 1024
+export const PREMIUM_STORAGE_LABEL = `${PREMIUM_STORAGE_MB} MB`
+export const PREMIUM_STORAGE_GB = PREMIUM_STORAGE_MB / 1024
 
 /** 35000 → "Rp 35.000". Indonesian grouping, no decimals — rupiah has no subunit in practice. */
 export function formatIdr(amount: number): string {
@@ -42,9 +43,6 @@ export function formatIdr(amount: number): string {
 
 /** The headline price, formatted: "Rp 35.000". */
 export const PREMIUM_PRICE_LABEL = formatIdr(PREMIUM_PRICE_IDR)
-
-/** The included storage, formatted: "5 GB". */
-export const PREMIUM_STORAGE_LABEL = `${PREMIUM_STORAGE_GB} GB`
 
 /** Bytes → "1,4 GB" / "820 MB" / "12 KB", for usage readouts. Indonesian decimal comma. */
 export function formatBytes(bytes: number): string {

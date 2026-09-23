@@ -6,6 +6,7 @@ import { Motion } from './Motion'
 import type { Locale } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'
 import { PREMIUM_DAYS, PREMIUM_PRICE_LABEL, PREMIUM_STORAGE_LABEL } from '@/lib/pricing'
+import { PricingCheckoutButton } from '@/components/PricingCheckoutButton'
 
 /*
  * Every claim on this page is one the app actually does today.
@@ -499,9 +500,12 @@ export default async function HomePage() {
               </p>
               <p className="pg-body">{c.premium.body}</p>
               <div>
-                <Link href="/pricing" className="pg-btn pg-btn-primary">
-                  {c.premium.cta}
-                </Link>
+                <PricingCheckoutButton
+                  label={c.premium.cta}
+                  className="pg-btn pg-btn-primary"
+                  offerLabel={PREMIUM_PRICE_LABEL}
+                  storageLabel={PREMIUM_STORAGE_LABEL}
+                />
               </div>
             </div>
           </div>

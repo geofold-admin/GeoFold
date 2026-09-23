@@ -47,3 +47,6 @@ secrets.json
 # Local scratch scripts
 next/_seed.mjs
 next/_test.mjs
+
+# Binaries & APKs
+*.apk

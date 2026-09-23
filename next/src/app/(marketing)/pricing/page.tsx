@@ -6,6 +6,7 @@ import { BUSINESS } from '@/lib/business'
 import { ipaymuConfig } from '@/lib/ipaymu'
 import type { Locale } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'
+import { PricingCheckoutButton } from '@/components/PricingCheckoutButton'
 
 /*
  * Rewritten 2026-09-07. The previous version sold an "Enterprise" tier offering SSO, role-based
@@ -264,9 +265,12 @@ export default async function PricingPage() {
                 <li key={f}>{f}</li>
               ))}
             </ul>
-            <Link href="/login" className="mk-btn mk-btn-primary">
-              {c.premium.cta}
-            </Link>
+            <PricingCheckoutButton
+              label={c.premium.cta}
+              className="mk-btn mk-btn-primary"
+              offerLabel={PREMIUM_PRICE_LABEL}
+              storageLabel={PREMIUM_STORAGE_LABEL}
+            />
           </div>
         </div>
 
