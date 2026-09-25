@@ -318,7 +318,8 @@ export async function createRedirectPayment(
   try {
     const checkout = new URL(url)
     const gateway = new URL(cfg.baseUrl)
-    if (checkout.protocol !== 'https:' || checkout.hostname !== gateway.hostname)
+    const allowedHosts = new Set([gateway.hostname, 'payment.ipaymu.com', 'my.ipaymu.com', 'sandbox.ipaymu.com'])
+    if (checkout.protocol !== 'https:' || !allowedHosts.has(checkout.hostname))
       throw new Error('ipaymu_untrusted_checkout_url')
   } catch (error) {
     if (error instanceof Error && error.message === 'ipaymu_untrusted_checkout_url') throw error
