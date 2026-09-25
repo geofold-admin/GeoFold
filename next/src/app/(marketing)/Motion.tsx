@@ -137,6 +137,7 @@ export function Motion() {
         const fixed = scene.querySelector<HTMLElement>('[data-scene-fixed]')
         const steps = Array.from(scene.querySelectorAll<HTMLElement>('[data-scene-step]'))
         const readout = scene.querySelector<HTMLElement>('[data-scene-readout]')
+        const rail = scene.querySelector<HTMLElement>('[data-scene-steps]')
 
         if (fixed && steps.length > 0) {
           ScrollTrigger.create({
@@ -158,6 +159,12 @@ export function Motion() {
                    the same instrument idiom the rest of the site uses. */
                 if (self.isActive && readout) {
                   readout.textContent = `${String(i + 1).padStart(2, '0')} / ${String(steps.length).padStart(2, '0')}`
+                }
+                /* The rail's fill. Written as a custom property rather than by setting a height
+                   directly, so the transition lives in CSS where the reduced-motion query can
+                   turn it off — a JS-driven height would animate regardless of that preference. */
+                if (self.isActive && rail) {
+                  rail.style.setProperty('--scene-progress', String((i + 1) / steps.length))
                 }
               },
             })

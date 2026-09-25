@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { FigAerial, FigCapture, FigExport, FigMap, FigOffline } from './Figures'
 import { Motion } from './Motion'
 import { SurveyField } from '@/components/SurveyField'
+import { SurveyGlobe } from '@/components/SurveyGlobe'
 import type { Locale } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'
 import { PREMIUM_DAYS, PREMIUM_PRICE_LABEL, PREMIUM_STORAGE_LABEL } from '@/lib/pricing'
@@ -53,6 +54,8 @@ type Copy = {
   whyTitle: string
   why1: string
   why2: { before: string; strong: string; after: string }
+  globePlace: string
+  globeSub: string
   priceMicro: string
   priceTitle: string
   free: { name: string; body: string; cta: string }
@@ -140,6 +143,8 @@ const copy: Record<Locale, Copy> = {
       after:
         ', lalu menyimpan angka yang sama di basis data. Keduanya tetap menempel ke mana pun fotonya berpindah.',
     },
+    globePlace: 'Sintang, Kalimantan Barat',
+    globeSub: 'Titik ini tempat kami bekerja — dan tempat survei pertama diuji.',
     priceMicro: 'Harga',
     priceTitle: 'Gratis dulu. Bayar hanya kalau memang perlu.',
     free: {
@@ -252,6 +257,8 @@ const copy: Record<Locale, Copy> = {
       after:
         ', then stores the same figures in the database. Both stay attached wherever the photo travels.',
     },
+    globePlace: 'Sintang, West Kalimantan',
+    globeSub: 'This is where we work — and where the first survey was tested.',
     priceMicro: 'Pricing',
     priceTitle: 'Free first. Pay only if you actually need to.',
     free: {
@@ -457,7 +464,7 @@ export default async function HomePage() {
               </p>
             </div>
 
-            <ol className="pg-scene-steps">
+            <ol className="pg-scene-steps" data-scene-steps>
               {c.steps.map((s, i) => (
                 <li className="pg-step" data-scene-step key={s.t}>
                   <span className="pg-step-n pg-num">{String(i + 1).padStart(2, '0')}</span>
@@ -481,13 +488,30 @@ export default async function HomePage() {
               {c.whyTitle}
             </h2>
           </div>
-          <div className="pg-quote-body" data-anim="up">
-            <p>{c.why1}</p>
-            <p>
-              {c.why2.before}
-              <strong>{c.why2.strong}</strong>
-              {c.why2.after}
-            </p>
+
+          {/* The globe sits beside the argument rather than decorating a hero: it marks the place
+              the business actually operates from, and the caption names it. See SurveyGlobe for
+              why this is canvas 2D and not the three.js globe the brief linked to. */}
+          <div className="pg-globe-row">
+            <div className="pg-quote-body" data-anim="up">
+              <p>{c.why1}</p>
+              <p>
+                {c.why2.before}
+                <strong>{c.why2.strong}</strong>
+                {c.why2.after}
+              </p>
+            </div>
+
+            <figure className="pg-globe" data-anim="up">
+              <SurveyGlobe className="pg-globe-canvas" />
+              <figcaption className="pg-globe-cap">
+                <span className="pg-globe-dot" aria-hidden="true" />
+                <span>
+                  <strong>{c.globePlace}</strong>
+                  <span className="pg-globe-sub">{c.globeSub}</span>
+                </span>
+              </figcaption>
+            </figure>
           </div>
         </div>
       </section>

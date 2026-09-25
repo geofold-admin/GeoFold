@@ -579,6 +579,43 @@
   content: ''; width: 4px; height: 4px; border-radius: 100px; background: var(--mk-line); flex: none;
 }
 
+/* ---------- the argument: prose + globe ---------- */
+/* The globe carries a fact (the operator's real location) rather than decorating a hero, so it
+   belongs beside the argument the page is making about evidence, not on top of it. Two columns on
+   a wide screen, stacked below 900px where the sphere would otherwise squeeze the prose. */
+.mk .pg-globe-row {
+  display: grid; gap: clamp(36px, 5vw, 72px); align-items: center;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 380px);
+  margin-top: clamp(28px, 3.5vw, 48px);
+}
+.mk .pg-globe { margin: 0; display: grid; gap: 6px; justify-items: center; }
+/* The globe sits on the dark band, so its own two colours are declared here rather than read from
+   the light-theme tokens — a navy wireframe on a navy background is an invisible globe.
+   The caption is pulled up under the sphere: the canvas is a square box but the drawn sphere only
+   fills the middle ~72% of it, so the box's own bottom margin read as a gap between the globe and
+   its label. A negative offset on the caption closes it without shrinking the drawing. */
+.mk .pg-globe-canvas { --globe-accent: #f07a26; --globe-line: #cfd8e3; width: 100%; aspect-ratio: 1 / 1; display: block; }
+.mk .pg-globe-cap {
+  display: flex; align-items: flex-start; gap: 11px;
+  font-size: 13.5px; line-height: 1.5; color: var(--mk-deep-prose);
+  margin-top: -8%;
+}
+.mk .pg-globe-cap strong { font-weight: 600; display: block; }
+/* NOT --mk-faint. That token is #71717a, tuned for the light theme's white paper where it reads
+   4.9:1. On this dark band the same value measures 4.07:1 — under the 4.5:1 floor for text this
+   size, and the one caption on the page a reader is most likely to squint at because it is the
+   smallest thing on it. #a1a1aa measures 7.7:1 against the band and still reads as secondary. */
+.mk .pg-globe-sub { display: block; color: #a1a1aa; font-size: 12.5px; margin-top: 2px; }
+.mk .pg-globe-dot {
+  flex: none; width: 8px; height: 8px; border-radius: 100px; margin-top: 5px;
+  background: #f07a26; box-shadow: 0 0 0 4px rgba(240, 122, 38, .18);
+}
+
+@media (max-width: 900px) {
+  .mk .pg-globe-row { grid-template-columns: 1fr; }
+  .mk .pg-globe { max-width: 340px; margin-inline: auto; }
+}
+
 /* ---------- capability rows ---------- */
 /* The old design put these five in a horizontal carousel, which hides four of them behind an
    interaction and gives scroll nothing to reveal. As full-width rows they are the spine of the
@@ -606,10 +643,49 @@
    Below 900px it degrades to three ordinary stacked blocks and the pin never engages. */
 .mk .pg-scene { display: grid; gap: 40px; }
 .mk .pg-scene-fixed { display: grid; gap: 18px; align-content: start; }
-.mk .pg-scene-steps { display: grid; gap: 20px; }
+.mk .pg-scene-steps {
+  display: grid; gap: 20px; position: relative;
+  /* The UA's default <ol> padding-inline-start is 40px. Left in place it silently offset every
+     measurement taken against this list's left edge — the rail was landing 41px left of the
+     badges it is meant to thread through. Reset here so the offsets below are measured from the
+     list's real box. */
+  list-style: none; margin: 0; padding: 0;
+}
+
+/* A rail down the left of the steps, with a fill that tracks how far through the sequence the
+   reader has scrolled. Adapted from the React Bits "how it works" block referenced in the brief
+   (that one is a paid Pro template, so this is the effect rebuilt against the tokens already in
+   this stylesheet rather than a copy of its markup).
+
+   THE RAIL IS INSET TO MEET THE BADGES. The first version ran it at left:15px, outside the cards,
+   which read as a disconnected line floating beside the list — the numbers it is supposed to
+   connect were 26px further in, past the card padding. It now sits on the badge's own centre line
+   and the step cards are indented past it, so the rail reads as the thread the numbered nodes
+   hang from.
+   The rail is decoration for the scroll position — the step numbers and the readout already carry
+   the same information in text, so this is not load-bearing for anyone using a screen reader. */
+.mk .pg-scene-steps::before,
+.mk .pg-scene-steps::after {
+  content: ''; position: absolute; left: 41px; width: 1px; z-index: 1;
+}
+.mk .pg-scene-steps::before { top: 41px; bottom: 41px; background: var(--mk-line); }
+/* The fill is a pseudo-element scaled by a custom property Motion.tsx writes on the <ol>. It is
+   drawn this way rather than as a child <span> because an <ol> may only contain <li> — a stray
+   span in there is invalid markup that browsers relocate, which would put the rail in the wrong
+   place. `--scene-progress` is 0..1; the fallback keeps the rail empty before script runs. */
+.mk .pg-scene-steps::after {
+  top: 41px; height: calc(var(--scene-progress, 0) * (100% - 82px));
+  background: var(--mk-ink); transform-origin: top center;
+  transition: height .45s cubic-bezier(.4, 0, .2, 1);
+}
+@media (prefers-reduced-motion: reduce) { .mk .pg-scene-steps::after { transition: none; } }
 .mk .pg-step {
   border: 1px solid var(--mk-line); border-radius: 8px; padding: 26px;
   background: var(--mk-panel); display: grid; gap: 12px; align-content: start;
+  /* Above the rail. The line is drawn behind the cards and only shows in the 20px gaps between
+     them, which is what makes it read as one thread connecting the numbered nodes rather than a
+     stripe ruled across the panels. The background has to be opaque for that to work. */
+  position: relative; z-index: 2;
 }
 .mk .pg-step-n {
   width: 30px; height: 30px; border-radius: 100px; display: grid; place-items: center;
@@ -1085,10 +1161,20 @@ html[data-theme='dark'] .mk .mk-theme-btn .mk-icon-moon { display: none; }
 }
 
 /* The nav is wordmark | links | tools. marketing.css gives .mk-nav-links `flex: 1`, so the tools
-   sit hard right on their own. Below 680px the links wrap to their own row and the tools stay up
-   top beside the wordmark, which is where a language and theme control belong on a phone. */
-@media (max-width: 680px) {
+   sit hard right on their own.
+
+   THE WRAP POINT WAS 680px AND IS NOW 900px. Between those two widths the row could not fit but
+   did not wrap: wordmark + seven links + language segment + theme button + portal button need
+   about 861px, so at any viewport in 681-860px the tools ran off the right edge and the whole
+   document gained a horizontal scrollbar — measured at 820px, scrollWidth 861 against a 820px
+   viewport, on every page because the header is on every page. Below 900px the links now drop to
+   their own scrollable row, which is the layout that was already working on phones. */
+@media (max-width: 900px) {
   .mk .mk-nav-tools { gap: 8px; margin-left: auto; }
   .mk .mk-lang-seg button { padding: 6px 8px; font-size: 10.5px; }
   .mk .mk-theme-btn { width: 30px; height: 30px; }
+}
+
+@media (max-width: 680px) {
+  .mk .mk-nav-tools { gap: 8px; margin-left: auto; }
 }

@@ -156,9 +156,54 @@
 .mk-plan-cta.solid { background: var(--mk-sand); color: #3a2f16; border-color: var(--mk-sand); }
 .mk-faq { max-width: 760px; margin: 0 auto; }
 .mk-faq h2 { font-weight: 700; font-size: 24px; margin: 0 0 28px; text-align: center; }
-.mk-faq-list { display: flex; flex-direction: column; gap: 22px; }
-.mk-faq-q { font-family: var(--font-sans), sans-serif; font-weight: 600; font-size: 15.5px; margin-bottom: 6px; }
-.mk-faq-a { font-size: 14px; line-height: 1.6; color: var(--mk-muted); }
+.mk-faq-list { display: flex; flex-direction: column; gap: 0; }
+.mk-faq-a { font-size: 14px; line-height: 1.65; color: var(--mk-muted); }
+
+/* ---------- FAQ disclosure ----------
+   Replaces a list where every answer was permanently open: 5101px of continuous text with no way
+   to see the shape of it. Each row is now a button over an animated panel.
+
+   The height animation is a `grid-template-rows` 0fr -> 1fr transition on a wrapper grid, not a
+   max-height guess and not a JS-measured pixel height. A measured height has to be recomputed
+   every time the text reflows (font swap, rotation, a link wrapping to a new line) or the panel
+   clips; this needs no measurement at all, because the browser interpolates the row itself.
+   `overflow: hidden` on the inner element is what makes 0fr actually hide the content. */
+.mk-faq-item { border-bottom: 1px solid var(--mk-line); }
+.mk-faq-group .mk-faq-item:first-of-type { border-top: 1px solid var(--mk-line); }
+
+.mk-faq-h { margin: 0; font-size: inherit; font-weight: inherit; }
+.mk-faq-btn {
+  width: 100%; display: flex; align-items: flex-start; gap: 18px; text-align: left;
+  background: none; border: 0; cursor: pointer; padding: 18px 2px;
+  font-family: var(--font-sans), sans-serif; font-weight: 600; font-size: 15.5px;
+  color: var(--mk-ink); line-height: 1.4;
+}
+.mk-faq-btn:hover .mk-faq-q { color: var(--mk-green); }
+.mk-faq-q { transition: color .15s ease; }
+
+/* The mark: a plus that becomes a minus. Drawn from two bars so the rotation is a single
+   transform on the vertical one — cheaper and crisper than swapping a glyph, and it cannot
+   shift position between the two states the way a text character can. */
+.mk-faq-mark { position: relative; flex: none; width: 14px; height: 14px; margin-top: 3px; margin-left: auto; }
+.mk-faq-mark::before,
+.mk-faq-mark::after {
+  content: ''; position: absolute; inset: 50% 0 auto 0; height: 1.5px;
+  background: var(--mk-muted); border-radius: 2px; transition: transform .22s ease, background .22s ease;
+}
+.mk-faq-mark::after { transform: rotate(90deg); }
+.mk-faq-item[data-open] .mk-faq-mark::after { transform: rotate(0deg); }
+.mk-faq-item[data-open] .mk-faq-mark::before,
+.mk-faq-item[data-open] .mk-faq-mark::after { background: var(--mk-green); }
+
+.mk-faq-panel { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .26s ease; }
+.mk-faq-item[data-open] .mk-faq-panel { grid-template-rows: 1fr; }
+.mk-faq-panel > .mk-faq-a { overflow: hidden; min-height: 0; }
+.mk-faq-item[data-open] .mk-faq-panel > .mk-faq-a { padding-bottom: 20px; padding-right: 32px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mk-faq-panel { transition: none; }
+  .mk-faq-mark::before, .mk-faq-mark::after { transition: none; }
+}
 
 /* ---- about ---- */
 .mk-prose { max-width: 720px; margin: 0 auto; font-size: 16px; line-height: 1.8; color: var(--mk-prose); }
@@ -238,10 +283,13 @@ textarea.mk-input { min-height: 0; resize: vertical; }
   .mk-hero h1 { font-size: 34px; }
 }
 
-@media (max-width: 680px) {
-  .mk { --mk-pad: 20px; }
+@media (max-width: 900px) {
   .mk-nav { flex-wrap: wrap; gap: 16px; }
   .mk-nav-links { order: 3; flex-basis: 100%; gap: 18px; overflow-x: auto; }
+}
+
+@media (max-width: 680px) {
+  .mk { --mk-pad: 20px; }
   .mk-steps, .mk-features, .mk-pillars, .mk-meta-grid { grid-template-columns: 1fr; gap: 28px; }
   .mk-footer { flex-direction: column; gap: 28px; }
   .mk-footer-cols { gap: 32px; }

@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import { ANDROID_MIN, BUSINESS } from '@/lib/business'
 import { PREMIUM_DAYS, PREMIUM_PRICE_LABEL, PREMIUM_STORAGE_LABEL } from '@/lib/pricing'
 import { BilingualDoc } from '../BilingualDoc'
+import { FaqDisclosure } from '../FaqDisclosure'
 import type { Locale } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'
 
@@ -602,15 +603,17 @@ const GROUPS_EN: Group[] = [
 function Groups({ groups }: { groups: Group[] }) {
   return (
     <div className="mk-faq">
-      {groups.map((group) => (
+      {groups.map((group, gi) => (
         <section key={group.title} className="mk-faq-group">
           <h2>{group.title}</h2>
           <div className="mk-faq-list">
-            {group.items.map(({ q, a }) => (
-              <div key={q}>
-                <div className="mk-faq-q">{q}</div>
-                <div className="mk-faq-a">{a}</div>
-              </div>
+            {group.items.map(({ q, a }, i) => (
+              /* Exactly one row is open on arrival — the very first. Opening the first row of every
+                 group was tried and rejected: with twelve groups that is twelve answers already
+                 expanded, which is 4116px of page and most of the problem this change exists to
+                 fix. One open row still shows the reader the shape of what is behind the rest,
+                 and every question is visible at a glance, which is the point. */
+              <FaqDisclosure key={q} q={q} a={a} defaultOpen={gi === 0 && i === 0} />
             ))}
           </div>
         </section>
