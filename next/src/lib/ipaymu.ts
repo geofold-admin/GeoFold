@@ -328,6 +328,109 @@ export async function createRedirectPayment(
   return { sessionId, url, raw }
 }
 
+/* ── direct payment ────────────────────────────────────────────────────────── */
+
+/**
+ * Create a Direct Payment — the flow where iPaymu returns a payment NUMBER or a QR image
+ * instead of a hosted checkout URL.
+ *
+ * WHY IT IS WORTH THE EXTRA ROUTE. Redirect Payment sends the buyer to my.ipaymu.com, which is a
+ * different site with a different header, a different language, and a "back to merchant" link
+ * that people miss. For a small one-off purchase that is a lot of trust to ask for at the last
+ * step. Direct Payment keeps the transaction on our own page: the QR or the VA number is rendered
+ * in the checkout modal and the buyer never navigates away.
+ *
+ * THE SIGNATURE IS THE SAME ONE. This goes through the same `post()` helper as everything else,
+ * so the HMAC, the VPS static-IP relay and the error classification are all shared. Adding a new
+ * payment shape must never mean a second, subtly different signing implementation.
+ *
+ * WHAT IT DOES NOT DO: it does not grant anything. Settlement is still decided only by
+ * `checkTransaction` against the authenticated API — see lib/ipaymu-settle.ts.
+ */
+export interface DirectPayment {
+  /** The VA number to pay into, or the raw QR payload when the channel returns one. */
+  paymentNo: string
+  /** A URL to the QR image, for QRIS. Empty for VA channels. */
+  qrUrl: string
+  /** What the buyer actually pays, per iPaymu. */
+  totalIdr: number
+  /** The gateway fee added on top, when fee direction is BUYER. */
+  feeIdr: number
+  channel: string
+  paymentName: string
+  expired: string
+  raw: unknown
+}
+
+export interface DirectPaymentInput {
+  orderId: string
+  amountIdr: number
+  productName: string
+  comments: string
+  notifyUrl: string
+  successUrl: string
+  buyerName: string
+  buyerEmail: string
+  buyerPhone: string
+  /** 'qris' → channel 'mpm'; 'va' → a bank code such as 'bca'. */
+  paymentMethod: 'qris' | 'va'
+  paymentChannel: string
+}
+
+export async function createDirectPayment(
+  cfg: IpaymuConfig,
+  input: DirectPaymentInput,
+): Promise<DirectPayment> {
+  const expiryHours = checkoutExpiryHours()
+  const feeDirection =
+    (process.env.IPAYMU_FEE_DIRECTION ?? 'MERCHANT').toUpperCase() === 'BUYER' ? 'BUYER' : 'MERCHANT'
+
+  const raw = await post(cfg, '/api/v2/payment/direct', {
+    name: input.buyerName,
+    phone: input.buyerPhone,
+    email: input.buyerEmail,
+    amount: Math.round(input.amountIdr),
+    notifyUrl: input.notifyUrl,
+    referenceId: input.orderId,
+    comments: input.comments,
+    paymentMethod: input.paymentMethod,
+    paymentChannel: input.paymentChannel,
+    expired: expiryHours,
+    expiredType: 'hours',
+    feeDirection,
+    product: [input.productName],
+    qty: [1],
+    price: [Math.round(input.amountIdr)],
+    successUrl: input.successUrl,
+  })
+
+  const data = (raw.Data ?? {}) as Record<string, unknown>
+  const str = (v: unknown) => (v == null ? '' : String(v))
+  const num = (v: unknown) => {
+    const n = Math.round(Number(v))
+    return Number.isFinite(n) ? n : 0
+  }
+
+  /* QRIS returns the image under `Url`; some channels return the raw payload under `QrString`.
+     A VA channel returns neither — its `PaymentNo` IS the deliverable. At least one of the two
+     must be present or there is nothing to show the buyer, and a modal with an empty box is
+     worse than an honest failure. */
+  const qrUrl = str(data.Url) || str(data.QrUrl)
+  const paymentNo = str(data.PaymentNo) || str(data.QrString)
+  if (!qrUrl && !paymentNo) throw new Error('ipaymu_no_payment_details')
+
+  return {
+    paymentNo,
+    qrUrl,
+    totalIdr: num(data.Total),
+    feeIdr: num(data.Fee),
+    channel: str(data.Channel) || input.paymentChannel,
+    paymentName: str(data.PaymentName) || input.paymentChannel.toUpperCase(),
+    expired: str(data.Expired),
+    raw: { Data: { TransactionId: data.TransactionId, ReferenceId: data.ReferenceId } },
+  }
+}
+
 /* ── transaction status (the authoritative check) ──────────────────────────── */
 
 /** Transaction status codes, per docs/transaction/check-transaction. */

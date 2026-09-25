@@ -223,7 +223,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function PricingPage() {
-  const c = copy[await getLocale()]
+  const locale = await getLocale()
+  const c = copy[locale]
   const ipaymu = ipaymuConfig()
   const sandboxIpaymu = Boolean(ipaymu && !ipaymu.isProduction)
 
@@ -272,6 +273,7 @@ export default async function PricingPage() {
               className="mk-btn mk-btn-primary"
               offerLabel={PREMIUM_PRICE_LABEL}
               storageLabel={PREMIUM_STORAGE_LABEL}
+              locale={locale}
             />
           </div>
         </div>

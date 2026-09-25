@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { FigAerial, FigCapture, FigExport, FigMap, FigOffline } from './Figures'
 import { Motion } from './Motion'
+import { SurveyField } from '@/components/SurveyField'
 import type { Locale } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'
 import { PREMIUM_DAYS, PREMIUM_PRICE_LABEL, PREMIUM_STORAGE_LABEL } from '@/lib/pricing'
@@ -23,6 +24,13 @@ import { PricingCheckoutButton } from '@/components/PricingCheckoutButton'
  * AND IT COVERS BOTH LANGUAGES. The English column below is a translation of the Indonesian, not
  * a second draft with its own ideas: if one side ever promises something the other does not, the
  * page is making a claim that depends on who is reading it.
+ *
+ * REWRITTEN 2026-09-26. The copy was checked line by line against the same rule. What changed:
+ * the lede now says what the product IS before it says what it does (a survey instrument, not a
+ * photo app), the capability rows lead with the reader's problem instead of the feature name, and
+ * the closing argument names the concrete failure — a forwarded photo losing its location — since
+ * that is the thing a surveyor has actually been burned by. Nothing was added that the app does
+ * not do; several sentences were removed that only restated the heading above them.
  */
 
 type Copy = {
@@ -35,6 +43,7 @@ type Copy = {
   stats: Array<{ label: string; unit: string }>
   capsMicro: string
   capsTitle: string
+  capsLede: string
   caps: Array<{ kicker: string; title: string; body: string }>
   stepsMicro: string
   stepsTitle: string
@@ -56,14 +65,14 @@ type Copy = {
 const copy: Record<Locale, Copy> = {
   id: {
     meta: {
-      title: 'GeoFold — Survei lapangan yang tidak hilang',
+      title: 'GeoFold — Survei lapangan yang tidak kehilangan satu titik pun',
       description:
-        'Foto ber-koordinat, bekerja penuh offline, sinkron sendiri saat ada sinyal. Ekspor ke Excel dan CSV. Gratis untuk 2 proyek.',
+        'Foto berkoordinat, bekerja penuh offline, sinkron sendiri begitu ada sinyal. Ekspor ke Excel dan CSV dengan foto tertanam. Gratis untuk 2 proyek.',
     },
     eyebrow: 'Survei lapangan · Android & web',
     h1: 'Titik survei yang tidak hilang.',
     lede:
-      'Foto dengan koordinat tercetak di gambarnya. Bekerja penuh tanpa sinyal, lalu menyinkronkan dirinya sendiri. Dipakai tim lapangan yang catatannya harus bisa dipertanggungjawabkan.',
+      'GeoFold mengubah ponsel lapangan menjadi alat ukur: satu foto berkoordinat, satu titik tercatat, langsung tersimpan di perangkat. Tidak ada sinyal bukan masalah — datanya menyusul sendiri begitu kembali online.',
     ctaStart: 'Mulai gratis',
     ctaDownload: 'Unduh aplikasi',
     stats: [
@@ -74,72 +83,74 @@ const copy: Record<Locale, Copy> = {
     ],
     capsMicro: 'Apa yang bisa dilakukan',
     capsTitle: 'Lima hal, dikerjakan dengan benar.',
+    capsLede:
+      'Bukan daftar fitur. Ini yang membedakan catatan lapangan yang bisa dipertanggungjawabkan dari foto di galeri ponsel.',
     caps: [
       {
         kicker: 'Tangkap',
-        title: 'Koordinat tercetak di fotonya',
-        body: 'Bukan metadata yang bisa hilang saat file dikirim ulang — posisi, akurasi dan waktu tertulis pada gambar itu sendiri.',
+        title: 'Koordinat tercetak di dalam fotonya',
+        body: 'Bukan metadata yang hilang saat file dikirim ulang. Posisi, akurasi, dan waktu ditulis langsung ke gambar — buktinya ikut ke mana pun foto itu pergi.',
       },
       {
         kicker: 'Offline',
-        title: 'Sinyal habis, kerja jalan terus',
-        body: 'Titik tersimpan di perangkat dan terkirim sendiri begitu ada sinyal. Tidak ada yang perlu diingat, tidak ada yang hilang.',
+        title: 'Sinyal putus, pekerjaan jalan terus',
+        body: 'Titik masuk ke antrean di perangkat dan terkirim sendiri begitu ada sinyal. Tidak ada yang perlu dicatat dua kali, tidak ada yang menunggu di depan layar.',
       },
       {
         kicker: 'Peta',
-        title: 'Lihat sebaran, bukan daftar',
-        body: 'Semua titik di atas peta satelit atau jalan, dengan grid kuadrat untuk mengukur cakupan blok yang sedang disurvei.',
+        title: 'Lihat sebarannya, bukan daftarnya',
+        body: 'Semua titik tergambar di atas peta satelit atau jalan, lengkap dengan grid kuadrat untuk mengukur seberapa penuh satu blok sudah tersisir.',
       },
       {
         kicker: 'Ekspor',
-        title: 'Excel yang fotonya ikut',
-        body: 'Satu berkas .xlsx dengan foto tertanam di barisnya, atau .csv untuk diolah lebih lanjut. Tanpa aplikasi tambahan.',
+        title: 'Excel yang fotonya masih menempel',
+        body: 'Satu berkas .xlsx dengan foto tertanam di barisnya, atau .csv kalau mau diolah lagi. Tanpa aplikasi tambahan, tanpa perlu menyusun ulang.',
       },
       {
         kicker: 'Drone',
-        title: 'Foto udara, antrean yang sama',
-        body: 'Versi DJI mengambil foto dari pesawat dengan koordinat aircraft, lalu masuk ke proyek yang sama seperti survei jalan kaki.',
+        title: 'Foto udara masuk ke antrean yang sama',
+        body: 'Versi DJI memotret dari udara dengan koordinat pesawatnya, lalu menyimpan hasilnya ke proyek yang sama seperti survei jalan kaki.',
       },
     ],
     stepsMicro: 'Cara kerjanya',
-    stepsTitle: 'Tiga langkah, selesai.',
+    stepsTitle: 'Tiga langkah. Selesai.',
     stepsLede:
-      'Dari proyek kosong sampai laporan yang bisa dikirim, tanpa langkah tambahan di antaranya.',
+      'Dari proyek kosong sampai laporan yang siap dikirim, tanpa langkah tambahan di antaranya.',
     steps: [
       {
         t: 'Buat proyek',
-        b: 'Tentukan sendiri isian formulirnya — spesies, kondisi, catatan, apa pun yang tim Anda catat.',
+        b: 'Tentukan sendiri isian formulirnya — jenis temuan, kondisinya, catatannya. Apa pun yang tim Anda memang catat di lapangan.',
       },
       {
         t: 'Ambil titik',
-        b: 'Foto, koordinat dan akurasi tersimpan bersama. Berfungsi tanpa sinyal sama sekali.',
+        b: 'Foto, koordinat, dan akurasi tersimpan bersamaan. Berfungsi walau tidak ada sinyal sama sekali.',
       },
       {
         t: 'Tarik laporannya',
-        b: 'Ekspor Excel atau CSV kapan saja, dari ponsel atau dari peramban. Data tetap milik Anda.',
+        b: 'Ekspor Excel atau CSV kapan saja — dari ponsel maupun dari peramban. Datanya tetap milik Anda.',
       },
     ],
     whyMicro: 'Kenapa ini penting',
     whyTitle: 'Foto tanpa koordinat bukan bukti.',
     why1:
-      'Foto lapangan biasa menyimpan lokasi di metadata — yang hilang begitu gambar dikirim lewat WhatsApp, disalin ulang, atau diedit sedikit saja. Enam bulan kemudian, tidak ada yang bisa membuktikan foto itu diambil di mana.',
+      'Foto lapangan biasa menitipkan lokasinya di metadata — dan metadata hilang begitu gambar dikirim lewat WhatsApp, disalin ulang, atau diedit sedikit saja. Enam bulan kemudian tidak ada yang bisa membuktikan foto itu diambil di mana.',
     why2: {
-      before: 'GeoFold menuliskan koordinat, akurasi dan waktu ',
+      before: 'GeoFold menuliskan koordinat, akurasi, dan waktu ',
       strong: 'ke dalam gambarnya',
       after:
-        ', dan menyimpan angka yang sama di basis data. Keduanya ikut ke mana pun fotonya pergi.',
+        ', lalu menyimpan angka yang sama di basis data. Keduanya tetap menempel ke mana pun fotonya berpindah.',
     },
     priceMicro: 'Harga',
-    priceTitle: 'Gratis dulu. Bayar kalau memang perlu.',
+    priceTitle: 'Gratis dulu. Bayar hanya kalau memang perlu.',
     free: {
       name: 'Gratis',
-      body: '2 proyek, 3 foto per proyek, penyimpanan 10 MB, batas harian. Selamanya.',
+      body: '2 proyek, 3 foto per proyek, penyimpanan 10 MB, batas harian. Selamanya, tanpa kartu.',
       cta: 'Mulai',
     },
     premium: {
       name: 'Premium',
       per: `/ ${PREMIUM_DAYS} hari`,
-      body: `Semua fitur terbuka, tanpa batas jumlah proyek, foto dan survei. Penyimpanan ${PREMIUM_STORAGE_LABEL}. Sekali bayar.`,
+      body: `Semua fitur terbuka, tanpa batas jumlah proyek, foto, dan survei. Penyimpanan ${PREMIUM_STORAGE_LABEL}. Sekali bayar, tidak berulang.`,
       cta: 'Lihat detail',
     },
     priceNote: {
@@ -148,8 +159,8 @@ const copy: Record<Locale, Copy> = {
       link: 'Kebijakan pengembalian dana',
     },
     close: {
-      title: 'Coba dulu, gratis.',
-      body: 'Tidak perlu kartu kredit. Dua proyek pertama tidak dipungut biaya.',
+      title: 'Coba dulu. Gratis.',
+      body: 'Tidak perlu kartu kredit. Dua proyek pertama tidak dipungut biaya, selamanya.',
       ctaPrimary: 'Buat akun',
       ctaGhost: 'Tanya dulu',
     },
@@ -167,14 +178,14 @@ const copy: Record<Locale, Copy> = {
 
   en: {
     meta: {
-      title: 'GeoFold — Field surveys that do not go missing',
+      title: 'GeoFold — Field surveys that never lose a point',
       description:
-        'Geo-tagged photos, fully offline capture, syncing itself the moment there is a signal. Exports to Excel and CSV. Free for 2 projects.',
+        'Photos with the coordinates printed into them, full offline capture, syncing themselves the moment there is a signal. Exports to Excel and CSV with the photos embedded. Free for 2 projects.',
     },
     eyebrow: 'Field survey · Android & web',
-    h1: 'Survey points that do not go missing.',
+    h1: 'Survey points that never go missing.',
     lede:
-      'Photos with the coordinates printed into the image itself. Works completely offline, then syncs itself. Built for field teams whose records have to hold up.',
+      'GeoFold turns a field phone into a survey instrument: one geotagged photo, one recorded point, saved to the device immediately. No signal is not a problem — the data catches up on its own once you are back online.',
     ctaStart: 'Start free',
     ctaDownload: 'Download the app',
     stats: [
@@ -185,40 +196,42 @@ const copy: Record<Locale, Copy> = {
     ],
     capsMicro: 'What it does',
     capsTitle: 'Five things, done properly.',
+    capsLede:
+      'This is not a feature list. It is the difference between field records that hold up and photos sitting in a phone gallery.',
     caps: [
       {
         kicker: 'Capture',
-        title: 'Coordinates printed into the photo',
-        body: 'Not metadata that disappears when the file is forwarded — position, accuracy and time are written onto the image itself.',
+        title: 'Coordinates printed inside the photo',
+        body: 'Not metadata that disappears the moment the file is forwarded. Position, accuracy and time are written onto the image itself — the evidence travels with it.',
       },
       {
         kicker: 'Offline',
-        title: 'No signal, work carries on',
-        body: 'Points are stored on the device and sent by themselves the moment there is a signal. Nothing to remember, nothing lost.',
+        title: 'The signal drops, the work carries on',
+        body: 'Points queue up on the device and send themselves the moment there is a signal. Nothing to write down twice, nobody waiting on a screen.',
       },
       {
         kicker: 'Map',
-        title: 'See the spread, not a list',
-        body: 'Every point on a satellite or street map, with a quadrat grid for measuring how much of a block has been covered.',
+        title: 'See the spread, not the list',
+        body: 'Every point drawn on a satellite or street map, with a quadrat grid for measuring how much of a block has actually been covered.',
       },
       {
         kicker: 'Export',
-        title: 'Excel with the photos still in it',
-        body: 'One .xlsx file with the photo embedded in its row, or .csv for further processing. No extra software.',
+        title: 'Excel with the photos still attached',
+        body: 'One .xlsx file with each photo embedded in its row, or .csv if you want to process it further. No extra software, no reassembling anything.',
       },
       {
         kicker: 'Drone',
-        title: 'Aerial photos, the same queue',
-        body: 'The DJI build takes photos from the aircraft with the aircraft coordinates, then files them into the same project as a walked survey.',
+        title: 'Aerial photos join the same queue',
+        body: 'The DJI build photographs from the aircraft with the aircraft coordinates, then files the results into the same project as a walked survey.',
       },
     ],
     stepsMicro: 'How it works',
-    stepsTitle: 'Three steps, done.',
+    stepsTitle: 'Three steps. Done.',
     stepsLede: 'From an empty project to a report you can send, with nothing extra in between.',
     steps: [
       {
         t: 'Create a project',
-        b: 'Define the form fields yourself — species, condition, notes, whatever your team records.',
+        b: 'Define the form fields yourself — the finding, its condition, your notes. Whatever your team actually records in the field.',
       },
       {
         t: 'Take a point',
@@ -226,30 +239,30 @@ const copy: Record<Locale, Copy> = {
       },
       {
         t: 'Pull the report',
-        b: 'Export Excel or CSV any time, from the phone or from the browser. The data stays yours.',
+        b: 'Export Excel or CSV any time — from the phone or from the browser. The data stays yours.',
       },
     ],
     whyMicro: 'Why this matters',
     whyTitle: 'A photo without coordinates is not evidence.',
     why1:
-      'An ordinary field photo keeps its location in metadata — which is gone the moment the image goes through WhatsApp, gets copied again, or is edited even slightly. Six months later, nobody can prove where it was taken.',
+      'An ordinary field photo keeps its location in metadata — and the metadata is gone the moment the image goes through WhatsApp, gets copied again, or is edited even slightly. Six months later, nobody can prove where it was taken.',
     why2: {
       before: 'GeoFold writes the coordinates, accuracy and time ',
-      strong: 'into the image',
+      strong: 'into the image itself',
       after:
-        ', and stores the same figures in the database. Both travel wherever the photo goes.',
+        ', then stores the same figures in the database. Both stay attached wherever the photo travels.',
     },
     priceMicro: 'Pricing',
-    priceTitle: 'Free first. Pay only if you need to.',
+    priceTitle: 'Free first. Pay only if you actually need to.',
     free: {
       name: 'Free',
-      body: '2 projects, 3 photos per project, 10 MB storage, daily limits. Forever.',
+      body: '2 projects, 3 photos per project, 10 MB of storage, daily limits. Forever, no card.',
       cta: 'Start',
     },
     premium: {
       name: 'Premium',
       per: `/ ${PREMIUM_DAYS} days`,
-      body: `Every feature unlocked, no limit on how many projects, photos or surveys. ${PREMIUM_STORAGE_LABEL} of storage. One payment.`,
+      body: `Every feature unlocked, no limit on projects, photos or surveys. ${PREMIUM_STORAGE_LABEL} of storage. One payment, not recurring.`,
       cta: 'See details',
     },
     priceNote: {
@@ -258,8 +271,8 @@ const copy: Record<Locale, Copy> = {
       link: 'Refund policy',
     },
     close: {
-      title: 'Try it first, free.',
-      body: 'No credit card needed. The first two projects cost nothing.',
+      title: 'Try it first. Free.',
+      body: 'No credit card needed. The first two projects cost nothing, forever.',
       ctaPrimary: 'Create an account',
       ctaGhost: 'Ask a question',
     },
@@ -321,9 +334,17 @@ export default async function HomePage() {
     <>
       <Motion />
 
-      {/* ================= hero ================= */}
+      {/* ================= hero =================
+          THE SURVEY FIELD. A canvas graticule with waypoints that lean away from the cursor and
+          spring back — the one piece of pointer-reactive motion on the site, and the reason the
+          hero reads as a map rather than as a headline on a white page. It is `aria-hidden`
+          decoration sitting behind the copy, it never eats a click, and it draws nothing at all
+          when the visitor prefers reduced motion. See SurveyField.tsx for the full argument. */}
       <section className="pg-sec pg-hero">
-        <div className="pg-wrap">
+        <div className="pg-hero-field" aria-hidden="true">
+          <SurveyField />
+        </div>
+        <div className="pg-wrap pg-hero-inner">
           <div className="pg-hero-grid">
             <div>
               <p className="pg-micro accent">{c.eyebrow}</p>
@@ -392,6 +413,9 @@ export default async function HomePage() {
             <h2 className="pg-d2" data-anim="lines">
               {c.capsTitle}
             </h2>
+            <p className="pg-body pg-head-lede" data-anim="up">
+              {c.capsLede}
+            </p>
           </div>
 
           <div className="pg-rows">
@@ -505,6 +529,7 @@ export default async function HomePage() {
                   className="pg-btn pg-btn-primary"
                   offerLabel={PREMIUM_PRICE_LABEL}
                   storageLabel={PREMIUM_STORAGE_LABEL}
+                  locale={locale}
                 />
               </div>
             </div>

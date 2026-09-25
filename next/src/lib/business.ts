@@ -71,6 +71,37 @@ export const BUSINESS = {
 } as const
 
 /**
+ * The operator's OSS registration, printed in the marketing footer as a trust seal.
+ *
+ * WHY IT IS HERE AND NOT IN THE PAGE. The footer is the one block a payment gateway's
+ * verification team scrolls to on every page of the site, and the figures on it are the ones a
+ * mismatch would be read as a red flag on. Keeping them beside the rest of the legal identity
+ * means there is one file to correct and no page can quietly disagree with another.
+ *
+ * KBLI 60390 — "Aktivitas Situs Jejaring Sosial dan Distribusi Konten Lainnya" — covers a
+ * platform that distributes content and sells premium access through it, which is what the
+ * Premium plan does. It is the code the operator asked for and the one that matches the activity.
+ *
+ * `ossUrl` points at the public OSS checker rather than a document. There is no per-NIB public
+ * URL to link to, so the seal links to the tool where the number can actually be looked up —
+ * a link that resolves is worth more than one that looks official and 404s.
+ */
+export const LEGAL = {
+  nib: '6105010402050002',
+  kbli: '60390',
+  kbliLabel: {
+    id: 'Aktivitas Situs Jejaring Sosial dan Distribusi Konten Lainnya',
+    en: 'Social Networking Sites and Other Content Distribution Activities',
+  },
+  ossUrl: 'https://oss.go.id/informasi/kbli-berdasarkan-kbli',
+  /** The parent company this product is built and operated by. */
+  parent: {
+    name: 'SAYBA ARC',
+    url: 'https://sayba.id',
+  },
+} as const
+
+/**
  * The Android builds offered on /download.
  *
  * `url` is where the APK is actually hosted. It is not served from this app: Vercel is not a file

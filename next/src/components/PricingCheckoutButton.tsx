@@ -2,12 +2,15 @@
 
 import { useState } from 'react'
 import { CheckoutModal } from './CheckoutModal'
+import type { Locale } from '@/lib/i18n'
 
 interface PricingCheckoutButtonProps {
   label: string
   className?: string
   offerLabel?: string
   storageLabel?: string
+  /** The marketing locale. The checkout is the last screen before payment, so it follows it. */
+  locale?: Locale
 }
 
 export function PricingCheckoutButton({
@@ -15,6 +18,7 @@ export function PricingCheckoutButton({
   className = 'mk-btn mk-btn-primary',
   offerLabel = 'Rp 35.000',
   storageLabel = '500 MB',
+  locale = 'id',
 }: PricingCheckoutButtonProps) {
   const [open, setOpen] = useState(false)
 
@@ -33,6 +37,7 @@ export function PricingCheckoutButton({
         onClose={() => setOpen(false)}
         offerLabel={offerLabel}
         storageLabel={storageLabel}
+        locale={locale}
       />
     </>
   )

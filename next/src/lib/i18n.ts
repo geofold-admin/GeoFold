@@ -95,6 +95,19 @@ export function t<T>(dict: Record<Locale, T>, locale: Locale): T {
 export const chrome: Record<Locale, {
   nav: { home: string; product: string; pricing: string; download: string; faq: string; about: string; contact: string; portal: string }
   footer: { product: string; company: string; account: string; help: string; legal: string; features: string; pricing: string; download: string; about: string; contact: string; login: string; faq: string; support: string; terms: string; refund: string; privacy: string; rights: string }
+  seal: {
+    heading: string
+    entity: string
+    scale: string
+    nib: string
+    kbli: string
+    oss: string
+    ossNote: string
+    parentPre: string
+    parentName: string
+    parentPost: string
+    parentNote: string
+  }
   a11y: { theme: string; language: string; nav: string }
 }> = {
   id: {
@@ -126,6 +139,19 @@ export const chrome: Record<Locale, {
       refund: 'Kebijakan Pengembalian Dana',
       privacy: 'Kebijakan Privasi',
       rights: 'Seluruh hak cipta dilindungi.',
+    },
+    seal: {
+      heading: 'Legalitas',
+      entity: 'GEOFOLD',
+      scale: 'Usaha Mikro',
+      nib: 'NIB',
+      kbli: 'KBLI',
+      oss: 'Terdaftar melalui OSS',
+      ossNote: 'Nomor Induk Berusaha (NIB) diterbitkan oleh sistem Online Single Submission, Kementerian Investasi/BKPM Republik Indonesia.',
+      parentPre: 'Produk dari',
+      parentName: 'SAYBA ARC',
+      parentPost: '',
+      parentNote: 'GeoFold dikembangkan dan dioperasikan oleh SAYBA ARC — konsultan IT & keteknikan di Pontianak, Kalimantan Barat.',
     },
     a11y: {
       theme: 'Ganti tema terang atau gelap',
@@ -162,6 +188,19 @@ export const chrome: Record<Locale, {
       refund: 'Refund Policy',
       privacy: 'Privacy Policy',
       rights: 'All rights reserved.',
+    },
+    seal: {
+      heading: 'Legal',
+      entity: 'GEOFOLD',
+      scale: 'Micro Enterprise',
+      nib: 'NIB',
+      kbli: 'KBLI',
+      oss: 'Registered through OSS',
+      ossNote: 'The Business Identification Number (NIB) is issued by the Online Single Submission system of the Ministry of Investment/BKPM, Republic of Indonesia.',
+      parentPre: 'A product of',
+      parentName: 'SAYBA ARC',
+      parentPost: '',
+      parentNote: 'GeoFold is built and operated by SAYBA ARC — an IT & engineering consultancy in Pontianak, West Kalimantan.',
     },
     a11y: {
       theme: 'Toggle light or dark theme',

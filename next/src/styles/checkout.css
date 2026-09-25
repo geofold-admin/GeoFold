@@ -1,0 +1,293 @@
+/* =====================================================================================
+   THE IN-PAGE CHECKOUT — 2026-09-26.
+
+   This is the last screen before a buyer sends money, so it is the one place on the site where
+   clarity beats restraint. Three rules shaped it:
+
+   1. IT IS PART OF THE SITE, NOT A FOREIGN WIDGET. The previous modal was a hard-coded dark
+      green panel with its own palette, its own radii and its own spacing — it looked like an
+      embed from a different product. This one reads the same --mk-* tokens as every other page,
+      so it is light in light mode and dark in dark mode, and it inherits the same accent.
+
+   2. THE THING THE BUYER MUST DO IS THE BIGGEST THING ON SCREEN. The QR is 220px and centred;
+      the VA number is 22px tabular and on its own line with a copy button beside it. Everything
+      else — the plan, the feature list, the reference number — is deliberately quieter.
+
+   3. NOTHING MOVES THAT DOES NOT MEAN SOMETHING. There is exactly one animation: the spinner on
+      the waiting state, which says "this page is still checking". It stops under
+      prefers-reduced-motion, where the waiting line becomes static text instead.
+
+   The class prefix is `gf-ck-` and the block is scoped to `.gf-ck` so it cannot leak into the
+   app chrome, which shares the same document when a signed-in visitor opens the pricing page.
+   ===================================================================================== */
+
+.gf-ck-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+  background: rgba(11, 11, 12, .55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: gf-ck-fade .18s ease both;
+}
+
+.gf-ck {
+  /* Falls back to the light palette's literal values when the modal is rendered outside a
+     `.mk` subtree (the signed-in app can open it too), so it is never unstyled. */
+  --mk-bg: var(--mk-bg, #ffffff);
+  --mk-raise: var(--mk-raise, #f6f6f7);
+  --mk-panel: var(--mk-panel, #ffffff);
+  --mk-line: var(--mk-line, #e7e7ea);
+  --mk-ink: var(--mk-ink, #0b0b0c);
+  --mk-prose: var(--mk-prose, #52525b);
+  --mk-muted: var(--mk-muted, #71717a);
+  --mk-faint: var(--mk-faint, #71717a);
+  --mk-green: var(--mk-green, #1b4dff);
+  --mk-green-2: var(--mk-green-2, #1339cc);
+  --mk-on-green: var(--mk-on-green, #ffffff);
+
+  width: 100%; max-width: 460px; max-height: calc(100vh - 32px);
+  display: flex; flex-direction: column;
+  background: var(--mk-panel); color: var(--mk-ink);
+  border: 1px solid var(--mk-line); border-radius: 14px;
+  overflow: hidden;
+  animation: gf-ck-rise .22s cubic-bezier(.22, .61, .36, 1) both;
+}
+
+@keyframes gf-ck-fade { from { opacity: 0 } to { opacity: 1 } }
+@keyframes gf-ck-rise { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: none } }
+
+/* ---------- chrome ---------- */
+.gf-ck-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 16px 18px; border-bottom: 1px solid var(--mk-line); flex: none;
+}
+.gf-ck-mark {
+  display: inline-grid; place-items: center; width: 27px; height: 27px; border-radius: 7px;
+  background: color-mix(in srgb, var(--mk-green) 12%, transparent); color: var(--mk-green);
+  flex: none;
+}
+.gf-ck-title {
+  font-family: var(--font-tight, inherit); font-weight: 500; font-size: 16.5px;
+  letter-spacing: -.01em; flex: 1;
+}
+.gf-ck-close {
+  appearance: none; border: 0; background: transparent; cursor: pointer;
+  color: var(--mk-faint); padding: 5px; border-radius: 6px; display: grid; place-items: center;
+  transition: color .2s ease, background-color .2s ease;
+}
+.gf-ck-close:hover { color: var(--mk-ink); background: var(--mk-raise); }
+
+.gf-ck-body { padding: 20px 18px; overflow-y: auto; flex: 1; }
+
+.gf-ck-foot {
+  display: flex; align-items: center; gap: 7px;
+  padding: 12px 18px; border-top: 1px solid var(--mk-line);
+  background: var(--mk-raise); color: var(--mk-faint); font-size: 11.5px; flex: none;
+}
+.gf-ck-foot svg { flex: none; }
+
+/* ---------- shared bits ---------- */
+.gf-ck-stack { display: grid; gap: 16px; }
+.gf-ck-lede { margin: 0; font-size: 14px; line-height: 1.55; color: var(--mk-prose); }
+
+.gf-ck-label {
+  margin: 0 0 9px; font-family: var(--font-inter, inherit);
+  font-size: 10.5px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--mk-faint);
+}
+
+.gf-ck-primary {
+  width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 13px 16px; border: 1px solid var(--mk-green); border-radius: 8px;
+  background: var(--mk-green); color: var(--mk-on-green);
+  font-family: var(--font-inter, inherit); font-size: 14.5px; font-weight: 500; cursor: pointer;
+  transition: background-color .2s ease, border-color .2s ease;
+}
+.gf-ck-primary:hover:not(:disabled) { background: var(--mk-green-2); border-color: var(--mk-green-2); }
+.gf-ck-primary:disabled { opacity: .6; cursor: wait; }
+
+.gf-ck-ghost {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 10px 14px; border: 1px solid var(--mk-line); border-radius: 8px;
+  background: transparent; color: var(--mk-ink); cursor: pointer;
+  font-family: var(--font-inter, inherit); font-size: 13.5px; font-weight: 500;
+  transition: border-color .2s ease, color .2s ease;
+}
+.gf-ck-ghost:hover:not(:disabled) { border-color: var(--mk-ink); }
+.gf-ck-ghost:disabled { opacity: .6; cursor: wait; }
+
+.gf-ck-spin { animation: gf-ck-spin .9s linear infinite; }
+@keyframes gf-ck-spin { to { transform: rotate(360deg) } }
+
+/* ---------- sign-in ---------- */
+.gf-ck-oauth {
+  width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 11px; border: 1px solid var(--mk-line); border-radius: 8px;
+  background: var(--mk-panel); color: var(--mk-ink); cursor: pointer;
+  font-family: var(--font-inter, inherit); font-size: 14px; font-weight: 500;
+  transition: border-color .2s ease;
+}
+.gf-ck-oauth:hover { border-color: var(--mk-ink); }
+
+.gf-ck-divider { display: flex; align-items: center; gap: 10px; color: var(--mk-faint); font-size: 11.5px; }
+.gf-ck-divider::before, .gf-ck-divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--mk-line);
+}
+
+.gf-ck-tabs {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 3px;
+  padding: 3px; border: 1px solid var(--mk-line); border-radius: 8px; background: var(--mk-raise);
+}
+.gf-ck-tabs button {
+  appearance: none; border: 0; background: transparent; cursor: pointer; border-radius: 6px;
+  padding: 8px; font-family: var(--font-inter, inherit); font-size: 13px; font-weight: 500;
+  color: var(--mk-muted); transition: background-color .2s ease, color .2s ease;
+}
+.gf-ck-tabs button.on { background: var(--mk-panel); color: var(--mk-ink); }
+
+.gf-ck-form { display: grid; gap: 11px; }
+.gf-ck-form input {
+  width: 100%; padding: 11px 13px; border: 1px solid var(--mk-input-line, var(--mk-line));
+  border-radius: 8px; background: var(--mk-panel); color: var(--mk-ink);
+  font-family: var(--font-inter, inherit); font-size: 14px;
+}
+.gf-ck-form input:focus { outline: none; border-color: var(--mk-green); box-shadow: 0 0 0 3px color-mix(in srgb, var(--mk-green) 14%, transparent); }
+
+.gf-ck-error {
+  display: flex; align-items: flex-start; gap: 7px; margin: 0;
+  color: var(--mk-error, #b3261e); font-size: 13px; line-height: 1.5;
+}
+.gf-ck-error svg { flex: none; margin-top: 2px; }
+
+/* ---------- the offer ---------- */
+.gf-ck-account {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 13px; border: 1px solid var(--mk-line); border-radius: 8px;
+  background: var(--mk-raise); font-size: 13px; color: var(--mk-muted);
+}
+.gf-ck-account strong { color: var(--mk-ink); font-weight: 500; overflow-wrap: anywhere; }
+
+.gf-ck-offer { border: 1px solid var(--mk-line); border-radius: 10px; padding: 16px; display: grid; gap: 13px; }
+.gf-ck-offer-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.gf-ck-offer-name { font-size: 14.5px; font-weight: 500; }
+.gf-ck-offer-price {
+  font-family: var(--font-tight, inherit); font-weight: 500; font-size: 24px;
+  letter-spacing: -.03em; color: var(--mk-green);
+}
+.gf-ck-features { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
+.gf-ck-features li {
+  display: flex; align-items: flex-start; gap: 8px;
+  font-size: 13px; line-height: 1.5; color: var(--mk-prose);
+}
+.gf-ck-features svg { flex: none; margin-top: 3px; color: var(--mk-green); }
+.gf-ck-offer-note { margin: 0; font-size: 12px; color: var(--mk-faint); }
+
+/* ---------- channels ---------- */
+.gf-ck-channel-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+.gf-ck-channel {
+  appearance: none; cursor: pointer;
+  padding: 11px 6px; border: 1px solid var(--mk-line); border-radius: 8px;
+  background: var(--mk-panel); color: var(--mk-ink);
+  font-family: var(--font-inter, inherit); font-size: 12.5px; font-weight: 500;
+  transition: border-color .2s ease, background-color .2s ease;
+}
+.gf-ck-channel:hover { border-color: var(--mk-green); background: color-mix(in srgb, var(--mk-green) 6%, transparent); }
+
+.gf-ck-hint {
+  display: flex; align-items: flex-start; gap: 7px; margin: 12px 0 0;
+  font-size: 12px; line-height: 1.5; color: var(--mk-faint);
+}
+.gf-ck-hint svg { flex: none; margin-top: 2px; }
+
+/* ---------- the payment itself ---------- */
+.gf-ck-pay-head { text-align: center; }
+.gf-ck-pay-head h3 {
+  margin: 0 0 6px; font-family: var(--font-tight, inherit); font-weight: 500;
+  font-size: 17px; letter-spacing: -.01em;
+}
+.gf-ck-pay-head p { margin: 0; font-size: 13px; line-height: 1.55; color: var(--mk-muted); }
+
+.gf-ck-qr {
+  justify-self: center; padding: 12px; border: 1px solid var(--mk-line); border-radius: 12px;
+  background: #fff; /* A QR must be scanned off a light field; it stays white in dark mode. */
+}
+.gf-ck-qr img { display: block; width: 220px; height: 220px; object-fit: contain; }
+
+/* The VA number. Tabular figures and wide tracking so it can be read aloud and typed in
+   accurately — this is the one string on the page a buyer must transcribe perfectly. */
+.gf-ck-value {
+  display: flex; align-items: center; gap: 10px;
+  padding: 13px 14px; border: 1px solid var(--mk-line); border-radius: 10px; background: var(--mk-raise);
+}
+.gf-ck-value code {
+  flex: 1; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 19px; font-weight: 600; letter-spacing: .06em; color: var(--mk-ink);
+  font-variant-numeric: tabular-nums; overflow-wrap: anywhere;
+}
+.gf-ck-value button {
+  display: inline-flex; align-items: center; gap: 6px; flex: none;
+  padding: 8px 12px; border: 1px solid var(--mk-line); border-radius: 7px;
+  background: var(--mk-panel); color: var(--mk-ink); cursor: pointer;
+  font-family: var(--font-inter, inherit); font-size: 12.5px; font-weight: 500;
+  transition: border-color .2s ease, color .2s ease;
+}
+.gf-ck-value button:hover { border-color: var(--mk-green); color: var(--mk-green); }
+
+.gf-ck-sums { margin: 0; display: grid; gap: 9px; }
+.gf-ck-sums > div { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; font-size: 13.5px; }
+.gf-ck-sums dt { color: var(--mk-muted); }
+.gf-ck-sums dd { margin: 0; color: var(--mk-ink); font-weight: 500; font-variant-numeric: tabular-nums; text-align: right; }
+.gf-ck-sums .total { padding-top: 9px; border-top: 1px solid var(--mk-line); }
+.gf-ck-sums .total dt { color: var(--mk-ink); font-weight: 500; }
+.gf-ck-sums .total dd { font-size: 17px; font-weight: 600; }
+
+.gf-ck-waiting {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 12px 14px; border: 1px solid var(--mk-line); border-radius: 10px;
+  background: color-mix(in srgb, var(--mk-green) 5%, transparent);
+}
+.gf-ck-waiting svg { flex: none; margin-top: 3px; color: var(--mk-green); }
+.gf-ck-waiting div { display: grid; gap: 3px; }
+.gf-ck-waiting strong { font-size: 13px; font-weight: 500; color: var(--mk-ink); }
+.gf-ck-waiting span { font-size: 12.5px; line-height: 1.5; color: var(--mk-muted); }
+
+.gf-ck-ref { margin: 0; font-size: 11.5px; color: var(--mk-faint); text-align: center; }
+.gf-ck-ref code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .04em; }
+
+/* ---------- terminal states ---------- */
+.gf-ck-center { display: grid; gap: 13px; justify-items: center; text-align: center; padding: 12px 4px; }
+.gf-ck-center h3 {
+  margin: 0; font-family: var(--font-tight, inherit); font-weight: 500;
+  font-size: 18px; letter-spacing: -.01em;
+}
+.gf-ck-center p { margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--mk-muted); max-width: 34ch; }
+.gf-ck-center > svg:first-child { color: var(--mk-green); }
+
+.gf-ck-tick, .gf-ck-cross {
+  display: inline-grid; place-items: center; width: 52px; height: 52px; border-radius: 100px;
+}
+.gf-ck-tick { background: color-mix(in srgb, #12805c 15%, transparent); color: #12805c; }
+.gf-ck-cross { background: color-mix(in srgb, var(--mk-error, #b3261e) 15%, transparent); color: var(--mk-error, #b3261e); }
+.gf-ck-error-text { color: var(--mk-error, #b3261e) !important; }
+.gf-ck-error-actions { display: flex; flex-wrap: wrap; gap: 9px; justify-content: center; }
+.gf-ck-error-actions .gf-ck-primary { width: auto; }
+
+/* ---------- narrow ---------- */
+@media (max-width: 420px) {
+  .gf-ck-overlay { padding: 10px; }
+  .gf-ck { max-height: calc(100vh - 20px); border-radius: 12px; }
+  .gf-ck-body { padding: 17px 15px; }
+  .gf-ck-head { padding: 14px 15px; }
+  .gf-ck-foot { padding: 11px 15px; }
+  .gf-ck-qr img { width: 190px; height: 190px; }
+  .gf-ck-value code { font-size: 17px; }
+  /* Three channel buttons on a 320px screen leaves 90px each — enough for "QRIS" and "BCA" but
+     not for "Permata" at a legible size. Two columns keeps every label on one line. */
+  .gf-ck-channel-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gf-ck-overlay, .gf-ck { animation: none; }
+  .gf-ck-spin { animation: none; }
+}

@@ -123,14 +123,21 @@
 }
 
 /* Display weight is 300 everywhere it is large, 500 where it is small: a 300 at 20px is limp,
-   and a 500 at 120px is a wall. The size decides the weight. */
+   and a 500 at 120px is a wall. The size decides the weight.
+
+   THE D1 CAP WAS 132px AND IS NOW 88px. At 1440x900 — the single most common laptop viewport —
+   a 124px headline broke to four lines, grew to 475px tall, and pushed the hero's own call to
+   action to y=893: below the fold, on the one screen whose entire job is to offer it. Measured,
+   not guessed. 88px breaks the same sentence to three lines and leaves the buttons visible
+   without scrolling, and the type is still the largest thing on the page by a wide margin.
+   The paragraph below it shrank to match so the block does not read as a big head on a small body. */
 .mk .pg-d1 {
-  font-size: clamp(44px, 8.6vw, 132px);
-  font-weight: 300; letter-spacing: -.035em; line-height: .92; margin: 0;
+  font-size: clamp(38px, 5.6vw, 88px);
+  font-weight: 300; letter-spacing: -.035em; line-height: .96; margin: 0;
 }
 .mk .pg-d2 {
-  font-size: clamp(30px, 4.6vw, 66px);
-  font-weight: 300; letter-spacing: -.03em; line-height: 1; margin: 0;
+  font-size: clamp(28px, 3.8vw, 54px);
+  font-weight: 300; letter-spacing: -.03em; line-height: 1.02; margin: 0;
 }
 .mk .pg-d3 {
   font-size: clamp(21px, 2vw, 28px);
@@ -252,6 +259,124 @@
 .mk-footer-col a:hover { color: var(--mk-ink); opacity: 1; }
 .mk-copy { color: var(--mk-faint); font-size: 13px; line-height: 1.6; }
 .mk-copy a { color: var(--mk-muted); }
+
+/* =====================================================================================
+   THE FOOTER — rebuilt 2026-09-26.
+
+   Two blocks, stacked, each answering one question. The top block is the site map and the
+   company's own contact details, unchanged in content. The bottom block is new: it is the
+   trust panel, and it exists because this is the block a payment gateway's verification team
+   scrolls to on every page, and the block a buyer about to send money reads last.
+
+   WHY IT IS A PANEL AND NOT MORE LINKS. Adding NIB and KBLI as another column would put them
+   at the same visual weight as "FAQ" — a number nobody would find and a verifier would not
+   trust. Set apart on the raised ground, with the label above the value, they read as what
+   they are: a registration, stated once.
+
+   WHY IT DOES NOT USE THE GOVERMENT OSS LOGO. The mark belongs to BKPM. Hotlinking a
+   government logo onto a commercial page is a licence question, and a broken image on a page
+   being verified is worse than no image. The plate here is a neutral stand-in; the link beside
+   it goes to the checker where the number can actually be looked up.
+   ===================================================================================== */
+
+.mk .mk-footer { display: block; padding: 0; }
+
+.mk .mk-footer-main {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 32px; flex-wrap: wrap; padding: 44px var(--mk-pad) 36px;
+}
+.mk .mk-footer-brand-block { max-width: 34ch; }
+.mk .mk-footer-brand { margin-bottom: 10px; }
+
+.mk .mk-footer-cols { display: flex; gap: clamp(28px, 5vw, 56px); font-size: 13px; flex-wrap: wrap; }
+.mk .mk-footer-col { display: flex; flex-direction: column; gap: 9px; min-width: 92px; }
+.mk .mk-footer-col > span { font-weight: 500; margin-bottom: 3px; }
+
+/* ---- the trust panel ---- */
+.mk .mk-footer-legal {
+  border-top: 1px solid var(--mk-line);
+  background: var(--mk-raise);
+  display: grid; gap: clamp(26px, 4vw, 56px);
+  padding: 32px var(--mk-pad) 40px;
+}
+
+.mk .mk-seal-heading {
+  font-family: var(--font-inter), sans-serif;
+  font-size: 10.5px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--mk-faint); margin: 0 0 12px;
+}
+
+.mk .mk-seal-entity {
+  margin: 0 0 16px; font-size: 17px; line-height: 1.2; color: var(--mk-ink);
+  font-family: var(--font-tight), sans-serif; letter-spacing: -.01em;
+}
+.mk .mk-seal-entity strong { font-weight: 500; }
+.mk .mk-seal-scale { color: var(--mk-muted); font-size: 15px; }
+
+/* The two figures. A definition list, because that is what they are: a label and its value. */
+.mk .mk-seal-rows { margin: 0 0 18px; display: grid; gap: 12px; }
+.mk .mk-seal-rows > div { display: grid; gap: 3px; }
+.mk .mk-seal-rows dt {
+  font-family: var(--font-inter), sans-serif; font-size: 10.5px; font-weight: 500;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--mk-faint);
+}
+.mk .mk-seal-rows dd {
+  margin: 0; font-family: var(--font-inter), sans-serif; font-size: 15px; font-weight: 500;
+  color: var(--mk-ink); font-variant-numeric: tabular-nums; letter-spacing: .01em;
+}
+.mk .mk-seal-kbli-label {
+  display: block; margin-top: 3px; font-size: 12.5px; font-weight: 400;
+  color: var(--mk-muted); letter-spacing: 0; line-height: 1.45; max-width: 46ch;
+}
+
+/* The badge. A pill with a plate and a line — the same idiom as the nav controls. */
+.mk .mk-seal-oss {
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 7px 14px 7px 8px; border: 1px solid var(--mk-line); border-radius: 100px;
+  background: var(--mk-panel); color: var(--mk-prose); font-size: 12.5px; font-weight: 500;
+  text-decoration: none; transition: border-color .2s ease, color .2s ease;
+}
+.mk .mk-seal-oss:hover { border-color: var(--mk-ink); color: var(--mk-ink); opacity: 1; }
+.mk .mk-seal-oss-mark {
+  display: inline-grid; place-items: center; width: 30px; height: 22px; border-radius: 100px;
+  background: var(--mk-ink); color: var(--mk-bg);
+  font-family: var(--font-inter), sans-serif; font-size: 9.5px; font-weight: 600;
+  letter-spacing: .08em;
+}
+
+.mk .mk-seal-note {
+  margin: 14px 0 0; font-size: 12.5px; line-height: 1.6; color: var(--mk-faint); max-width: 52ch;
+}
+
+/* ---- the parent ---- */
+.mk .mk-parent-link {
+  display: inline-flex; align-items: baseline; gap: 7px;
+  font-family: var(--font-tight), sans-serif; font-weight: 500;
+  font-size: clamp(26px, 3.4vw, 40px); letter-spacing: -.03em; line-height: 1;
+  color: var(--mk-ink); text-decoration: none;
+  transition: color .2s ease;
+}
+.mk .mk-parent-link:hover { color: var(--mk-green); opacity: 1; }
+.mk .mk-parent-arrow {
+  font-size: .45em; line-height: 1; transform: translateY(-.15em);
+  transition: transform .25s ease;
+}
+.mk .mk-parent-link:hover .mk-parent-arrow { transform: translateY(-.35em) translateX(.1em); }
+
+@media (min-width: 860px) {
+  .mk .mk-footer-legal {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 64px;
+  }
+  .mk .mk-parent { padding-left: clamp(0px, 3vw, 40px); border-left: 1px solid var(--mk-line); }
+}
+
+@media (max-width: 859px) {
+  .mk .mk-footer-cols { gap: 26px 34px; }
+  .mk .mk-footer-main { padding-bottom: 30px; }
+}
+
 
 /* =====================================================================================
    THE EXISTING PAGES — /about, /product, /pricing, /faq, /terms, /contact, /login
@@ -376,6 +501,54 @@
 .mk .pg-hero-grid { display: grid; gap: clamp(32px, 4vw, 56px); }
 .mk .pg-hero h1 { max-width: 15ch; }
 .mk .pg-hero-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
+
+/* =====================================================================================
+   THE HERO FIELD — 2026-09-26.
+
+   A live graticule of survey waypoints behind the hero copy, drawn on canvas (see
+   components/SurveyField.tsx). Three things it must not do, and how each is prevented:
+
+   1. IT MUST NOT COST CONTRAST. The field is drawn at low alpha on the page ground, and the
+      copy sits above it on its own layer. The heading is --mk-ink (18.9:1) on --mk-bg, and
+      nothing in the canvas touches either token — the lines take --mk-line, which is the same
+      hairline the rest of the site uses. A visitor with the canvas blocked sees the identical
+      page with one layer missing.
+
+   2. IT MUST NOT EAT A CLICK. The canvas is pointer-events-none and aria-hidden, and the copy
+      is in a sibling element with its own stacking context. Buttons stay clickable through it.
+
+   3. IT MUST NOT PUSH THE PAGE AROUND. It is absolutely positioned inside the hero section, so
+      it contributes no height; the hero's own padding is what sizes the band.
+
+   WHERE IT STOPS. The field is clipped to the hero. On a phone it stays (it is the page's one
+   piece of identity and costs nothing without a pointer), but the fade at its foot is stronger
+   so it never runs under the stat strip's hairlines and makes them look doubled.
+   ===================================================================================== */
+
+.mk .pg-hero { position: relative; isolation: isolate; }
+/* The top padding was clamp(56px, 9vw, 112px) and is now tighter: together with the smaller
+   display size it is what actually gets the hero's call to action above the fold at 1440x900.
+   The bottom padding stays generous — that space belongs to the stat strip, which is the next
+   thing the eye should reach, not to the buttons. */
+.mk .pg-hero { padding-top: clamp(40px, 5.5vw, 72px); padding-bottom: clamp(52px, 6vw, 88px); }
+.mk .pg-hero-field {
+  position: absolute; inset: 0; z-index: -1;
+  overflow: hidden;
+  /* Fades the field out at the edges so it reads as a ground, not as a bordered box. The
+     bottom fade is what keeps it clear of the stat strip. */
+  mask-image: linear-gradient(180deg, #000 0, #000 62%, transparent 96%);
+  -webkit-mask-image: linear-gradient(180deg, #000 0, #000 62%, transparent 96%);
+  opacity: .9;
+}
+.mk .pg-hero-inner { position: relative; }
+
+@media (max-width: 640px) {
+  .mk .pg-hero-field { opacity: .62; }
+}
+
+/* The lede under a section heading. It exists so the capability list has a reason to be read
+   rather than skimmed; it is not a second heading. */
+.mk .pg-head-lede { max-width: 56ch; margin-top: -6px; }
 
 /* The stat strip that closes the hero. Four measurements on one rule. */
 .mk .pg-stats {
@@ -608,7 +781,64 @@
    declaration that actually landed was globals.css's blanket `h1 { margin: 0 }`. At .96 leading
    that put the lede directly against the descenders. */
 .mk .mk-hero h1, .mk .mk-h-title { margin-bottom: 22px; }
-.mk .mk-price-num small { margin-left: 9px; font-size: .3em; letter-spacing: 0; font-weight: 400; }
+/* THE "/ 30 days" TAIL WAS BREAKING AWAY FROM ITS PRICE. `.mk-price-num` runs at up to 50px with
+   an inherited 80px line-height, and the `<small>` inside it was a plain inline span. On the
+   premium card — the one that carries a period, "Rp 35.000 / 30 days" — the tail wrapped after
+   "/ 30", dropping "days" onto a second line whose 80px leading opened a hole the height of the
+   price itself. Measured at 1440px: the `<small>` produced two line boxes, one at y=642 and one
+   at y=722.
+
+   `white-space: nowrap` keeps the tail as one unit so it wraps *before* the slash rather than
+   inside it, and `line-height: 1` collapses the phantom leading the inline box was inheriting.
+   The 9px gap is unchanged — it is what separates the tail from the price when both sit on the
+   same line. */
+.mk .mk-price-num small {
+  margin-left: 9px; font-size: .3em; letter-spacing: 0; font-weight: 400;
+  white-space: nowrap; line-height: 1;
+}
+
+/* =====================================================================================
+   PHONE FIXES — 2026-09-26. Three things the desktop composition hid, each measured on a
+   390x844 viewport rather than eyeballed.
+
+   1. THE NAV LINKS OVERFLOWED. marketing.css gives .mk-nav-links `flex: 1` and lets the row
+      scroll, but the trailing link was clipped flush against the screen edge with a visible
+      scrollbar — which reads as a broken layout, not as an affordance. The row now bleeds to
+      both edges, hides its scrollbar, and fades its trailing edge so the cut is deliberate and
+      the next link is visibly "more", not "missing".
+
+   2. THE HERO'S TWO BUTTONS WERE TOO WIDE SIDE BY SIDE. At 390px "Start free" and "Download the
+      app" fit, but with barely a gutter between them and the second label touching its own
+      border. Below 460px they stack full-width instead: each becomes a proper tap target
+      (52px tall) and the primary stays first in the reading order.
+
+   3. THE STAT STRIP WAS TIGHT. Four cells in a 2x2 at 20px gap left the units crowding the
+      figures. The gap goes up on small screens; the layout itself is unchanged.
+   ===================================================================================== */
+
+@media (max-width: 680px) {
+  .mk .mk-nav { gap: 14px; }
+  .mk .mk-nav-links {
+    margin-inline: calc(var(--mk-pad) * -1);
+    padding-inline: var(--mk-pad);
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 40px), transparent 100%);
+    -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 40px), transparent 100%);
+  }
+  .mk .mk-nav-links::-webkit-scrollbar { display: none; }
+
+  /* The pinned scene never engages here (the module checks for 1000px), so the steps are just
+     cards and the heading above them does not need the pinned column's extra room. */
+  .mk .pg-scene { gap: 30px; }
+
+  .mk .pg-stats { gap: 30px 24px; }
+}
+
+@media (max-width: 460px) {
+  .mk .pg-hero-cta { flex-direction: column; align-items: stretch; }
+  .mk .pg-hero-cta .pg-btn { width: 100%; }
+}
 
 /* =====================================================================================
    DARK MODE + THE NAV CONTROLS. 2026-09-10.

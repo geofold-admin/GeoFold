@@ -27,7 +27,11 @@ function buildCsp(nonce: string) {
     // blob:/data: are needed for camera capture previews before upload.
     // arcgisonline serves the Esri satellite basemap + its place-name overlay (see MapView).
     // api(.sandbox).midtrans.com serves the QRIS payment QR image on the subscription page.
-    "img-src 'self' data: blob: https://*.supabase.co https://*.tile.openstreetmap.org https://server.arcgisonline.com https://api.midtrans.com https://api.sandbox.midtrans.com",
+    // *.ipaymu.com + storage.googleapis.com serve the QRIS image returned by iPaymu's Direct
+    // Payment endpoint, which the in-page checkout modal renders. Both hosts are required: the
+    // QR is a URL to iPaymu's own storage, not an inline data URI, and without them the modal
+    // shows a broken image with no error anywhere.
+    "img-src 'self' data: blob: https://*.supabase.co https://*.tile.openstreetmap.org https://server.arcgisonline.com https://api.midtrans.com https://api.sandbox.midtrans.com https://*.ipaymu.com https://storage.googleapis.com",
     "font-src 'self' data:",
     // wss: for Supabase realtime; the OAuth redirect itself is a top-level navigation, not a fetch.
     "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
