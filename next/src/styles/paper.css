@@ -825,26 +825,11 @@
 }
 
 /* 2. THE NAV STRIP READ AS CLIPPED TEXT, NOT AS MORE CONTENT. marketing.css wraps the links to
-      their own full-width row and lets it scroll horizontally below 680px. The row stopped at
-      the page padding with "Contact" sliced mid-word against a visible scrollbar, which looks
-      like a layout bug rather than an affordance. It now bleeds to both screen edges, hides the
-      scrollbar, and fades its trailing edge so the cut is deliberate. */
-@media (max-width: 680px) {
-  .mk .mk-nav { gap: 14px; }
-  .mk .mk-nav-links {
-    margin-inline: calc(var(--mk-pad) * -1);
-    padding-inline: var(--mk-pad);
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-    mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 40px), transparent 100%);
-    -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 40px), transparent 100%);
-  }
-  .mk .mk-nav-links::-webkit-scrollbar { display: none; }
-
-  /* The pinned scene never engages here (the module checks for 1000px), so the steps are just
-     cards and the heading above them does not need the pinned column's extra room. */
-  .mk .pg-scene { gap: 30px; }
-}
+      their own full-width row and lets it scroll horizontally below 900px — the width at which
+      the single-line nav stops fitting (see the note on that breakpoint in marketing.css). The
+      row stopped at the page padding with "Contact" sliced mid-word against a visible scrollbar,
+      which looks like a layout bug rather than an affordance. It now bleeds to both screen edges,
+      hides the scrollbar, and fades its trailing edge so the cut is deliberate. */
 
 /* Two spacing carry-overs the shared pages needed once the display face changed. Both are the
    same root cause: marketing.css set these margins against Archivo at 34-40px and 1.08 leading,
@@ -892,7 +877,7 @@
       figures. The gap goes up on small screens; the layout itself is unchanged.
    ===================================================================================== */
 
-@media (max-width: 680px) {
+@media (max-width: 900px) {
   .mk .mk-nav { gap: 14px; }
   .mk .mk-nav-links {
     margin-inline: calc(var(--mk-pad) * -1);
