@@ -43,6 +43,13 @@
    ===================================================================================== */
 
 .mk {
+  /* The subtree declares its own text colour, and this is not cosmetic. `.mk` set its
+     background but never its colour, so anything that did not set one inherited the
+     PORTAL's --ink from globals.css: measured #1d1f20 in light and #e8e8ea in dark on
+     /login, which are not in this palette at all. Declaring it here means the subtree is
+     self-contained whatever it is mounted inside. */
+  color: var(--mk-ink);
+
   /* ---- GeoFold palette: "Precision Topography" ----
      Client-supplied. Biru Geospasial #014AB5, Oranye Marker #F35D19, Batu Tulis #334155,
      Putih Kertas Peta #F8FAFC. The scheme is a monochromatic slate ramp with a complementary
@@ -65,6 +72,29 @@
   --mk-field-bg: #FFFFFF;
   --mk-field-ink: #1E293B;   /* 14.48:1 on the field ground */
   --mk-field-hint: #64748B;  /*  4.76:1 — a hint, legible, never mistakable for a value */
+
+  /* THE PHONE MOCKUP. This is the ONE group of tokens that deliberately does not flip with the
+     theme, because it is a picture of the app rather than a surface of the site: the device frame
+     is near-black and the screen ground near-white in both themes, which is what the product looks
+     like. Everything drawn ON the screen is a real palette colour, so the mockup still reads as
+     this brand. */
+  --mk-phone-frame: #0F172A;
+  --mk-phone-notch: #1E293B;
+  --mk-phone-ink: #1E293B;
+  --mk-phone-muted: #475569;
+  --mk-phone-faint: #64748B;
+  --mk-phone-line: #DCE3EC;
+  --mk-phone-raise: #EEF2F7;
+
+  /* The map panels. Three steps of the brand blue, dark enough that the white reticle, pins and
+     readouts drawn on top of them stay legible: the darkest step is 9.6:1 against white. */
+  --mk-phone-map-1: #2E6FC4;
+  --mk-phone-map-2: #1B4E96;
+  --mk-phone-map-3: #123B75;
+  /* The drone view is the same map seen from above: lighter, because it is sky. */
+  --mk-phone-air-1: #7FA8E8;
+  --mk-phone-air-2: #4E82CE;
+  --mk-phone-air-3: #2E6FC4;
 
   /* The graticule. A coordinate grid is the most on-theme background this product can have: it is
      what a map looks like before anything is drawn on it. Deliberately faint, because it sits
@@ -645,7 +675,7 @@
 .mk-oauth-btn { border-radius: 6px; border-color: var(--mk-input-line); }
 .mk-lang button { border-radius: 100px; border-color: var(--mk-control-line); }
 .mk-car-arrow { border-radius: 100px; border-color: var(--mk-control-line); }
-.mk-car-dots button.on { background: var(--mk-ink); }
+.mk-car-dots button.on { background: var(--mk-ink); color: transparent; }
 
 /* The phone frame in PhoneMock keeps its dark body — a phone is dark — but loses its cast
    shadow, since nothing else on this site has one. */
@@ -694,7 +724,7 @@
 .mk .pg-sec-dark { background: var(--mk-deep); color: var(--mk-deep-prose); }
 .mk .pg-sec-dark h2, .mk .pg-sec-dark h3 { color: var(--mk-deep-ink); }
 .mk .pg-sec-dark .pg-micro { color: var(--mk-deep-accent); }
-.mk .pg-rule { border: 0; border-top: 1px solid var(--mk-line); margin: 0; }
+.mk .pg-rule { border: 0; border-top: 1px solid var(--mk-line); margin: 0; color: var(--mk-line); }
 
 /* A section header: micro-label, rule, heading. The rule is the whole visual system in one
    element — structure by hairline, not by box. */
@@ -1686,7 +1716,7 @@ html[data-theme='dark'] .mk .pg-price-card.feat .pg-price-list li { color: #5264
 html[data-theme='dark'] .mk .pg-price-card.feat .pg-price-list li::before {
   border-left-color: #014AB5; border-bottom-color: #014AB5;
 }
-html[data-theme='dark'] .mk .pg-price-card.feat .pg-price-list { border-top-color: #D8E0EA; }
+html[data-theme='dark'] .mk .pg-price-card.feat .pg-price-list { border-top-color: var(--mk-deep-line); }
 html[data-theme='dark'] .mk .pg-price-card.feat .pg-btn-primary,
 html[data-theme='dark'] .mk .mk-price-card.feat .mk-btn-primary {
   background: #0F172A; color: #F8FAFC; border-color: #0F172A;
@@ -1715,7 +1745,7 @@ html[data-theme='dark'] .mk .mk-price-card.feat .mk-btn-primary:hover {
   html:not([data-theme='light']) .mk .pg-price-card.feat .pg-price-list li::before {
     border-left-color: #014AB5; border-bottom-color: #014AB5;
   }
-  html:not([data-theme='light']) .mk .pg-price-card.feat .pg-price-list { border-top-color: #D8E0EA; }
+  html:not([data-theme='light']) .mk .pg-price-card.feat .pg-price-list { border-top-color: var(--mk-deep-line); }
   html:not([data-theme='light']) .mk .pg-price-card.feat .pg-btn-primary,
   html:not([data-theme='light']) .mk .mk-price-card.feat .mk-btn-primary {
     background: #0F172A; color: #F8FAFC; border-color: #0F172A;

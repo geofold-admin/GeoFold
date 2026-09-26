@@ -96,8 +96,10 @@ h1, h2, h3 { font-family: var(--font-cond), system-ui, sans-serif; font-weight: 
 h1 { font-size: 21px; }
 h2 { font-size: 18px; }
 h3 { font-size: 15px; }
-a { color: var(--accent-ink); text-decoration: none; }
-a:hover { color: var(--accent); }
+/* Scoped out of `.mk` for the same reason as the button rule below: the marketing pages load
+   this file, and a bare `a` rule paints every link in the marketing site with the portal accent. */
+a:not(.mk a) { color: var(--accent-ink); text-decoration: none; }
+a:not(.mk a):hover { color: var(--accent); }
 ::selection { background: color-mix(in srgb, var(--accent) 30%, transparent); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .mono { font-family: var(--font-mono), ui-monospace, monospace; }
@@ -179,10 +181,12 @@ a:hover { color: var(--accent); }
 .list-row:hover { background: color-mix(in srgb, var(--ink) 4%, transparent); }
 
 label { display: block; font-size: 12.5px; font-weight: 500; color: var(--ink-2); margin: var(--space-3) 0 5px; }
-input, textarea, select { width: 100%; padding: 8px 12px; font: inherit; font-size: 13px; color: var(--ink);
+/* Scoped out of `.mk`. The honeypot field on /contact deliberately carries no class, so it used
+   to inherit the portal's input colours: measured #232326 on #e8e8ea in dark mode. */
+input:not(.mk input), textarea:not(.mk textarea), select:not(.mk select) { width: 100%; padding: 8px 12px; font: inherit; font-size: 13px; color: var(--ink);
   border: 1px solid var(--line); border-radius: 0; background: var(--surface); min-height: 34px; }
-input:focus, textarea:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
-textarea { min-height: 92px; font-family: var(--font-mono), monospace; font-size: 12.5px; }
+input:not(.mk input):focus, textarea:not(.mk textarea):focus, select:not(.mk select):focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+textarea:not(.mk textarea) { min-height: 92px; font-family: var(--font-mono), monospace; font-size: 12.5px; }
 /* THE PORTAL'S DEFAULT BUTTON, SCOPED OUT OF THE MARKETING SITE.
  *
  * This is a bare element selector, and the marketing pages load globals.css as well. So every

@@ -1,35 +1,53 @@
-/* Geofold marketing site — imported from the Claude Design project
-   ("Dashboard with surveyor integration"). A fixed light brand palette that is
-   deliberately independent of the app's themeable tokens in globals.css:
-   these pages read the same in either theme, which is what the design specifies. */
+/* Geofold marketing site — the base skin.
+
+   THE TOKENS HERE ARE THE CURRENT PALETTE, and that matters more than it looks. This block used to
+   hold the palette this project replaced (a forest green and a cream), on the reasoning that
+   paper.css overrides all of them for the marketing pages anyway. That was true for the pages that
+   import paper.css and false for the three that do not: /login, /onboarding and /reset import this
+   file ONLY, so they were rendering in the old design. Measured before the fix: #1f3a2e on the
+   sign-in button, #f6f4ee as the page ground.
+
+   Keeping the current values here makes paper.css's override a no-op with identical values rather
+   than a rescue, so no page can be left behind by importing one stylesheet instead of two.
+
+   The palette itself: a monochromatic base whose neutrals all share the brand blue's hue, plus a
+   near-complementary orange used only as a marker. See paper.css for the measured contrast of
+   every pair. */
 
 .mk {
-  --mk-bg: #f6f4ee;
-  --mk-ink: #20241f;
-  --mk-muted: #4b5750;
-  --mk-prose: #333d31;
-  --mk-green: #1f3a2e;
-  --mk-green-2: #264a3a;
-  --mk-green-line: #4f7a5c;
-  --mk-on-green: #cdd9d0;
-  --mk-on-green-dim: #a9c2ab;
-  --mk-line: #e3dfd0;
-  --mk-input-line: #c9c2ab;
-  --mk-sand: #efe6cc;
-  --mk-sand-ink: #7a6a3f;
-  --mk-panel: #efece2;
-  --mk-faint: #8c8570;
-  --mk-pad: 56px;
-
-  background: var(--mk-bg);
+  /* The subtree declares its own text colour. Without this, an element that sets no colour of
+     its own inherits the PORTAL's --ink from globals.css, which is not in this palette:
+     measured #1d1f20 in light and #e8e8ea in dark on /login, which imports this file only. */
   color: var(--mk-ink);
-  font-family: var(--font-work), system-ui, sans-serif;
-  font-size: 15px;
-  line-height: 1.6;
-  min-height: 100vh;
+  --mk-bg: #F8FAFC;
+  --mk-ink: #334155;
+  --mk-muted: #475569;
+  --mk-prose: #52647D;
+  --mk-faint: #475569;
+  --mk-green: #014AB5;
+  --mk-green-2: #013A8F;
+  --mk-green-line: #BFD3F0;
+  --mk-on-green: #F8FAFC;
+  --mk-on-green-dim: #D6E3F8;
+  --mk-line: #DCE3EC;
+  --mk-input-line: #C8D3E0;
+  --mk-control-line: #7A8CA6;
+  --mk-field-bg: #FFFFFF;
+  --mk-field-ink: #1E293B;
+  --mk-field-hint: #64748B;
+  --mk-sand: #EEF2F7;
+  --mk-sand-ink: #014AB5;
+  --mk-panel: #FFFFFF;
+  --mk-raise: #EEF2F7;
+  --mk-amber: #C2410C;
+  --mk-marker: #F35D19;
+  --mk-deep: #0F172A;
+  --mk-deep-ink: #F8FAFC;
+  --mk-deep-prose: #C3CEDC;
+  --mk-deep-accent: #7FA8E8;
 }
 
-.mk ::selection { background: color-mix(in srgb, #3f6b4f 30%, transparent); }
+.mk ::selection { background: color-mix(in srgb, var(--mk-green) 26%, transparent); }
 .mk a { color: inherit; text-decoration: none; }
 .mk a:hover { opacity: 0.75; color: inherit; }
 /* text-transform/weight are reset explicitly: the app's globals.css sets headings
@@ -102,7 +120,7 @@
   font-size: 13px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--mk-faint);
 }
 .mk-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; }
-.mk-step-n { font-family: var(--font-sans), sans-serif; font-weight: 700; font-size: 15px; color: #7fa98e; margin-bottom: 10px; }
+.mk-step-n { font-family: var(--font-sans), sans-serif; font-weight: 700; font-size: 15px; color: var(--mk-green); margin-bottom: 10px; }
 .mk-step-t { font-family: var(--font-sans), sans-serif; font-weight: 600; font-size: 19px; margin-bottom: 10px; }
 .mk-step-b { font-size: 14.5px; line-height: 1.6; color: var(--mk-on-green); }
 .mk-features { display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; }
@@ -153,7 +171,7 @@
 .mk-plan-list > li { display: flex; gap: 8px; align-items: flex-start; list-style: none; }
 .mk-plan-list svg { margin-top: 2px; flex: none; }
 .mk-plan-cta { padding: 12px; border-radius: 3px; font-weight: 600; font-size: 14px; text-align: center; border: 1px solid var(--mk-green); color: var(--mk-green); }
-.mk-plan-cta.solid { background: var(--mk-sand); color: #3a2f16; border-color: var(--mk-sand); }
+.mk-plan-cta.solid { background: var(--mk-sand); color: var(--mk-sand-ink); border-color: var(--mk-sand); }
 .mk-faq { max-width: 760px; margin: 0 auto; }
 .mk-faq h2 { font-weight: 700; font-size: 24px; margin: 0 0 28px; text-align: center; }
 .mk-faq-list { display: flex; flex-direction: column; gap: 0; }
@@ -345,12 +363,28 @@ textarea.mk-input { min-height: 0; resize: vertical; }
 .mk-login-shell { min-height: 100vh; display: flex; flex-direction: column; }
 .mk-login-top { padding: 24px var(--mk-pad); }
 .mk-login-body { flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px 20px 80px; }
-.mk-card { width: 380px; max-width: 100%; background: #fff; border: 1px solid var(--mk-line); border-radius: 8px; padding: 36px 32px; }
+/* THE LOGIN CARD. Three defects fixed here, all of them the same shape as the form-field bug:
+
+   1. `background: #fff` was hardcoded. That is only correct while the page is light; on a dark
+      ground it is a white plate with dark text on it, which is not the design and was never
+      intended. It takes the panel token now.
+
+   2. `color: var(--mk-bg)` on the submit button paired a text colour with the PAGE GROUND. On the
+      light theme that happens to read (near-white on the accent) but it is the wrong token for the
+      job and it breaks the moment the ground changes. The dedicated `--mk-on-green` exists for
+      exactly this and is used everywhere else.
+
+   3. The error box used three literals from the old palette. It is now built from the amber, which
+      is the palette's one warm accent and already carries a measured 4.95:1. */
+.mk-card {
+  width: 380px; max-width: 100%; background: var(--mk-panel); border: 1px solid var(--mk-line);
+  border-radius: 8px; padding: 36px 32px;
+}
 .mk-card-t { font-family: var(--font-sans), sans-serif; font-weight: 700; font-size: 22px; margin-bottom: 8px; }
 .mk-card-sub { font-size: 14px; color: var(--mk-muted); margin-bottom: 28px; }
 .mk-card-fields { display: flex; flex-direction: column; gap: 16px; margin-bottom: 22px; }
 .mk-submit {
-  display: block; width: 100%; text-align: center; background: var(--mk-green); color: var(--mk-bg);
+  display: block; width: 100%; text-align: center; background: var(--mk-green); color: var(--mk-on-green);
   padding: 13px; border-radius: 4px; font-weight: 600; font-size: 14.5px; margin-bottom: 14px;
   border: none; cursor: pointer; font-family: inherit;
 }
@@ -366,7 +400,7 @@ textarea.mk-input { min-height: 0; resize: vertical; }
   border: 1px solid var(--mk-input-line); border-radius: 4px;
   font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer;
 }
-.mk-oauth-btn:hover:not(:disabled) { background: #faf8f3; }
+.mk-oauth-btn:hover:not(:disabled) { background: var(--mk-raise); }
 .mk-oauth-btn:disabled { opacity: 0.55; cursor: default; }
 .mk-oauth-btn svg { flex: none; }
 .mk-or { display: flex; align-items: center; gap: 12px; margin: 6px 0 2px; color: var(--mk-faint); font-size: 12px; }
@@ -375,7 +409,9 @@ textarea.mk-input { min-height: 0; resize: vertical; }
 .mk-card-foot { text-align: center; font-size: 12.5px; color: var(--mk-faint); }
 .mk-card-foot a { color: var(--mk-muted); }
 .mk-error {
-  background: #f6e0dc; border: 1px solid #e2bcb4; color: #7d2b23;
+  background: color-mix(in srgb, var(--mk-amber) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--mk-amber) 34%, transparent);
+  color: var(--mk-amber);
   border-radius: 4px; padding: 10px 12px; font-size: 13px; margin-bottom: 16px;
 }
 .mk-note { background: var(--mk-sand); color: var(--mk-sand-ink); border-radius: 4px; padding: 10px 12px; font-size: 13px; margin-bottom: 16px; }
@@ -424,8 +460,8 @@ textarea.mk-input { min-height: 0; resize: vertical; }
   font: inherit; font-size: 12.5px; padding: 7px 14px; cursor: pointer;
   border: 1px solid var(--mk-line); background: transparent; color: var(--mk-muted); border-radius: 4px;
 }
-.mk-lang button:hover { background: #faf8f3; }
-.mk-lang button.on { background: var(--mk-green); border-color: var(--mk-green); color: #f6f4ee; }
+.mk-lang button:hover { background: var(--mk-raise); }
+.mk-lang button.on { background: var(--mk-green); border-color: var(--mk-green); color: var(--mk-on-green); }
 
 .mk-doc { max-width: 760px; margin: 0 auto; }
 .mk-doc h2 {
@@ -469,7 +505,7 @@ textarea.mk-input { min-height: 0; resize: vertical; }
 .mk-faq-a a { color: var(--mk-green); text-decoration: underline; text-underline-offset: 2px; }
 
 .mk-callout {
-  border-left: 3px solid var(--mk-green); background: #f4f2ec;
+  border-left: 3px solid var(--mk-green); background: var(--mk-raise);
   padding: 14px 16px; border-radius: 0 4px 4px 0; margin: 0 0 20px;
 }
 .mk-callout p:last-child { margin-bottom: 0; }

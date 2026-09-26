@@ -139,8 +139,15 @@
 .mk-car-dots button {
   width: 7px; height: 7px; padding: 0; border-radius: 100px; border: 0; cursor: pointer;
   background: var(--mk-line); transition: width .18s ease, background .18s ease;
+  /* These dots carry no text, so without this their computed colour is the UA default black,
+     which is not in the palette and showed up in the rendered-colour audit. A control with no
+     label has no text colour. */
+  color: transparent;
 }
-.mk-car-dots button.on { width: 20px; background: var(--mk-green); }
+.mk-car-dots button.on { width: 20px; background: var(--mk-green); color: transparent; }
+/* `color: transparent` above is not decoration: this button has no text, so its computed
+   colour was the UA default black and the palette audit flagged it. A control with no label
+   has no text colour. */
 
 /* ---------- capability card ---------- */
 .mk-cap {
@@ -160,12 +167,12 @@
 /* ---------- phone mock ---------- */
 .mk-phone { display: flex; flex-direction: column; align-items: center; flex: none; }
 .mk-phone-frame {
-  width: 168px; aspect-ratio: 9 / 18; background: #14181c; border-radius: 22px; padding: 6px;
-  position: relative; box-shadow: 0 10px 26px rgba(20, 30, 22, .16);
+  width: 168px; aspect-ratio: 9 / 18; background: var(--mk-deep); border-radius: 22px; padding: 6px;
+  position: relative; box-shadow: 0 10px 26px rgba(15, 23, 42, .16);
 }
 .mk-phone-notch {
   position: absolute; top: 9px; left: 50%; transform: translateX(-50%);
-  width: 44px; height: 4px; border-radius: 100px; background: #2a3138; z-index: 2;
+  width: 44px; height: 4px; border-radius: 100px; background: var(--mk-phone-notch); z-index: 2;
 }
 .mk-phone-screen {
   width: 100%; height: 100%; border-radius: 17px; overflow: hidden; background: #fff;
@@ -176,19 +183,21 @@
 /* ---------- schematic app screens ---------- */
 .mk-scr { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 .mk-scr-head {
-  font-family: var(--font-sans), sans-serif; font-weight: 700; font-size: 9px; color: #1d231c;
+  font-family: var(--font-sans), sans-serif; font-weight: 700; font-size: 9px; color: var(--mk-phone-ink);
   padding: 12px 9px 7px;
 }
 .mk-scr-bar {
   display: flex; align-items: center; justify-content: space-between; padding: 11px 9px 6px;
-  font-size: 7.5px; color: #47504a; font-weight: 600;
+  font-size: 7.5px; color: var(--mk-phone-muted); font-weight: 600;
 }
-.mk-scr-dot { width: 5px; height: 5px; border-radius: 100px; background: #4aa06a; }
+.mk-scr-dot { width: 5px; height: 5px; border-radius: 100px; background: var(--mk-green); }
 .mk-scr-view {
   flex: 1; margin: 0 7px; border-radius: 7px; position: relative; overflow: hidden;
-  background: linear-gradient(150deg, #7d9a80, #4c6b55 60%, #3b5744);
+  /* The map panel, drawn in the brand blue rather than the old palette's forest greens. A
+     topographic panel is the most on-theme image this product has, and the app's map is blue. */
+  background: linear-gradient(150deg, var(--mk-phone-map-1), var(--mk-phone-map-2) 60%, var(--mk-phone-map-3));
 }
-.mk-scr-view.drone { background: linear-gradient(160deg, #9fb8c6, #6e8fa3 55%, #4e6d80); }
+.mk-scr-view.drone { background: linear-gradient(160deg, var(--mk-phone-air-1), var(--mk-phone-air-2) 55%, var(--mk-phone-air-3)); }
 .mk-scr-reticle {
   position: absolute; inset: 34% 30%; border: 1px solid rgba(255,255,255,.75); border-radius: 3px;
 }
@@ -198,26 +207,26 @@
 }
 .mk-scr-shutter { display: flex; justify-content: center; padding: 8px 0 10px; }
 .mk-scr-shutter span {
-  width: 24px; height: 24px; border-radius: 100px; background: #0070bb;
-  box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px #0070bb;
+  width: 24px; height: 24px; border-radius: 100px; background: var(--mk-green);
+  box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--mk-green);
 }
 .mk-scr-chips { display: flex; gap: 4px; padding: 0 9px 7px; }
 .mk-scr-chips span {
-  font-size: 6.5px; padding: 2.5px 6px; border-radius: 100px; border: .5px solid #d8dcd9; color: #6b7379;
+  font-size: 6.5px; padding: 2.5px 6px; border-radius: 100px; border: .5px solid var(--mk-phone-line); color: var(--mk-phone-faint);
 }
-.mk-scr-chips span.on { background: #0070bb; border-color: #0070bb; color: #fff; }
+.mk-scr-chips span.on { background: var(--mk-green); border-color: var(--mk-green); color: #fff; }
 .mk-scr-row {
-  display: flex; align-items: center; gap: 6px; padding: 5px 9px; border-top: .5px solid #eceff1;
+  display: flex; align-items: center; gap: 6px; padding: 5px 9px; border-top: .5px solid var(--mk-phone-line);
 }
-.mk-scr-thumb { width: 17px; height: 17px; border-radius: 3px; background: #cfd9d2; flex: none; }
-.mk-scr-ref { font-family: var(--font-mono), monospace; font-size: 7px; color: #10171c; }
-.mk-scr-meta { font-size: 6px; color: #8b9299; margin-top: 1px; }
+.mk-scr-thumb { width: 17px; height: 17px; border-radius: 3px; background: var(--mk-phone-line); flex: none; }
+.mk-scr-ref { font-family: var(--font-mono), monospace; font-size: 7px; color: var(--mk-phone-ink); }
+.mk-scr-meta { font-size: 6px; color: var(--mk-phone-faint); margin-top: 1px; }
 .mk-scr-pill { width: 5px; height: 5px; border-radius: 100px; margin-left: auto; flex: none; }
-.mk-scr-pill.ok { background: #4aa06a; }
-.mk-scr-pill.wait { background: #e0a640; }
+.mk-scr-pill.ok { background: var(--mk-green); }
+.mk-scr-pill.wait { background: var(--mk-marker); }
 .mk-scr-canvas {
   flex: 1; margin: 0 7px 9px; border-radius: 7px; position: relative; overflow: hidden;
-  background: #e8ece9;
+  background: var(--mk-phone-raise);
 }
 .mk-scr-grid {
   position: absolute; inset: 0;
@@ -227,25 +236,25 @@
 }
 .mk-scr-grid.sm { background-size: 30% 30%; }
 .mk-scr-pin {
-  position: absolute; width: 5px; height: 5px; border-radius: 100px; background: #0070bb;
+  position: absolute; width: 5px; height: 5px; border-radius: 100px; background: var(--mk-green);
   box-shadow: 0 0 0 1.5px rgba(0,112,187,.25); transform: translate(-50%, -50%);
 }
 .mk-scr-cell {
   position: absolute; left: 5px; bottom: 5px; background: rgba(255,255,255,.9);
-  border-radius: 3px; padding: 2px 4px; font-size: 6px; color: #1d231c;
+  border-radius: 3px; padding: 2px 4px; font-size: 6px; color: var(--mk-phone-ink);
 }
-.mk-scr-sheet { margin: 0 9px; border: .5px solid #e2e6e3; border-radius: 4px; overflow: hidden; }
+.mk-scr-sheet { margin: 0 9px; border: .5px solid var(--mk-phone-line); border-radius: 4px; overflow: hidden; }
 .mk-scr-sheet-head, .mk-scr-sheet-row {
   display: grid; grid-template-columns: 1.1fr 1fr .6fr; gap: 3px; padding: 3.5px 5px; font-size: 6px;
   align-items: center;
 }
-.mk-scr-sheet-head { background: #f1f4f2; font-weight: 700; color: #47504a; }
-.mk-scr-sheet-row { border-top: .5px solid #eef1ef; color: #6b7379; }
-.mk-scr-cellimg { height: 7px; border-radius: 1.5px; background: #cfd9d2; }
+.mk-scr-sheet-head { background: var(--mk-phone-raise); font-weight: 700; color: var(--mk-phone-muted); }
+.mk-scr-sheet-row { border-top: .5px solid var(--mk-phone-line); color: var(--mk-phone-faint); }
+.mk-scr-cellimg { height: 7px; border-radius: 1.5px; background: var(--mk-phone-line); }
 .mk-scr-formats { display: flex; gap: 5px; padding: 9px; margin-top: auto; }
 .mk-scr-formats span {
   font-family: var(--font-mono), monospace; font-size: 6.5px; padding: 3px 6px; border-radius: 3px;
-  background: #eef3ef; color: #1f3a2e;
+  background: var(--mk-phone-raise); color: var(--mk-phone-ink);
 }
 .mk-scr-hud {
   position: absolute; top: 5px; left: 5px; right: 5px; display: flex; justify-content: space-between;
@@ -271,7 +280,7 @@
 
 /* ---------- the why ---------- */
 .mk-why { padding: 0 var(--mk-pad); max-width: 62ch; }
-.mk-why p { font-size: 15px; line-height: 1.7; color: #d7e2d8; margin: 0 0 14px; }
+.mk-why p { font-size: 15px; line-height: 1.7; color: var(--mk-deep-prose); margin: 0 0 14px; }
 .mk-why strong { color: #fff; font-weight: 600; }
 
 /* ---------- audience tags ---------- */
@@ -300,7 +309,7 @@
 .mk-price-card.feat .mk-price-num { color: #fff; }
 .mk-price-num small { font-size: 13px; font-weight: 500; opacity: .7; margin-left: 4px; }
 .mk-price-card p { font-size: 13.5px; line-height: 1.6; color: var(--mk-muted); margin: 0 0 16px; }
-.mk-price-card.feat p { color: #cfe0d3; }
+.mk-price-card.feat p { color: var(--mk-deep-prose); }
 .mk-price-card .mk-btn { width: 100%; justify-content: center; margin-top: auto; }
 .mk-price-note {
   padding: 16px var(--mk-pad) 0; font-size: 12.5px; color: var(--mk-muted); text-align: center; margin: 0;
@@ -396,7 +405,7 @@
 .mk-plist li { font-size: 13.5px; line-height: 1.5; color: var(--mk-prose); padding-left: 20px;
   position: relative; }
 .mk-plist li::before { content: '—'; position: absolute; left: 0; color: var(--mk-green); }
-.mk-plist.on-dark li { color: #cfe0d3; }
+.mk-plist.on-dark li { color: var(--mk-deep-prose); }
 .mk-plist.on-dark li::before { color: var(--mk-green-line); }
 
 /* ---------- shared Q&A block ---------- */
