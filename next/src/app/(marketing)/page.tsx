@@ -8,6 +8,7 @@ import { SurveyGlobe } from '@/components/SurveyGlobe'
 import { MagnetField } from '@/components/MagnetField'
 import type { Locale } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'
+import { pageMetadata } from '@/lib/seo'
 import { PREMIUM_DAYS, PREMIUM_PRICE_LABEL, PREMIUM_STORAGE_LABEL } from '@/lib/pricing'
 import { PricingCheckoutButton } from '@/components/PricingCheckoutButton'
 
@@ -298,8 +299,9 @@ const copy: Record<Locale, Copy> = {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const c = copy[await getLocale()]
-  return { title: c.meta.title, description: c.meta.description }
+  const locale = await getLocale()
+  const c = copy[locale]
+  return pageMetadata({ title: c.meta.title, description: c.meta.description, path: '/', locale })
 }
 
 /* Counter values are language-independent — there is no version of this page where the free plan

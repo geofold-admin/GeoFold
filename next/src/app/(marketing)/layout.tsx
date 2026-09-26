@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { Work_Sans } from 'next/font/google'
@@ -15,8 +16,23 @@ import '@/styles/checkout.css'
 import { ADDRESS_ONE_LINE, BUSINESS, LEGAL, OPERATOR } from '@/lib/business'
 import { chrome } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'
+import { organizationJsonLd } from '@/lib/seo'
 import { LogoLockup } from '@/components/Logo'
 import { MarketingNav } from './MarketingNav'
+
+/**
+ * The marketing subtree is the part of the site that WANTS to be indexed.
+ *
+ * The root layout turns indexing off, because it is shared with the signed-in app and an app
+ * screen in a search result is noise at best and a leaked form at worst. Every page under this
+ * layout opts back in with its own title, description and canonical URL (see lib/seo). Setting it
+ * here rather than on each page means a new marketing page is crawlable by existing, which is the
+ * safe direction to fail in: a page nobody links to yet is harmless, while a page that silently
+ * ships `noindex` is invisible and nobody finds out.
+ */
+export const metadata: Metadata = {
+  robots: { index: true, follow: true },
+}
 
 // Body face for the marketing site. Headings stay on Archivo (--font-sans), which
 // the root layout already loads.
@@ -56,6 +72,15 @@ export default async function MarketingLayout({ children }: { children: ReactNod
      * and describes exactly the subtree that actually changes language.
      */
     <div className={`mk ${workSans.variable}`} lang={locale}>
+      {/* The Organization node. Emitted once per page, from the same constants the footer's trust
+          panel renders, so the machine-readable facts and the printed ones cannot disagree.
+          See lib/seo.ts for why there is no aggregateRating here. */}
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger -- JSON-LD is inert data, and Next has no
+        // first-class way to emit it; the value is serialised from our own constants, never input.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd(locale)) }}
+      />
       {/* Scroll progress hairline. Pinned to the very top of the viewport, above the nav's own
           sticky layer, and driven by Motion.tsx. aria-hidden: it is decoration, and a progress
           readout that a screen reader announced on every scroll would be unusable. */}

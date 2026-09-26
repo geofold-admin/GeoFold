@@ -7,6 +7,7 @@ import { BilingualDoc } from '../BilingualDoc'
 import { FaqDisclosure } from '../FaqDisclosure'
 import type { Locale } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'
+import { pageMetadata } from '@/lib/seo'
 
 /*
  * The chrome around the answers — heading, lede, page title, and the "still stuck" block below —
@@ -61,8 +62,9 @@ const chrome: Record<Locale, {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const c = chrome[await getLocale()]
-  return { title: c.title, description: c.description }
+  const locale = await getLocale()
+  const c = chrome[locale]
+  return pageMetadata({ title: c.title, description: c.description, path: '/faq', locale })
 }
 
 type QA = { q: string; a: ReactNode }

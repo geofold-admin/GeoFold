@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { BUSINESS, OPERATOR } from '@/lib/business'
 import type { Locale } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'
+import { pageMetadata } from '@/lib/seo'
 
 /*
  * Rewritten 2026-09-07. The previous version claimed ArcGIS-shaped exports with "correct CRS", and
@@ -145,8 +146,9 @@ const copy: Record<Locale, Copy> = {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const c = copy[await getLocale()]
-  return { title: c.meta.title, description: c.meta.description }
+  const locale = await getLocale()
+  const c = copy[locale]
+  return pageMetadata({ title: c.meta.title, description: c.meta.description, path: '/about', locale })
 }
 
 export default async function AboutPage() {

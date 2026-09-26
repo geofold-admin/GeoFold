@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { ADDRESS_ONE_LINE, BUSINESS, OPERATOR } from '@/lib/business'
 import type { Locale } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'
+import { pageMetadata } from '@/lib/seo'
 import { ContactForm } from './ContactForm'
 
 /*
@@ -143,8 +144,9 @@ const LOCALITY_LINE = [[address.city, address.province].filter(Boolean).join(', 
   .join(' ')
 
 export async function generateMetadata(): Promise<Metadata> {
-  const c = copy[await getLocale()]
-  return { title: c.meta.title, description: c.meta.description }
+  const locale = await getLocale()
+  const c = copy[locale]
+  return pageMetadata({ title: c.meta.title, description: c.meta.description, path: '/contact', locale })
 }
 
 export default async function ContactPage() {

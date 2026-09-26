@@ -4,6 +4,7 @@ import { ADDRESS_ONE_LINE, BUSINESS, OPERATOR } from '@/lib/business'
 import { BilingualDoc } from '../BilingualDoc'
 import type { Locale } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'
+import { pageMetadata } from '@/lib/seo'
 
 /*
  * The chrome around the document — heading, lede, page title — follows the visitor's language.
@@ -31,8 +32,9 @@ const chrome: Record<Locale, { title: string; description: string; eyebrow: stri
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const c = chrome[await getLocale()]
-  return { title: c.title, description: c.description }
+  const locale = await getLocale()
+  const c = chrome[locale]
+  return pageMetadata({ title: c.title, description: c.description, path: '/privacy', locale })
 }
 
 const UPDATED = '7 September 2026'

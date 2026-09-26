@@ -1,11 +1,12 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { IpaymuSandboxButton } from './IpaymuSandboxButton'
-import { PREMIUM_DAYS, PREMIUM_PRICE_LABEL, PREMIUM_STORAGE_LABEL } from '@/lib/pricing'
+import { PREMIUM_DAYS, PREMIUM_PRICE_IDR, PREMIUM_PRICE_LABEL, PREMIUM_STORAGE_LABEL, FREE_STORAGE_LABEL } from '@/lib/pricing'
 import { BUSINESS } from '@/lib/business'
 import { ipaymuConfig } from '@/lib/ipaymu'
 import type { Locale } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'
+import { pageMetadata, softwareJsonLd } from '@/lib/seo'
 import { PricingCheckoutButton } from '@/components/PricingCheckoutButton'
 
 /*
@@ -218,8 +219,9 @@ const copy: Record<Locale, Copy> = {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const c = copy[await getLocale()]
-  return { title: c.meta.title, description: c.meta.description }
+  const locale = await getLocale()
+  const c = copy[locale]
+  return pageMetadata({ title: c.meta.title, description: c.meta.description, path: '/pricing', locale })
 }
 
 export default async function PricingPage() {
@@ -230,6 +232,25 @@ export default async function PricingPage() {
 
   return (
     <>
+      {/* The SoftwareApplication node with both offers. The prices are read from lib/pricing, the
+          same constants the checkout charges, so the structured data cannot drift from the page —
+          a structured price that disagrees with the visible one is the kind of mismatch that gets
+          a merchant flagged. No aggregateRating: there are no reviews to average. */}
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger -- inert JSON-LD serialised from our own
+        // constants; Next has no first-class element for it.
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            softwareJsonLd({
+              locale,
+              priceIdr: PREMIUM_PRICE_IDR,
+              storageLabel: PREMIUM_STORAGE_LABEL,
+              freeStorageLabel: FREE_STORAGE_LABEL,
+            }),
+          ),
+        }}
+      />
       <section className="mk-h">
         <span className="mk-h-eyebrow">{c.eyebrow}</span>
         <h1 className="mk-h-title">

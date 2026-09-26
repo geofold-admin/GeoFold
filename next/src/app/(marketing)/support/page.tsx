@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { BUSINESS } from '@/lib/business'
 import type { Locale } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'
+import { pageMetadata } from '@/lib/seo'
 
 /*
  * This page was English-only while the rest of the marketing site was Indonesian — a leftover
@@ -148,8 +149,9 @@ const copy: Record<Locale, Copy> = {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const c = copy[await getLocale()]
-  return { title: c.meta.title, description: c.meta.description }
+  const locale = await getLocale()
+  const c = copy[locale]
+  return pageMetadata({ title: c.meta.title, description: c.meta.description, path: '/support', locale })
 }
 
 export default async function SupportPage() {

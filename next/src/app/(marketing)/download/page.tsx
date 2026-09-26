@@ -4,6 +4,7 @@ import { ANDROID_MIN, APP_DOWNLOADS, BUSINESS } from '@/lib/business'
 import { BilingualDoc } from '../BilingualDoc'
 import type { Locale } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'
+import { pageMetadata } from '@/lib/seo'
 
 /*
  * The chrome around the download list — heading, lede, page title, and the "still stuck" block below —
@@ -54,8 +55,9 @@ const chrome: Record<Locale, {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const c = chrome[await getLocale()]
-  return { title: c.title, description: c.description }
+  const locale = await getLocale()
+  const c = chrome[locale]
+  return pageMetadata({ title: c.title, description: c.description, path: '/download', locale })
 }
 
 const anyPublished = APP_DOWNLOADS.some((d) => d.url)
