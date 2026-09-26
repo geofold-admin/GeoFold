@@ -9,7 +9,7 @@ import { MagnetField } from '@/components/MagnetField'
 import type { Locale } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'
 import { pageMetadata } from '@/lib/seo'
-import { PREMIUM_DAYS, PREMIUM_PRICE_LABEL, PREMIUM_STORAGE_LABEL } from '@/lib/pricing'
+import { FREE_STORAGE_LABEL, PREMIUM_DAYS, PREMIUM_PRICE_LABEL, PREMIUM_STORAGE_LABEL } from '@/lib/pricing'
 import { FREE_PROJECTS, FREE_PHOTOS_PER_PROJECT } from '@/lib/quota'
 import { PricingCheckoutButton } from '@/components/PricingCheckoutButton'
 
@@ -64,8 +64,8 @@ type Copy = {
   globeSub: string
   priceMicro: string
   priceTitle: string
-  free: { name: string; body: string; cta: string }
-  premium: { name: string; per: string; body: string; cta: string }
+  free: { name: string; body: string; cta: string; features: string[] }
+  premium: { name: string; per: string; body: string; cta: string; features: string[] }
   priceNote: { text: string; link: string }
   close: { title: string; body: string; ctaPrimary: string; ctaGhost: string }
   audience: string[]
@@ -158,12 +158,26 @@ const copy: Record<Locale, Copy> = {
       name: 'Gratis',
       body: '2 proyek, 3 foto per proyek, penyimpanan 10 MB, batas harian. Selamanya, tanpa kartu.',
       cta: 'Mulai',
+      features: [
+        `${FREE_PROJECTS} proyek aktif`,
+        `${FREE_PHOTOS_PER_PROJECT} foto per proyek`,
+        `${FREE_STORAGE_LABEL} penyimpanan`,
+        'Peta offline di HP',
+        'Ekspor KML, GeoJSON, CSV',
+      ],
     },
     premium: {
       name: 'Premium',
       per: `/ ${PREMIUM_DAYS} hari`,
       body: `Semua fitur terbuka, tanpa batas jumlah proyek, foto, dan survei. Penyimpanan ${PREMIUM_STORAGE_LABEL}. Sekali bayar, tidak berulang.`,
       cta: 'Lihat detail',
+      features: [
+        'Proyek tanpa batas',
+        'Foto tanpa batas',
+        `${PREMIUM_STORAGE_LABEL} penyimpanan`,
+        'Sinkronisasi lintas perangkat',
+        'Prioritas dukungan',
+      ],
     },
     priceNote: {
       text:
@@ -273,12 +287,26 @@ const copy: Record<Locale, Copy> = {
       name: 'Free',
       body: '2 projects, 3 photos per project, 10 MB of storage, daily limits. Forever, no card.',
       cta: 'Start',
+      features: [
+        `${FREE_PROJECTS} active projects`,
+        `${FREE_PHOTOS_PER_PROJECT} photos per project`,
+        `${FREE_STORAGE_LABEL} of storage`,
+        'Offline maps on the phone',
+        'KML, GeoJSON and CSV export',
+      ],
     },
     premium: {
       name: 'Premium',
       per: `/ ${PREMIUM_DAYS} days`,
       body: `Every feature unlocked, no limit on projects, photos or surveys. ${PREMIUM_STORAGE_LABEL} of storage. One payment, not recurring.`,
       cta: 'See details',
+      features: [
+        'Unlimited projects',
+        'Unlimited photos',
+        `${PREMIUM_STORAGE_LABEL} of storage`,
+        'Sync across devices',
+        'Priority support',
+      ],
     },
     priceNote: {
       text:
@@ -570,6 +598,13 @@ export default async function HomePage() {
               <p className="pg-micro">{c.free.name}</p>
               <p className="pg-price-fig pg-num">Rp 0</p>
               <p className="pg-body">{c.free.body}</p>
+              {/* The list is generated from the same constants the API enforces, so a card cannot
+                  promise an allowance the server will refuse. See lib/quota.ts. */}
+              <ul className="pg-price-list">
+                {c.free.features.map((f) => (
+                  <li key={f}>{f}</li>
+                ))}
+              </ul>
               <div>
                 <Link href="/login" className="pg-btn pg-btn-outline">
                   {c.free.cta}
@@ -584,6 +619,11 @@ export default async function HomePage() {
                 <small>{c.premium.per}</small>
               </p>
               <p className="pg-body">{c.premium.body}</p>
+              <ul className="pg-price-list">
+                {c.premium.features.map((f) => (
+                  <li key={f}>{f}</li>
+                ))}
+              </ul>
               <div>
                 <PricingCheckoutButton
                   label={c.premium.cta}

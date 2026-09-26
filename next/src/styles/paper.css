@@ -986,6 +986,30 @@
  * button row to the bottom of whatever height the taller card establishes.
  */
 .mk .pg-price-card > .pg-body { align-self: start; }
+/* The included-features list. Every item is a real, enforced allowance read from lib/quota.ts and
+   lib/pricing.ts, not a marketing claim: the point of the list is that a buyer can scan it and
+   know exactly what the card buys. Each row takes a survey tick in the brand blue, the same mark
+   the maps use for a confirmed point, so the card reads as a record rather than as a brochure. */
+.mk .pg-price-list {
+  list-style: none; margin: 4px 0 0; padding: 0;
+  display: grid; gap: 9px;
+  border-top: 1px solid var(--mk-line); padding-top: 18px;
+}
+.mk .pg-price-list li {
+  position: relative; padding-left: 26px;
+  font-size: 14px; line-height: 1.5; color: var(--mk-prose);
+}
+.mk .pg-price-list li::before {
+  content: '';
+  position: absolute; left: 0; top: .34em;
+  width: 13px; height: 8px;
+  /* A tick, drawn as two borders on a rotated box. Cheaper than an icon font and it inherits the
+     accent colour. */
+  border-left: 1.5px solid var(--mk-green);
+  border-bottom: 1.5px solid var(--mk-green);
+  transform: rotate(-45deg);
+  transform-origin: left center;
+}
 .mk .pg-price-card > div:last-child { align-self: end; margin-top: auto; }
 @media (min-width: 760px) {
   .mk .pg-price { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -998,6 +1022,18 @@
 .mk .pg-price-card.feat .pg-micro { color: var(--mk-deep-accent); }
 .mk .pg-price-card.feat .pg-price-fig, .mk .pg-price-card.feat h3 { color: #F8FAFC; }
 .mk .pg-price-card.feat p { color: var(--mk-deep-prose); }
+/* The list has to invert with the card, and it did not at first.
+   The premium card is the INVERTED one: in light mode it is the dark band, in dark mode it is the
+   light one. So a list coloured with a plain token reads dark-on-dark in light mode (measured
+   2.96:1) and light-on-light in dark mode (1.72:1). Both were caught by a11y-contrast.mjs, which is
+   exactly what it is for. The list now follows the same two rules the card's paragraphs already
+   follow, and the tick takes the deep accent because brand blue on the dark band is only 2.14:1,
+   under the 3:1 a non-text graphic needs. */
+.mk .pg-price-card.feat .pg-price-list li { color: var(--mk-deep-prose); }
+.mk .pg-price-card.feat .pg-price-list li::before {
+  border-left-color: var(--mk-deep-accent);
+  border-bottom-color: var(--mk-deep-accent);
+}
 .mk .pg-price-fig {
   font-family: var(--font-tight), sans-serif; font-weight: 300; letter-spacing: -.035em;
   font-size: clamp(38px, 4.4vw, 60px); line-height: 1; color: var(--mk-ink);
@@ -1504,6 +1540,13 @@ html[data-theme='dark'] .mk .pg-price-card.feat .pg-micro,
 html[data-theme='dark'] .mk .mk-price-card.feat .mk-price-name { color: #014AB5; }
 html[data-theme='dark'] .mk .pg-price-card.feat .pg-price-fig small,
 html[data-theme='dark'] .mk .mk-price-card.feat .mk-price-num small { color: #52647D; }
+/* The list on the inverted card in dark mode. The card is LIGHT here, so the list text takes the
+   light-ground tone and the tick goes back to the brand blue, which is 7.58:1 on that ground. */
+html[data-theme='dark'] .mk .pg-price-card.feat .pg-price-list li { color: #52647D; }
+html[data-theme='dark'] .mk .pg-price-card.feat .pg-price-list li::before {
+  border-left-color: #014AB5; border-bottom-color: #014AB5;
+}
+html[data-theme='dark'] .mk .pg-price-card.feat .pg-price-list { border-top-color: #D8E0EA; }
 html[data-theme='dark'] .mk .pg-price-card.feat .pg-btn-primary,
 html[data-theme='dark'] .mk .mk-price-card.feat .mk-btn-primary {
   background: #0F172A; color: #F8FAFC; border-color: #0F172A;
@@ -1528,6 +1571,11 @@ html[data-theme='dark'] .mk .mk-price-card.feat .mk-btn-primary:hover {
   html:not([data-theme='light']) .mk .mk-price-card.feat .mk-price-name { color: #014AB5; }
   html:not([data-theme='light']) .mk .pg-price-card.feat .pg-price-fig small,
   html:not([data-theme='light']) .mk .mk-price-card.feat .mk-price-num small { color: #52647D; }
+  html:not([data-theme='light']) .mk .pg-price-card.feat .pg-price-list li { color: #52647D; }
+  html:not([data-theme='light']) .mk .pg-price-card.feat .pg-price-list li::before {
+    border-left-color: #014AB5; border-bottom-color: #014AB5;
+  }
+  html:not([data-theme='light']) .mk .pg-price-card.feat .pg-price-list { border-top-color: #D8E0EA; }
   html:not([data-theme='light']) .mk .pg-price-card.feat .pg-btn-primary,
   html:not([data-theme='light']) .mk .mk-price-card.feat .mk-btn-primary {
     background: #0F172A; color: #F8FAFC; border-color: #0F172A;
