@@ -357,8 +357,8 @@
 
 /* The two figures, side by side. A label and its value are one line each; stacking them cost 93px
    of height for no gain in legibility. */
-.mk .mk-seal-rows { margin: 0 0 12px; display: flex; flex-wrap: wrap; gap: 6px 28px; }
-.mk .mk-seal-rows > div { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.mk .mk-seal-rows { margin: 0 0 14px; display: flex; flex-wrap: wrap; gap: 8px 32px; }
+.mk .mk-seal-rows > div { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
 .mk .mk-seal-rows dt {
   font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500;
   letter-spacing: .12em; text-transform: uppercase; color: var(--mk-faint);

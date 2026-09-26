@@ -149,6 +149,14 @@ export function MarketingNav({ locale }: { locale: Locale }) {
               className="mk-menu-link"
               aria-current={pathname === href ? 'page' : undefined}
               tabIndex={open ? 0 : -1}
+              /* Close on the tap, not on the route change.
+                 The close-on-navigate effect below only fires once the App Router commits the new
+                 pathname, and measured on a phone that took 1782ms: the menu sat open on top of the
+                 page it had just navigated to, and the body stayed scroll-locked, for nearly two
+                 seconds after the tap. Closing here means the tap is acknowledged immediately, and
+                 the effect below remains as the fallback for any navigation that arrives another
+                 way (back button, a link that does not close, a future route change). */
+              onClick={() => setOpen(false)}
             >
               {label}
               <span aria-hidden="true">→</span>
@@ -156,7 +164,12 @@ export function MarketingNav({ locale }: { locale: Locale }) {
           ))}
           <div className="mk-menu-foot">
             <LangToggle locale={locale} label={c.a11y.language} />
-            <Link href="/login" className="mk-portal" tabIndex={open ? 0 : -1}>
+            <Link
+              href="/login"
+              className="mk-portal"
+              tabIndex={open ? 0 : -1}
+              onClick={() => setOpen(false)}
+            >
               {c.nav.portal} ↗
             </Link>
           </div>
