@@ -7,7 +7,7 @@ import '@/styles/home.css'
 // Loaded last: re-skins the whole marketing site at the token layer. See the file header.
 //
 // This was '@/styles/overhaul.css' (the "Topographic" skin) until the Paper re-skin. That file is
-// still on disk and still self-consistent — swapping this one line back restores the previous
+// still on disk and still self-consistent: swapping this one line back restores the previous
 // design in full, minus the landing page, whose markup was rebuilt around `pg-` components.
 import '@/styles/paper.css'
 // The in-page checkout. Loaded here as well as in the app chrome because the pricing page is
@@ -47,7 +47,7 @@ const workSans = Work_Sans({
  * The OSS mark, drawn rather than linked.
  *
  * The real logo belongs to BKPM and shipping a hotlinked copy of a government mark on a page a
- * payment gateway verifies is a bad trade — the file can move, and the licence to redistribute
+ * payment gateway verifies is a bad trade: the file can move, and the licence to redistribute
  * it is not ours. This is a neutral plate that says the same thing in the same place: this
  * number is an OSS registration. The link beside it goes to the checker where the number can be
  * looked up, which is what a verifier actually needs.
@@ -68,7 +68,7 @@ export default async function MarketingLayout({ children }: { children: ReactNod
     /*
      * `lang` goes on this wrapper rather than on <html>. The root layout is shared with the
      * signed-in app, which is English-only, so flipping the document language from a marketing
-     * cookie would mislabel every screen behind the login as Indonesian — telling a screen
+     * cookie would mislabel every screen behind the login as Indonesian: telling a screen
      * reader to pronounce English UI with Indonesian phonetics. Scoping it here is valid HTML
      * and describes exactly the subtree that actually changes language.
      */
@@ -155,12 +155,12 @@ export default async function MarketingLayout({ children }: { children: ReactNod
           THE TRUST BLOCK.
           Two things sit side by side here and they answer two different questions.
 
-          The seal answers "is this a real registered business?" — a NIB, the KBLI it trades
+          The seal answers "is this a real registered business?": a NIB, the KBLI it trades
           under, and the OSS system that issued it. A payment gateway's verification team looks
           for exactly this, and a buyer deciding whether to send money looks for it too. The
           numbers come from lib/business.ts so no page can drift out of step with another.
 
-          The parent line answers "who is behind this?" — and it is deliberately a link, not a
+          The parent line answers "who is behind this?", and it is deliberately a link, not a
           credit. SAYBA ARC is the entity that holds the NIB, so the two blocks read as one
           statement: this is a SAYBA ARC product, and SAYBA ARC is registered. The wording is
           "A product of" / "Produk dari" rather than "Part of", because a product of a company is

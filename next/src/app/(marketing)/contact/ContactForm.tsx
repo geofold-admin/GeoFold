@@ -13,11 +13,11 @@ type State =
  * Posts to /api/contact, which stores the message server-side and returns a reference.
  *
  * It used to open a mailto: link instead, which meant a visitor without a configured mail client
- * — including anyone verifying the site from a browser — had no way to reach us at all.
+ * (including anyone verifying the site from a browser) had no way to reach us at all.
  *
  * THE LABELS FOLLOW THE LOCALE; THE IDENTITY TABLE ON THE PAGE DOES NOT. Every label here used to
  * read "Nama / Name", and the error strings were English while the success note was both. A form
- * is something you fill in, so it should be in one language — the reader's. The business identity
+ * is something you fill in, so it should be in one language: the reader's. The business identity
  * block above it keeps its dual labels on purpose, for the reason set out in page.tsx.
  */
 
@@ -48,7 +48,7 @@ const copy: Record<Locale, FormCopy> = {
       'Terlalu banyak pesan dari koneksi ini. Coba lagi dalam satu jam, atau kirim email langsung.',
     errGeneric: 'Pesan tidak bisa dikirim. Silakan coba lagi.',
     errNetwork: (inbox) => `Server tidak bisa dihubungi. Silakan kirim email ke ${inbox}.`,
-    sentTitle: 'Terima kasih — pesan Anda sudah kami terima.',
+    sentTitle: 'Terima kasih: pesan Anda sudah kami terima.',
     sentRefBefore: 'Nomor referensi: ',
     sentRefAfter:
       '. Kami membalas ke alamat email yang Anda isikan, umumnya dalam 1 hari kerja.',
@@ -69,7 +69,7 @@ const copy: Record<Locale, FormCopy> = {
       'Too many messages from this connection. Please try again in an hour, or email us directly.',
     errGeneric: 'Could not send the message. Please try again.',
     errNetwork: (inbox) => `Could not reach the server. Please email ${inbox} instead.`,
-    sentTitle: 'Thank you — your message has been received.',
+    sentTitle: 'Thank you: your message has been received.',
     sentRefBefore: 'Reference: ',
     sentRefAfter: '. We reply to the email address you gave, usually within one business day.',
     sendAnother: 'Send another message',
@@ -236,7 +236,7 @@ export function ContactForm({ inbox, locale }: { inbox: string; locale: Locale }
         />
       </div>
 
-      {/* Honeypot — hidden from people, filled in by bots. Not `type=hidden`: bots skip those.
+      {/* Honeypot: hidden from people, filled in by bots. Not `type=hidden`: bots skip those.
           The label stays untranslated: nobody reads it, and a bot matching on "Website" should
           keep matching whichever language the page is in. */}
       <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px' }}>

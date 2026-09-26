@@ -63,7 +63,7 @@ export default function ResetPage() {
           <div className="mk-card-t">Choose a new password</div>
           <div className="mk-card-sub">
             {done
-              ? 'Password updated — signing you in…'
+              ? 'Password updated. Signing you in…'
               : invalid
                 ? 'This reset link is invalid or has expired.'
                 : 'Enter a new password for your GeoFold account.'}

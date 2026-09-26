@@ -128,7 +128,7 @@ function GoPremium({ offer, onGranted }: { offer: SubscriptionMe['offer']; onGra
     return (
       <div className="card">
         <div className="card-title">Go Premium</div>
-        <p className="hint" style={{ margin: 0 }}>Upgrades run through the live app — they are disabled in this sample-data demo.</p>
+        <p className="hint" style={{ margin: 0 }}>Upgrades run through the live app. They are disabled in this sample-data demo.</p>
       </div>
     )
   }
@@ -185,7 +185,7 @@ function GoPremium({ offer, onGranted }: { offer: SubscriptionMe['offer']; onGra
       <div className="hint" style={{ margin: '14px 0 10px', textAlign: 'center' }}>or</div>
 
       <button type="button" onClick={startCheckout} disabled={busy !== null} style={{ width: '100%' }}>
-        {busy === 'pay' ? 'Membuka pembayaran…' : `Upgrade ke Premium — ${offer.priceLabel}`}
+        {busy === 'pay' ? 'Membuka pembayaran…' : `Upgrade ke Premium: ${offer.priceLabel}`}
       </button>
       <p className="hint" style={{ marginTop: 8, marginBottom: 0, textAlign: 'center' }}>
         {offer.days} hari, semua fitur, penyimpanan {offer.storageLabel}. Bisa QRIS, transfer bank / VA,

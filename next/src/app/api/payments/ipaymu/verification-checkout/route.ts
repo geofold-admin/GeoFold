@@ -55,7 +55,7 @@ export async function POST(req: Request) {
     const payment = await createRedirectPayment(cfg, {
       orderId,
       amountIdr: PREMIUM_PRICE_IDR,
-      productName: `GeoFold Premium ${PREMIUM_DAYS} hari — Sandbox verification`,
+      productName: `GeoFold Premium ${PREMIUM_DAYS} hari (Sandbox verification)`,
       description: `Uji integrasi sandbox iPaymu. Tidak membuat akun atau Premium. ${PREMIUM_STORAGE_LABEL}, ${PREMIUM_DAYS} hari.`,
       returnUrl: resultUrl,
       cancelUrl: `${resultUrl}&cancelled=1`,

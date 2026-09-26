@@ -54,7 +54,7 @@ export default function HomePage() {
         <div className="in">
           <div className="eyebrow">Field survey</div>
           <h1>{greeting()}, surveyor</h1>
-          <p>Your projects and where they sit on the ground — capture from the field, review here.</p>
+          <p>Your projects and where they sit on the ground. Capture from the field, review here.</p>
           <div className="coordbar mono">◎ {points} survey point{points === 1 ? '' : 's'} mapped</div>
         </div>
       </div>

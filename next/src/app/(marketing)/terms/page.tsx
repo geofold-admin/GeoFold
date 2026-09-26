@@ -8,14 +8,14 @@ import { getLocale } from '@/lib/i18n.server'
 import { pageMetadata } from '@/lib/seo'
 
 /*
- * The chrome around the document — heading, lede, page title — follows the visitor's language.
+ * The chrome around the document (heading, lede, page title) follows the visitor's language.
  * The DOCUMENT ITSELF does not: BilingualDoc renders both versions into the HTML and only takes
  * the site language decides which one is visible, so a verifier still gets the whole document
  * in the first paint. Indonesian remains the governing version. See BilingualDoc.tsx.
  */
 const chrome: Record<Locale, { title: string; description: string; eyebrow: string; h1: string; lede: string }> = {
   id: {
-    title: 'Syarat & Ketentuan (Terms & Conditions) — GeoFold',
+    title: 'Syarat & Ketentuan (Terms & Conditions), GeoFold',
     description:
       'Syarat dan ketentuan penggunaan layanan GeoFold: akun, penggunaan yang diperbolehkan, kepemilikan data, harga, pembayaran, pengembalian dana, dan hukum yang berlaku.',
     eyebrow: 'Legal',
@@ -23,7 +23,7 @@ const chrome: Record<Locale, { title: string; description: string; eyebrow: stri
     lede: 'Ketentuan penggunaan layanan GeoFold, termasuk harga, pembayaran, dan pengembalian dana.',
   },
   en: {
-    title: 'Terms & Conditions — GeoFold',
+    title: 'Terms & Conditions | GeoFold',
     description:
       'The terms you use GeoFold under: accounts, acceptable use, data ownership, pricing, payment, refunds and governing law.',
     eyebrow: 'Legal',
@@ -115,11 +115,11 @@ function Indonesian() {
       <h2>5. Paket, harga, dan pembayaran</h2>
       <ul>
         <li>
-          <strong>Paket Gratis</strong> — Rp 0, dengan batas jumlah proyek, jumlah foto per proyek,
+          <strong>Paket Gratis</strong>. Rp 0, dengan batas jumlah proyek, jumlah foto per proyek,
           serta batas harian pengambilan dan pengunggahan.
         </li>
         <li>
-          <strong>GeoFold Premium</strong> — {PREMIUM_PRICE_LABEL} untuk {PREMIUM_DAYS} hari akses.
+          <strong>GeoFold Premium</strong>, {PREMIUM_PRICE_LABEL} untuk {PREMIUM_DAYS} hari akses.
           Ini adalah <strong>pembelian sekali bayar</strong>: tidak ada penagihan berulang, tidak ada
           auto-debit, dan tidak ada yang perlu dibatalkan.
         </li>
@@ -202,7 +202,7 @@ function Indonesian() {
 
       <h2>12. Kontak</h2>
       <p>
-        {OPERATOR} — {ADDRESS_ONE_LINE}. Email {support}, telepon{' '}
+        {OPERATOR}, {ADDRESS_ONE_LINE}. Email {support}, telepon{' '}
         <a href={`tel:${BUSINESS.phoneHref}`}>{BUSINESS.phone}</a>, atau melalui{' '}
         <Link href="/contact">halaman kontak</Link>.
       </p>
@@ -278,11 +278,11 @@ function English() {
       <h2>5. Plans, pricing and payment</h2>
       <ul>
         <li>
-          <strong>Free plan</strong> — Rp 0, with limits on projects, photos per project, and daily
+          <strong>Free plan</strong>. Rp 0, with limits on projects, photos per project, and daily
           capture and upload.
         </li>
         <li>
-          <strong>GeoFold Premium</strong> — {PREMIUM_PRICE_LABEL} for {PREMIUM_DAYS} days of access.
+          <strong>GeoFold Premium</strong>, {PREMIUM_PRICE_LABEL} for {PREMIUM_DAYS} days of access.
           This is a <strong>one-off purchase</strong>: no recurring billing, no auto-debit, nothing to
           cancel.
         </li>
@@ -359,7 +359,7 @@ function English() {
 
       <h2>12. Contact</h2>
       <p>
-        {OPERATOR} — {ADDRESS_ONE_LINE}. Email {support}, call{' '}
+        {OPERATOR}, {ADDRESS_ONE_LINE}. Email {support}, call{' '}
         <a href={`tel:${BUSINESS.phoneHref}`}>{BUSINESS.phone}</a>, or use the{' '}
         <Link href="/contact">contact page</Link>.
       </p>
@@ -368,7 +368,7 @@ function English() {
 }
 
 export default async function TermsPage() {
-  /* Chooses which of the two documents is visible. Both are still in the HTML — see the header
+  /* Chooses which of the two documents is visible. Both are still in the HTML: see the header
      of BilingualDoc. Indonesian remains the governing version. */
   const locale = await getLocale()
   const c = chrome[locale]

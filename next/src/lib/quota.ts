@@ -1,5 +1,5 @@
 import sql from './db'
-import { PREMIUM_STORAGE_BYTES, FREE_STORAGE_BYTES } from './pricing'
+import { PREMIUM_STORAGE_BYTES, FREE_STORAGE_BYTES, PREMIUM_STORAGE_LABEL } from './pricing'
 
 /**
  * Quota model per docs/migration-002-subscription.sql.
@@ -194,7 +194,7 @@ export async function checkSurveyCreation(userId: string): Promise<QuotaCheck> {
   if (surveys >= FREE_DAILY_SURVEYS) {
     return {
       allowed: false,
-      message: `Daily limit reached — ${surveys}/${FREE_DAILY_SURVEYS} surveys captured today. It resets at 00:00 UTC, or upgrade to Premium for no daily limit.`,
+      message: `Daily limit reached. ${surveys}/${FREE_DAILY_SURVEYS} surveys captured today. It resets at 00:00 UTC, or upgrade to Premium for no daily limit.`,
     }
   }
   return { allowed: true }
@@ -213,7 +213,7 @@ export async function checkPhotoUpload(userId: string, surveyId: string, sizeByt
       const mb = (n: number) => `${(n / (1024 * 1024)).toFixed(1)} MB`
       return {
         allowed: false,
-        message: `Storage full — ${mb(used)} of ${mb(PREMIUM_STORAGE_BYTES)} used. Delete photos or projects you no longer need to free up space.`,
+        message: `Storage full. ${mb(used)} of ${mb(PREMIUM_STORAGE_BYTES)} used. Delete photos or projects you no longer need to free up space.`,
       }
     }
     return { allowed: true }
@@ -225,7 +225,13 @@ export async function checkPhotoUpload(userId: string, surveyId: string, sizeByt
     const mb = (n: number) => `${(n / (1024 * 1024)).toFixed(1)} MB`
     return {
       allowed: false,
-      message: `Storage full — ${mb(used)} of ${mb(FREE_STORAGE_BYTES)} used. Upgrade to Pro for 500 MB storage.`,
+      // The storage figure is READ FROM THE CONSTANT rather than written into the string. Two
+      // problems with the previous copy ("Upgrade to Pro for 500 MB storage"): it called the plan
+      // Pro, when every other surface in the product calls it Premium, and it hardcoded 500 MB.
+      // The ceiling comes from PREMIUM_STORAGE_MB, which reads the PREMIUM_STORAGE_MB environment
+      // variable and only FALLS BACK to 500, so a deployment that raises the limit would have kept
+      // quoting the old number at the exact moment the user was deciding whether to pay.
+      message: `Storage full. ${mb(used)} of ${mb(FREE_STORAGE_BYTES)} used. Upgrade to Premium for ${PREMIUM_STORAGE_LABEL} of storage.`,
     }
   }
 
@@ -241,7 +247,7 @@ export async function checkPhotoUpload(userId: string, surveyId: string, sizeByt
   if (photos >= FREE_DAILY_PHOTOS) {
     return {
       allowed: false,
-      message: `Daily limit reached — ${photos}/${FREE_DAILY_PHOTOS} photos uploaded today. It resets at 00:00 UTC, or upgrade to Premium for no daily limit.`,
+      message: `Daily limit reached. ${photos}/${FREE_DAILY_PHOTOS} photos uploaded today. It resets at 00:00 UTC, or upgrade to Premium for no daily limit.`,
     }
   }
   return { allowed: true }

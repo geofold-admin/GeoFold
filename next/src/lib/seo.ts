@@ -50,20 +50,30 @@ export interface PageSeo {
 }
 
 /**
- * Strip a brand suffix a page's own copy table may already carry.
+ * Normalise a page title so the helper can own the brand suffix.
  *
- * The page dictionaries were written before this helper existed and end their titles with the
- * brand (`About — GeoFold`, `Harga — GeoFold`). Appending the brand again would produce
- * `About — GeoFold | GeoFold`, so any trailing brand marker is removed first and the helper owns
- * the suffix from then on. This also removes the EM DASH those titles used: it is replaced by the
- * same pipe separator the helper uses everywhere else, so the separator is consistent site-wide
- * and no title contains a character the copy rules forbid.
+ * The page dictionaries were written before this helper existed and put the brand in the title
+ * themselves, in BOTH positions: the inner pages end with it (`About | GeoFold`, once the em
+ * dashes were replaced) and the homepage LEADS with it (`GeoFold | Field surveys that never lose
+ * a point`). Appending the brand unconditionally therefore produced two different bugs, and the
+ * second was invisible until the title was read off the rendered page:
+ *
+ *     /about    About | GeoFold                     (correct)
+ *     /         GeoFold, Field surveys ... | GeoFold (brand twice)
+ *
+ * So a LEADING brand is stripped as well as a trailing one, and the separator that follows it
+ * goes with it. The result is a bare page title in every case, and `pageMetadata` appends exactly
+ * one brand to it.
  */
 function stripBrand(title: string): string {
   return title
-    .replace(/\s*[—–-]\s*GeoFold\s*$/i, '')
-    .replace(/\s*\|\s*GeoFold\s*$/i, '')
-    .replace(/\s*[—–]\s*Geofold\s*$/i, '')
+    /* Leading brand, with the separator that followed it. The hyphen goes LAST in the class: in
+       any other position it defines a range, and `–-` is out of order, which TypeScript rejects
+       (TS1517) and which would silently mis-match at runtime. */
+    .replace(/^\s*GeoFold\s*[|—–:,.-]\s*/i, '')
+    /* Trailing brand, with the separator that preceded it. Same ordering rule. */
+    .replace(/\s*[|—–.-]\s*GeoFold\s*$/i, '')
+    .replace(/\s*[,:]\s*GeoFold\s*$/i, '')
     .trim()
 }
 
@@ -98,7 +108,7 @@ export function pageMetadata({ title, description, path, locale }: PageSeo): Met
       locale: locale === 'id' ? 'id_ID' : 'en_US',
       /* `alt` is not decoration: a crawler with images disabled, and a screen reader on a link
          preview, both read it instead of the picture. */
-      images: [{ url: '/og.png', width: 1200, height: 630, alt: `${BUSINESS.brand} — ${title}` }],
+      images: [{ url: '/og.png', width: 1200, height: 630, alt: `${BUSINESS.brand}: ${title}` }],
     },
     twitter: {
       /* `summary_large_image` is what makes X show the wide card rather than a thumbnail. */

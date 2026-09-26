@@ -181,14 +181,14 @@ export function Motion() {
               end: 'bottom 62%',
               onToggle: (self) => {
                 step.classList.toggle('is-active', self.isActive)
-                /* The pinned column carries a position readout rather than a progress bar —
-                   the same instrument idiom the rest of the site uses. */
+                /* The pinned column carries a position readout rather than a progress bar, the
+                   same instrument idiom the rest of the site uses. */
                 if (self.isActive && readout) {
                   readout.textContent = `${String(i + 1).padStart(2, '0')} / ${String(steps.length).padStart(2, '0')}`
                 }
                 /* The rail's fill. Written as a custom property rather than by setting a height
                    directly, so the transition lives in CSS where the reduced-motion query can
-                   turn it off — a JS-driven height would animate regardless of that preference. */
+                   turn it off: a JS-driven height would animate regardless of that preference. */
                 if (self.isActive && rail) {
                   rail.style.setProperty('--scene-progress', String((i + 1) / steps.length))
                 }
@@ -255,7 +255,7 @@ export function Motion() {
 
         const move = (e: MouseEvent) => {
           const r = el.getBoundingClientRect()
-          /* Capped at a third of the offset so the control never leaves its own hit area — a
+          /* Capped at a third of the offset so the control never leaves its own hit area: a
              button that outruns the cursor is a button you cannot click. */
           xTo((e.clientX - (r.left + r.width / 2)) * 0.33)
           yTo((e.clientY - (r.top + r.height / 2)) * 0.33)
@@ -305,7 +305,7 @@ export function Motion() {
       /* ---------- 13. spotlight cards ----------
          A soft highlight that follows the pointer across a card's surface. Adapted from React Bits'
          SpotlightCard: there the position is React state, which re-renders the card on every mouse
-         move — fine for one card, wasteful for a grid of them. This is one delegated listener for
+         move: fine for one card, wasteful for a grid of them. This is one delegated listener for
          the whole page that writes --mx/--my onto whichever card the pointer is over; the glow is a
          radial-gradient in CSS, so the compositor does the work and React never sees the event.
          Pointer-fine only: on touch there is no hover to follow. */
@@ -347,7 +347,7 @@ export function Motion() {
          the element on the compositor.
 
          CAPPED AT 4 DEGREES, and no scale. More than that reads as a toy and makes text on the
-         card harder to read at the exact moment the visitor is reading it — the tilt is there to
+         card harder to read at the exact moment the visitor is reading it: the tilt is there to
          say "this surface is live", not to be the attraction. Pointer-fine only. */
       if (window.matchMedia('(pointer: fine)').matches) {
         const tilts: Array<() => void> = []
@@ -382,7 +382,7 @@ export function Motion() {
          canvas for the whole site, and the burst is drawn in screen space.
 
          The mark is the same ranging-rod tick the rest of the site uses, not a generic star, and
-         it fires ONLY on a real activation — a click that lands on a link or a button, which is
+         it fires ONLY on a real activation: a click that lands on a link or a button, which is
          the moment worth marking. A click on empty page is not a moment.
 
          It draws to a canvas that is removed from hit-testing and from the accessibility tree, it

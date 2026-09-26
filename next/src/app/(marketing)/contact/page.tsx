@@ -9,7 +9,7 @@ import { ContactForm } from './ContactForm'
 /*
  * TWO KINDS OF TEXT ON THIS PAGE, AND THEY BEHAVE DIFFERENTLY.
  *
- * The prose — heading, lede, the note under the table, the aside — follows the visitor's
+ * The prose (heading, lede, the note under the table, the aside) follows the visitor's
  * language like the rest of the site.
  *
  * The business identity table does NOT. Its row labels stay dual ("Nama usaha / Business name")
@@ -17,7 +17,7 @@ import { ContactForm } from './ContactForm'
  * merchant record: a payment gateway's verification team, and an Indonesian consumer-protection
  * reader, both have to be able to find the operator's legal name, address, phone and hours
  * without changing a setting or clicking anything. Making it depend on a cookie means half the
- * record is missing for whoever is looking — which is exactly the failure BilingualDoc on /terms
+ * record is missing for whoever is looking: which is exactly the failure BilingualDoc on /terms
  * is built to avoid. Duplication in that table is the feature.
  */
 
@@ -51,12 +51,12 @@ type Copy = {
 const copy: Record<Locale, Copy> = {
   id: {
     meta: {
-      title: 'Kontak — GeoFold',
+      title: 'Kontak | GeoFold',
       description: `Hubungi ${OPERATOR}: email ${BUSINESS.email.general}, telepon ${BUSINESS.phone}, alamat ${ADDRESS_ONE_LINE}.`,
     },
     eyebrow: 'Kontak',
     h1: 'Hubungi kami.',
-    lede: `Pertanyaan tentang proyek, harga, pembayaran, atau pengembalian dana — kami menjawab dalam ${BUSINESS.responseTime.id}.`,
+    lede: `Pertanyaan tentang proyek, harga, pembayaran, atau pengembalian dana: kami menjawab dalam ${BUSINESS.responseTime.id}.`,
     identity: 'Identitas usaha / Business details',
     labels: {
       name: 'Nama usaha / Business name',
@@ -75,7 +75,7 @@ const copy: Record<Locale, Copy> = {
       refund: 'Kebijakan Pengembalian Dana',
       mid: '. Untuk pertanyaan umum, lihat ',
       faq: 'FAQ',
-      after: ' terlebih dahulu — sebagian besar jawaban ada di sana.',
+      after: ' terlebih dahulu: sebagian besar jawaban ada di sana.',
     },
     aside: {
       tech: {
@@ -93,12 +93,12 @@ const copy: Record<Locale, Copy> = {
 
   en: {
     meta: {
-      title: 'Contact — GeoFold',
+      title: 'Contact | GeoFold',
       description: `Contact ${OPERATOR}: email ${BUSINESS.email.general}, phone ${BUSINESS.phone}, address ${ADDRESS_ONE_LINE}.`,
     },
     eyebrow: 'Contact',
     h1: 'Get in touch.',
-    lede: `Questions about a project, pricing, payment or a refund — we reply within ${BUSINESS.responseTime.en}.`,
+    lede: `Questions about a project, pricing, payment or a refund: we reply within ${BUSINESS.responseTime.en}.`,
     identity: 'Identitas usaha / Business details',
     labels: {
       name: 'Nama usaha / Business name',
@@ -117,7 +117,7 @@ const copy: Record<Locale, Copy> = {
       refund: 'Refund Policy',
       mid: '. For general questions, check the ',
       faq: 'FAQ',
-      after: ' first — most answers are there.',
+      after: ' first: most answers are there.',
     },
     aside: {
       tech: {
@@ -164,7 +164,7 @@ export default async function ContactPage() {
       </div>
 
       {/* The identity block. Everything a payment gateway, a customer or a regulator needs to
-          establish who is behind the service, in one place, above the fold, with no interaction —
+          establish who is behind the service, in one place, above the fold, with no interaction,
           and in both languages regardless of which one the visitor is browsing in. See the file
           header for why this one block does not follow the locale. */}
       <div className="mk-section tight" style={{ paddingTop: 0 }}>
@@ -176,7 +176,7 @@ export default async function ContactPage() {
               <dd>
                 <strong>{OPERATOR}</strong>
                 <br />
-                {c.operatorOf} {BUSINESS.brand} — {BUSINESS.site.replace(/^https?:\/\//, '')}
+                {c.operatorOf} {BUSINESS.brand}, {BUSINESS.site.replace(/^https?:\/\//, '')}
               </dd>
             </div>
             <div className="mk-row">

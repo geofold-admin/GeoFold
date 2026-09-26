@@ -21,7 +21,7 @@ export default function ProjectsPage() {
           <h1>Projects</h1>
           <Link href="/projects/new"><button><Plus size={16} style={{ verticalAlign: -3, marginRight: 6 }} /> New project</button></Link>
         </div>
-        <p>Each project is a separate survey — its own points, photos and form.</p>
+        <p>Each project is a separate survey: its own points, photos and form.</p>
       </div>
 
       {error && <p className="error">{error}</p>}

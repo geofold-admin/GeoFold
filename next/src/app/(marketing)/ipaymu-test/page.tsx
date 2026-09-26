@@ -8,7 +8,7 @@ type Copy = { meta: { title: string; description: string }; eyebrow: string; tit
 
 const copy: Record<Locale, Copy> = {
   id: {
-    meta: { title: 'Uji iPaymu — GeoFold', description: 'Halaman kembali untuk uji integrasi sandbox iPaymu GeoFold.' },
+    meta: { title: 'Uji iPaymu | GeoFold', description: 'Halaman kembali untuk uji integrasi sandbox iPaymu GeoFold.' },
     eyebrow: 'Uji integrasi iPaymu', title: 'Kembali dari halaman pembayaran.',
     body: 'Ini adalah uji sandbox untuk verifikasi integrasi iPaymu. Tidak membuat akun GeoFold, tidak mengaktifkan Premium, dan tidak menagih pembayaran produksi.',
     cancelled: 'Pembayaran sandbox dibatalkan atau belum diselesaikan. Anda dapat kembali ke halaman harga untuk mencoba lagi.',
@@ -16,7 +16,7 @@ const copy: Record<Locale, Copy> = {
     back: 'Kembali ke harga', contact: 'Hubungi dukungan',
   },
   en: {
-    meta: { title: 'iPaymu test — GeoFold', description: 'Return page for GeoFold’s iPaymu sandbox integration test.' },
+    meta: { title: 'iPaymu test | GeoFold', description: 'Return page for GeoFold’s iPaymu sandbox integration test.' },
     eyebrow: 'iPaymu integration test', title: 'Back from the payment page.',
     body: 'This is a sandbox test for iPaymu integration verification. It does not create a GeoFold account, activate Premium, or charge a production payment.',
     cancelled: 'The sandbox payment was cancelled or not completed. You can return to pricing to try again.',

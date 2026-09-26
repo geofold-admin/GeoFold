@@ -8,14 +8,14 @@ import { getLocale } from '@/lib/i18n.server'
 import { pageMetadata } from '@/lib/seo'
 
 /*
- * The chrome around the document — heading, lede, page title — follows the visitor's language.
+ * The chrome around the document (heading, lede, page title) follows the visitor's language.
  * The DOCUMENT ITSELF does not: BilingualDoc renders both versions into the HTML and only takes
  * the site language decides which one is visible, so a verifier still gets the whole document
  * in the first paint. Indonesian remains the governing version. See BilingualDoc.tsx.
  */
 const chrome: Record<Locale, { title: string; description: string; eyebrow: string; h1: string; lede: string }> = {
   id: {
-    title: 'Kebijakan Pengembalian Dana (Refund Policy) — GeoFold',
+    title: 'Kebijakan Pengembalian Dana (Refund Policy), GeoFold',
     description:
       'Syarat, pengecualian, tata cara, dan jangka waktu pengembalian dana untuk pembelian GeoFold Premium.',
     eyebrow: 'Pengembalian Dana',
@@ -23,7 +23,7 @@ const chrome: Record<Locale, { title: string; description: string; eyebrow: stri
     lede: 'Kapan dana dikembalikan, apa yang tidak, cara mengajukan, dan berapa lama prosesnya.',
   },
   en: {
-    title: 'Refund Policy — GeoFold',
+    title: 'Refund Policy | GeoFold',
     description:
       'Conditions, exclusions, procedure and timeframes for refunds on GeoFold Premium purchases.',
     eyebrow: 'Refund Policy',
@@ -51,7 +51,7 @@ function Indonesian() {
       <div className="mk-callout">
         <p>
           <strong>Ringkasnya:</strong> GeoFold Premium adalah pembelian sekali bayar sebesar{' '}
-          {PREMIUM_PRICE_LABEL} untuk {PREMIUM_DAYS} hari — tidak ada penagihan berulang dan tidak
+          {PREMIUM_PRICE_LABEL} untuk {PREMIUM_DAYS} hari: tidak ada penagihan berulang dan tidak
           ada auto-debit. Jika Anda mengajukan permintaan dalam <strong>7 hari kalender</strong>{' '}
           sejak pembayaran dan belum memanfaatkan Premium secara berarti, dana dikembalikan{' '}
           <strong>penuh</strong>.
@@ -79,7 +79,7 @@ function Indonesian() {
           pembayaran berhasil.
         </li>
         <li>
-          Manfaat Premium <strong>belum dimanfaatkan secara berarti</strong> — yaitu Anda belum
+          Manfaat Premium <strong>belum dimanfaatkan secara berarti</strong>. Yaitu Anda belum
           melampaui batas paket Gratis dengan memakai kuota Premium (misalnya membuat proyek keempat
           dan seterusnya, mengunggah foto melebihi 20 per proyek, atau melampaui batas harian).
         </li>
@@ -126,7 +126,7 @@ function Indonesian() {
           <Link href="/terms">Syarat &amp; Ketentuan</Link>.
         </li>
         <li>
-          Ketidakcocokan perangkat yang sudah dinyatakan sebelum pembelian — misalnya ketiadaan GPS
+          Ketidakcocokan perangkat yang sudah dinyatakan sebelum pembelian: misalnya ketiadaan GPS
           pada perangkat, atau aircraft DJI yang memang tidak didukung SDK-nya. Silakan uji dengan
           paket Gratis terlebih dahulu; paket Gratis ada justru untuk itu.
         </li>
@@ -149,7 +149,7 @@ function Indonesian() {
       </ul>
       <p>
         Anda juga dapat menggunakan <Link href="/contact">formulir kontak</Link>. Kami tidak pernah
-        meminta nomor kartu, CVV, PIN, ataupun OTP — jangan pernah mengirimkannya kepada siapa pun.
+        meminta nomor kartu, CVV, PIN, ataupun OTP: jangan pernah mengirimkannya kepada siapa pun.
       </p>
 
       <h2>6. Jangka waktu</h2>
@@ -191,7 +191,7 @@ function Indonesian() {
       <p>
         Setelah pengembalian dana disetujui, masa Premium dihentikan dan akun kembali ke paket
         Gratis. <strong>Data survei Anda tidak dihapus.</strong> Bila isi workspace melampaui batas
-        paket Gratis, workspace dibekukan — seluruh data tetap dapat dibaca, dilihat di peta, dan
+        paket Gratis, workspace dibekukan: seluruh data tetap dapat dibaca, dilihat di peta, dan
         diekspor, hanya penambahan data baru yang dihentikan.
       </p>
 
@@ -250,7 +250,7 @@ function English() {
       <div className="mk-callout">
         <p>
           <strong>In short:</strong> GeoFold Premium is a one-off purchase of{' '}
-          {PREMIUM_PRICE_LABEL} for {PREMIUM_DAYS} days — no recurring billing, no auto-debit. Ask
+          {PREMIUM_PRICE_LABEL} for {PREMIUM_DAYS} days: no recurring billing, no auto-debit. Ask
           within <strong>7 calendar days</strong> of payment, before you have used Premium in any
           material way, and you get a <strong>full refund</strong>.
         </p>
@@ -276,7 +276,7 @@ function English() {
           payment date.
         </li>
         <li>
-          Premium has <strong>not been used in any material way</strong> — that is, you have not gone
+          Premium has <strong>not been used in any material way</strong>. That is, you have not gone
           past the Free plan limits on Premium quota (a fourth project or beyond, more than 20 photos
           on a project, or past the daily caps).
         </li>
@@ -289,8 +289,8 @@ function English() {
       </p>
       <ul>
         <li>
-          <strong>You were charged twice.</strong> Two successful transactions for the same period —
-          the duplicate is returned in full.
+          <strong>You were charged twice.</strong> Two successful transactions for the same period.
+          The duplicate is returned in full.
         </li>
         <li>
           <strong>You paid and Premium never activated</strong> and we cannot activate it.
@@ -325,7 +325,7 @@ function English() {
           <Link href="/terms">Terms &amp; Conditions</Link>.
         </li>
         <li>
-          Device incompatibility that was stated before purchase — a handset with no GPS, or a DJI
+          Device incompatibility that was stated before purchase: a handset with no GPS, or a DJI
           aircraft its SDK does not support. Test on the Free plan first; that is what it is for.
         </li>
         <li>
@@ -347,7 +347,7 @@ function English() {
       </ul>
       <p>
         You may also use the <Link href="/contact">contact form</Link>. We never ask for a card
-        number, CVV, PIN or OTP — never send those to anyone.
+        number, CVV, PIN or OTP: never send those to anyone.
       </p>
 
       <h2>6. Timescales</h2>
@@ -380,7 +380,7 @@ function English() {
       <p>
         Refunds go to the <strong>same payment method</strong> you used, in the same currency (IDR),
         through the gateway that processed the transaction. If that method can no longer receive a
-        refund — an expired card, say — we will agree a bank transfer with you, to an account in the
+        refund (an expired card, say) we will agree a bank transfer with you, to an account in the
         account holder&apos;s name. We do not refund to third-party accounts.
       </p>
 
@@ -388,7 +388,7 @@ function English() {
       <p>
         Once a refund is approved, the Premium period ends and the account returns to the Free plan.{' '}
         <strong>Your survey data is not deleted.</strong> If the workspace is over the Free limits it
-        is frozen — everything stays readable, mappable and exportable, and only new captures stop.
+        is frozen: everything stays readable, mappable and exportable, and only new captures stop.
       </p>
 
       <h2>9. Cancellation</h2>
@@ -437,7 +437,7 @@ function English() {
 }
 
 export default async function RefundPolicyPage() {
-  /* Chooses which of the two documents is visible. Both are still in the HTML — see the header
+  /* Chooses which of the two documents is visible. Both are still in the HTML: see the header
      of BilingualDoc. Indonesian remains the governing version. */
   const locale = await getLocale()
   const c = chrome[locale]

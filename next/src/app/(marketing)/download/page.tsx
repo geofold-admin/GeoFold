@@ -7,8 +7,8 @@ import { getLocale } from '@/lib/i18n.server'
 import { pageMetadata } from '@/lib/seo'
 
 /*
- * The chrome around the download list — heading, lede, page title, and the "still stuck" block below —
- * follows the visitor's language. The INSTRUCTIONS THEMSELVES do not: BilingualDoc renders both versions
+ * The chrome around the download list: heading, lede, page title, and the "still stuck" block below
+ * all follow the visitor's language. The INSTRUCTIONS THEMSELVES do not: BilingualDoc renders both versions
  * into the HTML and only takes the site language decides which set is visible, so nothing is behind
  * a click for a reader who cannot run scripts. See BilingualDoc.tsx.
  */
@@ -21,7 +21,7 @@ const chrome: Record<Locale, {
   noLinks: { strong: string; before: string; mid: string; link: string; after: string }
 }> = {
   id: {
-    title: 'Unduh aplikasi Android — GeoFold',
+    title: 'Unduh aplikasi Android | GeoFold',
     description:
       'Unduh aplikasi Android GeoFold: survei lapangan berbasis GPS, bekerja offline, sinkron otomatis. Termasuk versi drone DJI.',
     eyebrow: 'Unduh',
@@ -30,14 +30,14 @@ const chrome: Record<Locale, {
       'Survei lapangan berbasis GPS yang bekerja penuh secara offline, lalu menyinkronkan sendiri begitu ada sinyal.',
     noLinks: {
       strong: 'Belum ada tautan unduhan publik.',
-      before: ' Berkas pemasangan dikirim langsung atas permintaan — email ',
+      before: ' Berkas pemasangan dikirim langsung atas permintaan: email ',
       mid: ' dan sebutkan versi mana yang Anda butuhkan. Versi web tersedia sekarang di ',
       link: 'halaman masuk',
       after: ' dan menjalankan seluruh fungsi kecuali pengambilan data di lapangan.',
     },
   },
   en: {
-    title: 'Download the Android app — GeoFold',
+    title: 'Download the Android app | GeoFold',
     description:
       'Download the GeoFold Android app: GPS field survey, works offline, syncs automatically. Includes the DJI drone build.',
     eyebrow: 'Download',
@@ -46,7 +46,7 @@ const chrome: Record<Locale, {
       'GPS field survey that works fully offline, then syncs itself the moment there is a signal.',
     noLinks: {
       strong: 'There is no public download link yet.',
-      before: ' The installer is sent directly on request — email ',
+      before: ' The installer is sent directly on request: email ',
       mid: ' and say which build you need. The web version is available now at the ',
       link: 'sign-in page',
       after: ' and does everything except capture in the field.',
@@ -83,12 +83,12 @@ function Builds({ lang }: { lang: 'id' | 'en' }) {
               <span style={{ opacity: 0.7, fontSize: 13 }}>
                 {lang === 'id' ? (
                   <>
-                    Belum tersedia untuk unduhan publik — minta melalui{' '}
+                    Belum tersedia untuk unduhan publik: minta melalui{' '}
                     <a href={`mailto:${BUSINESS.email.support}`}>{BUSINESS.email.support}</a>.
                   </>
                 ) : (
                   <>
-                    Not yet published for public download — request it from{' '}
+                    Not yet published for public download: request it from{' '}
                     <a href={`mailto:${BUSINESS.email.support}`}>{BUSINESS.email.support}</a>.
                   </>
                 )}
@@ -116,7 +116,7 @@ function Indonesian() {
         <li>Unduh berkas APK melalui peramban di ponsel Android Anda.</li>
         <li>
           Buka berkas yang terunduh. Android akan meminta izin{' '}
-          <strong>&quot;Install unknown apps&quot;</strong> untuk peramban tersebut — izinkan sekali,
+          <strong>&quot;Install unknown apps&quot;</strong> untuk peramban tersebut: izinkan sekali,
           lalu kembali dan buka berkasnya lagi.
         </li>
         <li>Ketuk <strong>Install</strong>, lalu buka aplikasinya.</li>
@@ -141,14 +141,14 @@ function Indonesian() {
       <h2>Izin yang diminta dan alasannya</h2>
       <ul>
         <li>
-          <strong>Lokasi</strong> — hanya saat Anda mengambil titik survei, untuk menuliskan
+          <strong>Lokasi</strong>. Hanya saat Anda mengambil titik survei, untuk menuliskan
           koordinat. Tidak ada pelacakan di latar belakang.
         </li>
         <li>
-          <strong>Kamera</strong> — untuk memotret titik survei.
+          <strong>Kamera</strong>. Untuk memotret titik survei.
         </li>
         <li>
-          <strong>Penyimpanan / foto</strong> — untuk melampirkan foto yang sudah Anda ambil.
+          <strong>Penyimpanan / foto</strong>. Untuk melampirkan foto yang sudah Anda ambil.
         </li>
       </ul>
       <p>
@@ -163,7 +163,7 @@ function Indonesian() {
       <p>
         Konsekuensinya: pemeriksaan otomatis Google Play tidak berlaku di sini. Unduh hanya dari
         halaman ini. Bila Anda menerima berkas APK dari sumber lain yang mengaku sebagai GeoFold,
-        jangan pasang — mintalah verifikasi ke{' '}
+        jangan pasang: mintalah verifikasi ke{' '}
         <a href={`mailto:${BUSINESS.email.support}`}>{BUSINESS.email.support}</a> terlebih dahulu.
       </p>
 
@@ -192,7 +192,7 @@ function English() {
         <li>Download the APK in a browser on your Android phone.</li>
         <li>
           Open the downloaded file. Android asks for the{' '}
-          <strong>&quot;Install unknown apps&quot;</strong> permission for that browser — allow it
+          <strong>&quot;Install unknown apps&quot;</strong> permission for that browser: allow it
           once, then go back and open the file again.
         </li>
         <li>
@@ -216,14 +216,14 @@ function English() {
       <h2>Permissions, and why</h2>
       <ul>
         <li>
-          <strong>Location</strong> — only while you capture a survey point, to write its
+          <strong>Location</strong>. Only while you capture a survey point, to write its
           coordinates. No background tracking.
         </li>
         <li>
-          <strong>Camera</strong> — to photograph the survey point.
+          <strong>Camera</strong>. To photograph the survey point.
         </li>
         <li>
-          <strong>Storage / photos</strong> — to attach a photo you already took.
+          <strong>Storage / photos</strong>. To attach a photo you already took.
         </li>
       </ul>
       <p>
@@ -237,8 +237,8 @@ function English() {
       </p>
       <p>
         The trade-off is that Google Play&apos;s automated checks do not apply here. Download only
-        from this page. If someone sends you an APK claiming to be GeoFold, do not install it —
-        check with <a href={`mailto:${BUSINESS.email.support}`}>{BUSINESS.email.support}</a> first.
+        from this page. If someone sends you an APK claiming to be GeoFold, do not install it.
+        Check with <a href={`mailto:${BUSINESS.email.support}`}>{BUSINESS.email.support}</a> first.
       </p>
 
       <h2>Need help?</h2>
@@ -252,7 +252,7 @@ function English() {
 }
 
 export default async function DownloadPage() {
-  /* Chooses which of the two documents is visible. Both are still in the HTML — see the header
+  /* Chooses which of the two documents is visible. Both are still in the HTML: see the header
      of BilingualDoc. Indonesian remains the governing version. */
   const locale = await getLocale()
   const c = chrome[locale]

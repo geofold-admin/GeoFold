@@ -17,7 +17,7 @@ import { PricingCheckoutButton } from '@/components/PricingCheckoutButton'
  * An earlier version advertised Shapefile and File Geodatabase export, one-click ArcGIS sync and
  * "sub-meter accuracy". None of those exist: `lib/export.ts` writes CSV and XLSX, and a phone GPS
  * reports metres. That copy was live on a site a payment gateway was verifying, which is a bad
- * place to overstate a product. If a capability is added later, add it here — not before.
+ * place to overstate a product. If a capability is added later, add it here: not before.
  *
  * The same rule covers the counters in the hero: 3 projects, 20 photos per project and 2 export
  * formats are the actual free-plan limits and the actual writers in lib/export.ts. A number that
@@ -30,7 +30,7 @@ import { PricingCheckoutButton } from '@/components/PricingCheckoutButton'
  * REWRITTEN 2026-09-26. The copy was checked line by line against the same rule. What changed:
  * the lede now says what the product IS before it says what it does (a survey instrument, not a
  * photo app), the capability rows lead with the reader's problem instead of the feature name, and
- * the closing argument names the concrete failure — a forwarded photo losing its location — since
+ * the closing argument names the concrete failure (a forwarded photo losing its location) since
  * that is the thing a surveyor has actually been burned by. Nothing was added that the app does
  * not do; several sentences were removed that only restated the heading above them.
  */
@@ -69,14 +69,14 @@ type Copy = {
 const copy: Record<Locale, Copy> = {
   id: {
     meta: {
-      title: 'GeoFold — Survei lapangan yang tidak kehilangan satu titik pun',
+      title: 'GeoFold, Survei lapangan yang tidak kehilangan satu titik pun',
       description:
         'Foto berkoordinat, bekerja penuh offline, sinkron sendiri begitu ada sinyal. Ekspor ke Excel dan CSV dengan foto tertanam. Gratis untuk 2 proyek.',
     },
     eyebrow: 'Survei lapangan · Android & web',
     h1: 'Titik survei yang tidak hilang.',
     lede:
-      'GeoFold mengubah ponsel lapangan menjadi alat ukur: satu foto berkoordinat, satu titik tercatat, langsung tersimpan di perangkat. Tidak ada sinyal bukan masalah — datanya menyusul sendiri begitu kembali online.',
+      'GeoFold mengubah ponsel lapangan menjadi alat ukur: satu foto berkoordinat, satu titik tercatat, langsung tersimpan di perangkat. Tidak ada sinyal bukan masalah: datanya menyusul sendiri begitu kembali online.',
     ctaStart: 'Mulai gratis',
     ctaDownload: 'Unduh aplikasi',
     stats: [
@@ -93,7 +93,7 @@ const copy: Record<Locale, Copy> = {
       {
         kicker: 'Tangkap',
         title: 'Koordinat tercetak di dalam fotonya',
-        body: 'Bukan metadata yang hilang saat file dikirim ulang. Posisi, akurasi, dan waktu ditulis langsung ke gambar — buktinya ikut ke mana pun foto itu pergi.',
+        body: 'Bukan metadata yang hilang saat file dikirim ulang. Posisi, akurasi, dan waktu ditulis langsung ke gambar: buktinya ikut ke mana pun foto itu pergi.',
       },
       {
         kicker: 'Offline',
@@ -123,7 +123,7 @@ const copy: Record<Locale, Copy> = {
     steps: [
       {
         t: 'Buat proyek',
-        b: 'Tentukan sendiri isian formulirnya — jenis temuan, kondisinya, catatannya. Apa pun yang tim Anda memang catat di lapangan.',
+        b: 'Tentukan sendiri isian formulirnya: jenis temuan, kondisinya, catatannya. Apa pun yang tim Anda memang catat di lapangan.',
       },
       {
         t: 'Ambil titik',
@@ -131,13 +131,13 @@ const copy: Record<Locale, Copy> = {
       },
       {
         t: 'Tarik laporannya',
-        b: 'Ekspor Excel atau CSV kapan saja — dari ponsel maupun dari peramban. Datanya tetap milik Anda.',
+        b: 'Ekspor Excel atau CSV kapan saja: dari ponsel maupun dari peramban. Datanya tetap milik Anda.',
       },
     ],
     whyMicro: 'Kenapa ini penting',
     whyTitle: 'Foto tanpa koordinat bukan bukti.',
     why1:
-      'Foto lapangan biasa menitipkan lokasinya di metadata — dan metadata hilang begitu gambar dikirim lewat WhatsApp, disalin ulang, atau diedit sedikit saja. Enam bulan kemudian tidak ada yang bisa membuktikan foto itu diambil di mana.',
+      'Foto lapangan biasa menitipkan lokasinya di metadata, dan metadata hilang begitu gambar dikirim lewat WhatsApp, disalin ulang, atau diedit sedikit saja. Enam bulan kemudian tidak ada yang bisa membuktikan foto itu diambil di mana.',
     why2: {
       before: 'GeoFold menuliskan koordinat, akurasi, dan waktu ',
       strong: 'ke dalam gambarnya',
@@ -145,7 +145,7 @@ const copy: Record<Locale, Copy> = {
         ', lalu menyimpan angka yang sama di basis data. Keduanya tetap menempel ke mana pun fotonya berpindah.',
     },
     globePlace: 'Sintang, Kalimantan Barat',
-    globeSub: 'Titik ini tempat kami bekerja — dan tempat survei pertama diuji.',
+    globeSub: 'Titik ini tempat kami bekerja, dan tempat survei pertama diuji.',
     priceMicro: 'Harga',
     priceTitle: 'Gratis dulu. Bayar hanya kalau memang perlu.',
     free: {
@@ -184,14 +184,14 @@ const copy: Record<Locale, Copy> = {
 
   en: {
     meta: {
-      title: 'GeoFold — Field surveys that never lose a point',
+      title: 'GeoFold, Field surveys that never lose a point',
       description:
         'Photos with the coordinates printed into them, full offline capture, syncing themselves the moment there is a signal. Exports to Excel and CSV with the photos embedded. Free for 2 projects.',
     },
     eyebrow: 'Field survey · Android & web',
     h1: 'Survey points that never go missing.',
     lede:
-      'GeoFold turns a field phone into a survey instrument: one geotagged photo, one recorded point, saved to the device immediately. No signal is not a problem — the data catches up on its own once you are back online.',
+      'GeoFold turns a field phone into a survey instrument: one geotagged photo, one recorded point, saved to the device immediately. No signal is not a problem: the data catches up on its own once you are back online.',
     ctaStart: 'Start free',
     ctaDownload: 'Download the app',
     stats: [
@@ -208,7 +208,7 @@ const copy: Record<Locale, Copy> = {
       {
         kicker: 'Capture',
         title: 'Coordinates printed inside the photo',
-        body: 'Not metadata that disappears the moment the file is forwarded. Position, accuracy and time are written onto the image itself — the evidence travels with it.',
+        body: 'Not metadata that disappears the moment the file is forwarded. Position, accuracy and time are written onto the image itself: the evidence travels with it.',
       },
       {
         kicker: 'Offline',
@@ -237,7 +237,7 @@ const copy: Record<Locale, Copy> = {
     steps: [
       {
         t: 'Create a project',
-        b: 'Define the form fields yourself — the finding, its condition, your notes. Whatever your team actually records in the field.',
+        b: 'Define the form fields yourself: the finding, its condition, your notes. Whatever your team actually records in the field.',
       },
       {
         t: 'Take a point',
@@ -245,13 +245,13 @@ const copy: Record<Locale, Copy> = {
       },
       {
         t: 'Pull the report',
-        b: 'Export Excel or CSV any time — from the phone or from the browser. The data stays yours.',
+        b: 'Export Excel or CSV any time: from the phone or from the browser. The data stays yours.',
       },
     ],
     whyMicro: 'Why this matters',
     whyTitle: 'A photo without coordinates is not evidence.',
     why1:
-      'An ordinary field photo keeps its location in metadata — and the metadata is gone the moment the image goes through WhatsApp, gets copied again, or is edited even slightly. Six months later, nobody can prove where it was taken.',
+      'An ordinary field photo keeps its location in metadata, and the metadata is gone the moment the image goes through WhatsApp, gets copied again, or is edited even slightly. Six months later, nobody can prove where it was taken.',
     why2: {
       before: 'GeoFold writes the coordinates, accuracy and time ',
       strong: 'into the image itself',
@@ -259,7 +259,7 @@ const copy: Record<Locale, Copy> = {
         ', then stores the same figures in the database. Both stay attached wherever the photo travels.',
     },
     globePlace: 'Sintang, West Kalimantan',
-    globeSub: 'This is where we work — and where the first survey was tested.',
+    globeSub: 'This is where we work, and where the first survey was tested.',
     priceMicro: 'Pricing',
     priceTitle: 'Free first. Pay only if you actually need to.',
     free: {
@@ -303,8 +303,8 @@ export async function generateMetadata(): Promise<Metadata> {
   return pageMetadata({ title: c.meta.title, description: c.meta.description, path: '/', locale })
 }
 
-/* Counter values are language-independent — there is no version of this page where the free plan
-   is a different number — so they live outside the copy table. The figures each take the locale
+/* Counter values are language-independent: there is no version of this page where the free plan
+   is a different number, so they live outside the copy table. The figures each take the locale
    and carry their own alt text and in-drawing labels; see the header of Figures.tsx. */
 function figures(locale: Locale): ReactNode[] {
   return [
@@ -319,7 +319,7 @@ const STAT_VALUES = [3, 20, 2, 0]
 const STAT_DISPLAY = ['3', '20', '2', 'Rp 0']
 const STAT_PREFIX = [undefined, undefined, undefined, 'Rp ']
 /* Row 05 is the aerial one. The palette's secondary accent is reserved for aerial material and
-   appears nowhere else — see the token block in paper.css. */
+   appears nowhere else: see the token block in paper.css. */
 const AERIAL_INDEX = 4
 
 function MarqueeRow({ items, hidden }: { items: string[]; hidden?: boolean }) {
@@ -346,7 +346,7 @@ export default async function HomePage() {
 
       {/* ================= hero =================
           THE SURVEY FIELD. A canvas graticule with waypoints that lean away from the cursor and
-          spring back — the one piece of pointer-reactive motion on the site, and the reason the
+          spring back: the one piece of pointer-reactive motion on the site, and the reason the
           hero reads as a map rather than as a headline on a white page. It is `aria-hidden`
           decoration sitting behind the copy, it never eats a click, and it draws nothing at all
           when the visitor prefers reduced motion. See SurveyField.tsx for the full argument. */}
@@ -483,7 +483,7 @@ export default async function HomePage() {
       {/* ================= the argument ================= */}
       <section className="pg-sec pg-sec-dark">
         {/* A field of ranging-rod ticks that swing toward the pointer, like needles finding
-            north. Adapted from React Bits' MagnetLines — see MagnetField for what changed and
+            north. Adapted from React Bits' MagnetLines: see MagnetField for what changed and
             why. It is decoration with a fact attached: every rod is the same survey mark the
             product drops on a map. */}
         <MagnetField />

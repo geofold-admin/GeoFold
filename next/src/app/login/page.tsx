@@ -70,7 +70,7 @@ export default function LoginPage() {
           options: { emailRedirectTo: `${location.origin}/auth/callback` },
         })
         if (error) throw error
-        if (!data.session) setNotice('Almost there — check your email for a confirmation link to finish signing up.')
+        if (!data.session) setNotice('Almost there. Check your email for a confirmation link to finish signing up.')
       } else {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${location.origin}/auth/callback?next=/reset`,
@@ -95,7 +95,7 @@ export default function LoginPage() {
         <div className="mk-card">
           <div className="mk-card-t">{titles[mode]}</div>
           <div className="mk-card-sub">
-            {DEMO_MODE ? 'Demo mode — enter anything to explore with sample data.' : subtitles[mode]}
+            {DEMO_MODE ? 'Demo mode: enter anything to explore with sample data.' : subtitles[mode]}
           </div>
 
           {error && <div className="mk-error">{error}</div>}

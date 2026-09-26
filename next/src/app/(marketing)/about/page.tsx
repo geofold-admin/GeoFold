@@ -8,7 +8,7 @@ import { pageMetadata } from '@/lib/seo'
 /*
  * Rewritten 2026-09-07. The previous version claimed ArcGIS-shaped exports with "correct CRS", and
  * a "team-synced" view of every surveyor's device and sync status. There is no ArcGIS export, no
- * CRS selection, and no team model at all — each account's data is isolated from every other, and
+ * CRS selection, and no team model at all: each account's data is isolated from every other, and
  * no device information is recorded anywhere. See the note in product/page.tsx.
  *
  * Translated 2026-09-10. The English is a translation of the Indonesian, not a second draft: if
@@ -34,7 +34,7 @@ type Copy = {
 const copy: Record<Locale, Copy> = {
   id: {
     meta: {
-      title: 'Tentang — GeoFold',
+      title: 'Tentang | GeoFold',
       description:
         'Kenapa GeoFold dibuat: foto lapangan yang kehilangan lokasinya begitu dikirim ulang, dan catatan yang tidak bisa dipertanggungjawabkan enam bulan kemudian.',
     },
@@ -49,7 +49,7 @@ const copy: Record<Locale, Copy> = {
         before: 'GeoFold menuliskan koordinat, akurasi dan waktu ',
         strong: 'ke dalam gambarnya',
         after:
-          ', lalu menyimpan angka yang sama di basis data bersama isian formulir yang Anda tentukan sendiri. Satu aplikasi, satu antrean, satu ekspor — dan bukti yang bertahan setelah fotonya berpindah tangan.',
+          ', lalu menyimpan angka yang sama di basis data bersama isian formulir yang Anda tentukan sendiri. Satu aplikasi, satu antrean, satu ekspor, dan bukti yang bertahan setelah fotonya berpindah tangan.',
       },
     },
     pillarsKick: 'Prinsipnya',
@@ -90,7 +90,7 @@ const copy: Record<Locale, Copy> = {
 
   en: {
     meta: {
-      title: 'About — GeoFold',
+      title: 'About | GeoFold',
       description:
         'Why GeoFold exists: field photos that lose their location the moment they are forwarded, and records nobody can vouch for six months later.',
     },
@@ -105,7 +105,7 @@ const copy: Record<Locale, Copy> = {
         before: 'GeoFold writes the coordinates, accuracy and time ',
         strong: 'into the image',
         after:
-          ', then stores the same figures in the database alongside the form fields you defined yourself. One app, one queue, one export — and evidence that survives the photo changing hands.',
+          ', then stores the same figures in the database alongside the form fields you defined yourself. One app, one queue, one export, and evidence that survives the photo changing hands.',
       },
     },
     pillarsKick: 'What we hold to',

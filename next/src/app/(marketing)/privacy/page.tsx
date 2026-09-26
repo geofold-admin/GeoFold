@@ -7,14 +7,14 @@ import { getLocale } from '@/lib/i18n.server'
 import { pageMetadata } from '@/lib/seo'
 
 /*
- * The chrome around the document — heading, lede, page title — follows the visitor's language.
+ * The chrome around the document (heading, lede, page title) follows the visitor's language.
  * The DOCUMENT ITSELF does not: BilingualDoc renders both versions into the HTML and only takes
  * the site language decides which one is visible, so a verifier still gets the whole document
  * in the first paint. Indonesian remains the governing version. See BilingualDoc.tsx.
  */
 const chrome: Record<Locale, { title: string; description: string; eyebrow: string; h1: string; lede: string }> = {
   id: {
-    title: 'Kebijakan Privasi (Privacy Policy) — GeoFold',
+    title: 'Kebijakan Privasi (Privacy Policy), GeoFold',
     description:
       'Data apa yang GeoFold kumpulkan, untuk apa digunakan, di mana disimpan, dengan siapa dibagikan, dan hak Anda atasnya.',
     eyebrow: 'Legal',
@@ -22,7 +22,7 @@ const chrome: Record<Locale, { title: string; description: string; eyebrow: stri
     lede: 'Data apa yang kami kumpulkan, untuk apa, di mana disimpan, dan hak Anda atasnya.',
   },
   en: {
-    title: 'Privacy Policy — GeoFold',
+    title: 'Privacy Policy | GeoFold',
     description:
       'What data GeoFold collects, what it is used for, where it is stored, who it is shared with, and your rights over it.',
     eyebrow: 'Legal',
@@ -55,19 +55,19 @@ function Indonesian() {
       <h2>2. Data yang kami kumpulkan</h2>
       <ul>
         <li>
-          <strong>Data akun</strong> — alamat email dan kredensial autentikasi. Kata sandi di-hash
+          <strong>Data akun</strong>. Alamat email dan kredensial autentikasi. Kata sandi di-hash
           oleh penyedia autentikasi kami dan tidak pernah disimpan dalam bentuk terbaca.
         </li>
         <li>
-          <strong>Data profil</strong> — nama lengkap, nomor WhatsApp, domisili, jenis kelamin, dan
+          <strong>Data profil</strong>. Nama lengkap, nomor WhatsApp, domisili, jenis kelamin, dan
           pekerjaan (opsional), beserta waktu Anda menyetujui Syarat &amp; Ketentuan.
         </li>
         <li>
-          <strong>Data survei yang Anda buat</strong> — foto, koordinat GPS beserta akurasinya, waktu
+          <strong>Data survei yang Anda buat</strong>. Foto, koordinat GPS beserta akurasinya, waktu
           pengambilan, definisi proyek, dan isian formulir Anda.
         </li>
         <li>
-          <strong>Data transaksi</strong> — nomor pesanan, jumlah, metode, status, dan waktu
+          <strong>Data transaksi</strong>. Nomor pesanan, jumlah, metode, status, dan waktu
           pembayaran. <strong>Kami tidak pernah menerima atau menyimpan nomor kartu, CVV, PIN, atau
           OTP.</strong> Data tersebut ditangani sepenuhnya oleh gerbang pembayaran.
         </li>
@@ -77,18 +77,18 @@ function Indonesian() {
           penyalahgunaan, tidak dalam bentuk aslinya.
         </li>
         <li>
-          <strong>Data teknis</strong> — log permintaan dan galat yang diperlukan untuk menjalankan
+          <strong>Data teknis</strong>. Log permintaan dan galat yang diperlukan untuk menjalankan
           dan mengamankan layanan.
         </li>
       </ul>
 
       <h2>3. Dasar dan tujuan penggunaan</h2>
       <ul>
-        <li>Menjalankan layanan inti: menyimpan survei Anda dan menampilkannya kembali di peta, daftar, dan ekspor — dasar: pelaksanaan perjanjian dengan Anda.</li>
-        <li>Mengautentikasi Anda dan memisahkan data Anda dari pengguna lain — dasar: pelaksanaan perjanjian.</li>
-        <li>Memproses pembayaran dan memenuhi kewajiban perpajakan serta pembukuan — dasar: kewajiban hukum.</li>
-        <li>Menjawab pertanyaan dan permintaan dukungan Anda — dasar: pelaksanaan perjanjian.</li>
-        <li>Memelihara, mengamankan, dan memperbaiki layanan — dasar: kepentingan sah kami.</li>
+        <li>Menjalankan layanan inti: menyimpan survei Anda dan menampilkannya kembali di peta, daftar, dan ekspor: dasar: pelaksanaan perjanjian dengan Anda.</li>
+        <li>Mengautentikasi Anda dan memisahkan data Anda dari pengguna lain: dasar: pelaksanaan perjanjian.</li>
+        <li>Memproses pembayaran dan memenuhi kewajiban perpajakan serta pembukuan: dasar: kewajiban hukum.</li>
+        <li>Menjawab pertanyaan dan permintaan dukungan Anda: dasar: pelaksanaan perjanjian.</li>
+        <li>Memelihara, mengamankan, dan memperbaiki layanan: dasar: kepentingan sah kami.</li>
       </ul>
       <p>
         Kami tidak menggunakan data Anda untuk iklan, tidak melakukan profiling, dan tidak mengambil
@@ -162,7 +162,7 @@ function Indonesian() {
 
       <h2>12. Kontak</h2>
       <p>
-        {OPERATOR} — {ADDRESS_ONE_LINE}. Email {support}, telepon{' '}
+        {OPERATOR}, {ADDRESS_ONE_LINE}. Email {support}, telepon{' '}
         <a href={`tel:${BUSINESS.phoneHref}`}>{BUSINESS.phone}</a>.
       </p>
     </div>
@@ -184,19 +184,19 @@ function English() {
       <h2>2. What we collect</h2>
       <ul>
         <li>
-          <strong>Account data</strong> — your email address and authentication credentials.
+          <strong>Account data</strong>. Your email address and authentication credentials.
           Passwords are hashed by our authentication provider and never stored in readable form.
         </li>
         <li>
-          <strong>Profile data</strong> — full name, WhatsApp number, domicile, gender, and
+          <strong>Profile data</strong>. Full name, WhatsApp number, domicile, gender, and
           occupation (optional), plus when you accepted the Terms.
         </li>
         <li>
-          <strong>Survey data you create</strong> — photos, GPS coordinates with accuracy, capture
+          <strong>Survey data you create</strong>. Photos, GPS coordinates with accuracy, capture
           timestamps, project definitions, and the field values you enter.
         </li>
         <li>
-          <strong>Transaction data</strong> — order id, amount, method, status and time of payment.{' '}
+          <strong>Transaction data</strong>. Order id, amount, method, status and time of payment.{' '}
           <strong>We never receive or store card numbers, CVV, PIN or OTP.</strong> Those are handled
           entirely by the payment gateway.
         </li>
@@ -206,14 +206,14 @@ function English() {
           in its original form.
         </li>
         <li>
-          <strong>Technical data</strong> — request and error logs needed to operate and secure the
+          <strong>Technical data</strong>. Request and error logs needed to operate and secure the
           service.
         </li>
       </ul>
 
       <h2>3. Why we use it</h2>
       <ul>
-        <li>To run the core service — storing your surveys and showing them back on the map, records and exports (performance of our contract with you).</li>
+        <li>To run the core service: storing your surveys and showing them back on the map, records and exports (performance of our contract with you).</li>
         <li>To authenticate you and keep your data separate from other users (performance of contract).</li>
         <li>To process payments and meet tax and bookkeeping obligations (legal obligation).</li>
         <li>To answer your questions and support requests (performance of contract).</li>
@@ -286,7 +286,7 @@ function English() {
 
       <h2>12. Contact</h2>
       <p>
-        {OPERATOR} — {ADDRESS_ONE_LINE}. Email {support}, call{' '}
+        {OPERATOR}, {ADDRESS_ONE_LINE}. Email {support}, call{' '}
         <a href={`tel:${BUSINESS.phoneHref}`}>{BUSINESS.phone}</a>.
       </p>
     </div>
@@ -294,7 +294,7 @@ function English() {
 }
 
 export default async function PrivacyPage() {
-  /* Chooses which of the two documents is visible. Both are still in the HTML — see the header
+  /* Chooses which of the two documents is visible. Both are still in the HTML: see the header
      of BilingualDoc. Indonesian remains the governing version. */
   const locale = await getLocale()
   const c = chrome[locale]

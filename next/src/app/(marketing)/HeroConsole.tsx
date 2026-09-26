@@ -6,20 +6,20 @@ import { useEffect, useState } from 'react'
  * The hero's right-hand column: a schematic instrument panel showing a fix being taken.
  *
  * WHY THIS EXISTS. At >=1080px the hero was one left-aligned column of type with the entire right
- * half of the viewport empty — the largest piece of dead space on the site, directly above the
+ * half of the viewport empty: the largest piece of dead space on the site, directly above the
  * fold. The recommended pattern for this product category puts the product artefact beside or
  * under the headline rather than three sections down; ours was buried in the carousel.
  *
  * WHY IT IS DRAWN, NOT PHOTOGRAPHED. Same reasoning as PhoneMock: real captures show real
  * coordinates of real field sites, which is not something to publish, and they need retaking
- * every time the UI moves. This is schematic — it shows what a fix looks like without claiming
+ * every time the UI moves. This is schematic: it shows what a fix looks like without claiming
  * to be a photograph of one, stays sharp at any size, and weighs nothing on a field connection.
  *
  * WHAT IT IS ALLOWED TO CLAIM. Only what the app does: a coordinate pair, an accuracy in metres,
  * a queue that drains when a signal returns. No sub-metre figure, no basemap it does not have.
  * The accuracy never settles below ±3 m because a phone GPS does not.
  *
- * MOTION. Everything animated here is decorative — the panel reads correctly frozen. Under
+ * MOTION. Everything animated here is decorative: the panel reads correctly frozen. Under
  * `prefers-reduced-motion: reduce` the effects never start and the settled state renders
  * directly, so there is no first-paint jump for someone who asked for stillness.
  */
@@ -30,7 +30,7 @@ const LAT = -0.0234
 const LON = 109.3421
 
 /* Survey points, in the SVG's own 320x200 space. Positions are hand-placed to sit between the
-   contour rings rather than on them — a pin drawn on a contour line reads as a label for the
+   contour rings rather than on them: a pin drawn on a contour line reads as a label for the
    line. The last one is the arrival in the queue cycle below, so it drops in last. */
 const PINS = [
   { x: 96, y: 150 },
@@ -59,7 +59,7 @@ const QUEUE_STATES = [
   { synced: 5, pending: 0, label: 'Tersinkron', tone: 'ok' as const },
 ]
 
-/* Six decimals, which is what the app records — and exactly six on both rows. A pad-to-width here
+/* Six decimals, which is what the app records, and exactly six on both rows. A pad-to-width here
    is tempting for column stability but gives -0.023405 a seventh decimal that 109.342104 does not
    have, and two coordinates at different precisions is the one thing an instrument may not do.
    `font-variant-numeric: tabular-nums` on the readout holds the column instead. */
@@ -80,7 +80,7 @@ export function HeroConsole() {
     setLive(true)
 
     /* A real fix wanders in the last decimals rather than sitting still. Amplitude is ~1e-5 deg,
-       about a metre — matching the ±m the panel reports, instead of the digits scrambling. */
+       about a metre: matching the ±m the panel reports, instead of the digits scrambling. */
     const wander = window.setInterval(() => {
       setDrift({
         lat: (Math.random() - 0.5) * 2e-5,

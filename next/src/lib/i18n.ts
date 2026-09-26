@@ -151,7 +151,7 @@ export const chrome: Record<Locale, {
       parentPre: 'Produk dari',
       parentName: 'SAYBA ARC',
       parentPost: '',
-      parentNote: 'GeoFold dikembangkan dan dioperasikan oleh SAYBA ARC — konsultan IT & keteknikan di Pontianak, Kalimantan Barat.',
+      parentNote: 'GeoFold dikembangkan dan dioperasikan oleh SAYBA ARC, konsultan IT & keteknikan di Pontianak, Kalimantan Barat.',
     },
     a11y: {
       theme: 'Ganti tema terang atau gelap',
@@ -200,7 +200,7 @@ export const chrome: Record<Locale, {
       parentPre: 'A product of',
       parentName: 'SAYBA ARC',
       parentPost: '',
-      parentNote: 'GeoFold is built and operated by SAYBA ARC — an IT & engineering consultancy in Pontianak, West Kalimantan.',
+      parentNote: 'GeoFold is built and operated by SAYBA ARC, an IT & engineering consultancy in Pontianak, West Kalimantan.',
     },
     a11y: {
       theme: 'Toggle light or dark theme',

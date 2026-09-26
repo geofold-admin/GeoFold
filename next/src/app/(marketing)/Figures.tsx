@@ -11,13 +11,13 @@ import type { Locale } from '@/lib/i18n'
  * HOUSE STYLE. One viewBox (320x240, matching the 4:3 frame in paper.css), hairline strokes at
  * 1 user unit, no fills except the accent marks, and labels in the same 7px uppercase the rest
  * of the site uses for micro-type. Colour comes from the classes in paper.css, never from a
- * literal here — which is what let the whole palette change under these without touching them.
+ * literal here: which is what let the whole palette change under these without touching them.
  *
  * The aerial figure is the only one allowed the terracotta secondary. That rule has survived
  * two re-skins; it is the reason the second accent still means something.
  *
  * EACH FIGURE TAKES A LOCALE, NOT AN ALT STRING. There are two kinds of language in here: the
- * description a screen reader announces, and the words drawn inside the picture — column heads,
+ * description a screen reader announces, and the words drawn inside the picture: column heads,
  * a legend, a scale note. Those second ones are part of the illustration, so they live with the
  * illustration rather than being threaded in from the page; handing the component a locale gets
  * both, and means a new figure cannot be added with a translated alt and an untranslated legend.
@@ -74,14 +74,14 @@ export function FigCapture({ locale }: FigProps) {
     <svg viewBox={BOX} className="pg-fig" role="img" aria-label={text[locale].altCapture}>
       <rect x="30" y="26" width="260" height="188" rx="4" className="pg-fig-line" />
 
-      {/* corner reticle — four brackets, not a full box, so it reads as a viewfinder */}
+      {/* corner reticle: four brackets, not a full box, so it reads as a viewfinder */}
       {['M108 78v-14h14', 'M212 78v-14h-14', 'M108 150v14h14', 'M212 150v14h-14'].map((d) => (
         <path key={d} d={d} className="pg-fig-accent" strokeWidth="1.4" />
       ))}
       <circle cx="160" cy="114" r="2.5" className="pg-fig-fill" />
 
       {/* the stamp: a solid bar across the foot of the frame, which is the point of the product.
-          The coordinates themselves are numerals and a metre symbol — the same in both
+          The coordinates themselves are numerals and a metre symbol: the same in both
           languages, so they are not in the table above. */}
       <rect x="30" y="176" width="260" height="38" className="pg-fig-soft" />
       <text x="44" y="193" className="pg-fig-label">-0.023405 · 109.342101</text>
@@ -204,7 +204,7 @@ export function FigExport({ locale }: FigProps) {
 
 /**
  * Aerial: the flight lines, and the points taken along them.
- * The only figure that uses the terracotta secondary — see the file header.
+ * The only figure that uses the terracotta secondary: see the file header.
  */
 export function FigAerial({ locale }: FigProps) {
   const legs = [78, 116, 154, 192]

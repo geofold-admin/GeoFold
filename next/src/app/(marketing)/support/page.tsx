@@ -6,14 +6,14 @@ import { getLocale } from '@/lib/i18n.server'
 import { pageMetadata } from '@/lib/seo'
 
 /*
- * This page was English-only while the rest of the marketing site was Indonesian — a leftover
+ * This page was English-only while the rest of the marketing site was Indonesian: a leftover
  * from before either language was a decision. The Indonesian below is the translation; the
  * English is the original wording, unchanged, because it is the copy that has been answering
  * these questions.
  *
  * The troubleshooting answers describe real behaviour of the app (pending rows, the separate
  * photo upload, the ±m accuracy record, the plan caps). If any of that changes, this page is one
- * of the places that goes stale silently — there is no test that catches a support answer that
+ * of the places that goes stale silently: there is no test that catches a support answer that
  * has stopped being true.
  */
 
@@ -33,7 +33,7 @@ type Copy = {
 const copy: Record<Locale, Copy> = {
   id: {
     meta: {
-      title: 'Dukungan — Geofold',
+      title: 'Dukungan | Geofold',
       description:
         'Bantuan untuk pengambilan titik di lapangan, sinkronisasi, ekspor dan langganan Geofold Anda.',
     },
@@ -45,15 +45,15 @@ const copy: Record<Locale, Copy> = {
     topics: [
       {
         q: 'Survei saya tertahan di status "pending"',
-        a: 'Pending berarti titiknya sudah tersimpan di perangkat tapi belum sampai ke server — tidak ada yang hilang. Pengambilan titik memang dirancang berfungsi penuh tanpa sinyal. Buka layar Capture dan tekan "Sync now" begitu ada sinyal. Kalau masih tidak terkirim, keluar lalu masuk lagi: sesi yang kedaluwarsa memblokir unggahan.',
+        a: 'Pending berarti titiknya sudah tersimpan di perangkat tapi belum sampai ke server: tidak ada yang hilang. Pengambilan titik memang dirancang berfungsi penuh tanpa sinyal. Buka layar Capture dan tekan "Sync now" begitu ada sinyal. Kalau masih tidak terkirim, keluar lalu masuk lagi: sesi yang kedaluwarsa memblokir unggahan.',
       },
       {
         q: 'Fotonya terunggah tapi titiknya tidak ada',
-        a: 'Baris survei dan fotonya diunggah terpisah. Barisnya masuk lebih dulu, jadi titik yang hilang biasanya berarti survei itu sendiri ditolak — periksa apakah proyeknya masih ada dan isian formulirnya sudah lengkap.',
+        a: 'Baris survei dan fotonya diunggah terpisah. Barisnya masuk lebih dulu, jadi titik yang hilang biasanya berarti survei itu sendiri ditolak: periksa apakah proyeknya masih ada dan isian formulirnya sudah lengkap.',
       },
       {
         q: 'Akurasi GPS buruk, atau tidak ada GPS sama sekali',
-        a: 'Akurasi (±m) dicatat pada setiap titik supaya fix yang buruk tetap terlihat, bukan diam-diam dipercaya. Di peramban desktop sering tidak ada GPS yang bisa dipakai — gunakan "Enter manually" di layar Capture untuk mengetik koordinat desimal.',
+        a: 'Akurasi (±m) dicatat pada setiap titik supaya fix yang buruk tetap terlihat, bukan diam-diam dipercaya. Di peramban desktop sering tidak ada GPS yang bisa dipakai: gunakan "Enter manually" di layar Capture untuk mengetik koordinat desimal.',
       },
       {
         q: 'Saya kena batas dan tidak bisa mengambil titik',
@@ -65,18 +65,18 @@ const copy: Record<Locale, Copy> = {
       },
       {
         q: 'Aplikasi ponsel tidak bisa menjangkau server',
-        a: 'Aplikasi perlu alamat server yang dikonfigurasi. Di ponsel, "localhost" berarti ponsel itu sendiri — alamatnya harus menunjuk ke alamat LAN komputer Anda atau ke URL yang sudah dideploy.',
+        a: 'Aplikasi perlu alamat server yang dikonfigurasi. Di ponsel, "localhost" berarti ponsel itu sendiri: alamatnya harus menunjuk ke alamat LAN komputer Anda atau ke URL yang sudah dideploy.',
       },
     ],
     stillStuck: 'Masih macet?',
     tech: {
       t: 'Dukungan teknis',
       after:
-        ' — sertakan referensi surveinya (misalnya KAMPUNG-DURIAN-001) kalau menyangkut titik tertentu.',
+        ': sertakan referensi surveinya (misalnya KAMPUNG-DURIAN-001) kalau menyangkut titik tertentu.',
     },
     billing: {
       t: 'Tagihan & kunci aktivasi',
-      mid: ' — untuk masalah penukaran, sebutkan awalan kuncinya, jangan pernah kunci lengkapnya. Pengembalian dana mengikuti ',
+      mid: ': untuk masalah penukaran, sebutkan awalan kuncinya, jangan pernah kunci lengkapnya. Pengembalian dana mengikuti ',
       link: 'Kebijakan Pengembalian Dana',
       after: '.',
     },
@@ -92,7 +92,7 @@ const copy: Record<Locale, Copy> = {
 
   en: {
     meta: {
-      title: 'Support — Geofold',
+      title: 'Support | Geofold',
       description: 'Help with field capture, syncing, exports and your Geofold subscription.',
     },
     eyebrow: 'Support',
@@ -102,15 +102,15 @@ const copy: Record<Locale, Copy> = {
     topics: [
       {
         q: 'My surveys are stuck as "pending"',
-        a: 'Pending means the point is saved on the device but has not reached the server yet — nothing is lost. Capture works fully offline by design. Open Capture and tap "Sync now" once you have signal. If it still will not clear, sign out and back in: an expired session blocks the upload.',
+        a: 'Pending means the point is saved on the device but has not reached the server yet: nothing is lost. Capture works fully offline by design. Open Capture and tap "Sync now" once you have signal. If it still will not clear, sign out and back in: an expired session blocks the upload.',
       },
       {
         q: 'The photo uploaded but the point is missing',
-        a: 'The survey row and its photo upload separately. The row lands first, so a missing point usually means the survey itself was rejected — check that the project still exists and that its form fields are filled in.',
+        a: 'The survey row and its photo upload separately. The row lands first, so a missing point usually means the survey itself was rejected: check that the project still exists and that its form fields are filled in.',
       },
       {
         q: 'GPS accuracy is poor, or there is no GPS at all',
-        a: 'Accuracy (±m) is recorded with every point so bad fixes stay visible instead of being silently trusted. On a desktop browser there is often no usable GPS — use "Enter manually" on the Capture screen to type decimal-degree coordinates instead.',
+        a: 'Accuracy (±m) is recorded with every point so bad fixes stay visible instead of being silently trusted. On a desktop browser there is often no usable GPS: use "Enter manually" on the Capture screen to type decimal-degree coordinates instead.',
       },
       {
         q: 'I hit a limit and cannot capture',
@@ -122,18 +122,18 @@ const copy: Record<Locale, Copy> = {
       },
       {
         q: 'The mobile app cannot reach the server',
-        a: 'The app needs the server origin configured. On a phone, "localhost" means the phone itself — it must point at your machine’s LAN address or the deployed URL.',
+        a: 'The app needs the server origin configured. On a phone, "localhost" means the phone itself: it must point at your machine’s LAN address or the deployed URL.',
       },
     ],
     stillStuck: 'Still stuck?',
     tech: {
       t: 'Technical support',
       after:
-        ' — include the survey reference (e.g. KAMPUNG-DURIAN-001) if it is about a specific point.',
+        ': include the survey reference (e.g. KAMPUNG-DURIAN-001) if it is about a specific point.',
     },
     billing: {
       t: 'Billing & activation keys',
-      mid: ' — for redemption problems, quote the key prefix, never the full key. Refunds follow the ',
+      mid: ': for redemption problems, quote the key prefix, never the full key. Refunds follow the ',
       link: 'Refund Policy',
       after: '.',
     },

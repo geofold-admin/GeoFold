@@ -24,10 +24,10 @@ import { pageMetadata } from '@/lib/seo'
  * else; there is no team model, no device record and no CRS selection anywhere in the codebase.
  *
  * Everything below is checked against the schema and the exporter. If a capability is added later,
- * add it here then — not before.
+ * add it here then: not before.
  *
  * Translated 2026-09-10. This is the page that lists what the product does and does not do, so
- * the two languages have to say the same thing — including the paragraph admitting there is no
+ * the two languages have to say the same thing: including the paragraph admitting there is no
  * Shapefile export. A limitation that only appears in one language is not a disclosure.
  */
 
@@ -59,7 +59,7 @@ type Copy = {
 const copy: Record<Locale, Copy> = {
   id: {
     meta: {
-      title: 'Produk — GeoFold',
+      title: 'Produk | GeoFold',
       description:
         'Apa yang GeoFold rekam pada setiap titik survei, bagaimana datanya bertahan tanpa sinyal, dan dalam bentuk apa Anda mengambilnya kembali.',
     },
@@ -103,7 +103,7 @@ const copy: Record<Locale, Copy> = {
     record: [
       {
         t: 'Koordinat',
-        b: 'Titik WGS 84, disimpan sebagai geografi PostGIS — dan dicetak ke dalam fotonya.',
+        b: 'Titik WGS 84, disimpan sebagai geografi PostGIS, dan dicetak ke dalam fotonya.',
       },
       {
         t: 'Akurasi',
@@ -129,14 +129,14 @@ const copy: Record<Locale, Copy> = {
     exportKick: 'Ekspor',
     exportTitle: 'Dua format, tanpa kejutan.',
     xlsx:
-      ' — satu baris per titik, dengan fotonya tertanam di baris itu. Dibuat langsung di perangkat Anda, jadi tidak ada data yang dikirim ke layanan lain untuk diubah formatnya.',
+      ': satu baris per titik, dengan fotonya tertanam di baris itu. Dibuat langsung di perangkat Anda, jadi tidak ada data yang dikirim ke layanan lain untuk diubah formatnya.',
     csv:
-      ' — teks biasa untuk diolah di QGIS, R, Python atau apa pun yang tim Anda pakai. Koordinat dalam desimal WGS 84.',
+      ': teks biasa untuk diolah di QGIS, R, Python atau apa pun yang tim Anda pakai. Koordinat dalam desimal WGS 84.',
     gap: {
       before:
         'Belum ada ekspor Shapefile atau File Geodatabase, dan belum ada integrasi langsung ke ArcGIS. Kalau itu yang Anda butuhkan, ',
       link: 'beri tahu kami',
-      after: ' — lebih berguna mendengarnya dari Anda daripada menebak.',
+      after: ': lebih berguna mendengarnya dari Anda daripada menebak.',
     },
     close: {
       title: 'Coba dengan data Anda sendiri.',
@@ -148,7 +148,7 @@ const copy: Record<Locale, Copy> = {
 
   en: {
     meta: {
-      title: 'Product — GeoFold',
+      title: 'Product | GeoFold',
       description:
         'What GeoFold records at every survey point, how the data survives with no signal, and what shape you get it back in.',
     },
@@ -192,7 +192,7 @@ const copy: Record<Locale, Copy> = {
     record: [
       {
         t: 'Coordinates',
-        b: 'A WGS 84 point, stored as PostGIS geography — and printed into the photo.',
+        b: 'A WGS 84 point, stored as PostGIS geography, and printed into the photo.',
       },
       {
         t: 'Accuracy',
@@ -218,14 +218,14 @@ const copy: Record<Locale, Copy> = {
     exportKick: 'Export',
     exportTitle: 'Two formats, no surprises.',
     xlsx:
-      ' — one row per point, with its photo embedded in that row. Built directly on your device, so no data is sent to another service to be reformatted.',
+      ': one row per point, with its photo embedded in that row. Built directly on your device, so no data is sent to another service to be reformatted.',
     csv:
-      ' — plain text for QGIS, R, Python or whatever your team uses. Coordinates in WGS 84 decimal degrees.',
+      ': plain text for QGIS, R, Python or whatever your team uses. Coordinates in WGS 84 decimal degrees.',
     gap: {
       before:
         'There is no Shapefile or File Geodatabase export yet, and no direct ArcGIS integration. If that is what you need, ',
       link: 'tell us',
-      after: ' — hearing it from you is more useful than guessing.',
+      after: ': hearing it from you is more useful than guessing.',
     },
     close: {
       title: 'Try it with your own data.',
@@ -236,7 +236,7 @@ const copy: Record<Locale, Copy> = {
   },
 }
 
-/** The five field types a project form can use — ProjectForm.tsx FIELD_TYPES. */
+/** The five field types a project form can use, ProjectForm.tsx FIELD_TYPES. */
 const fieldTypes = ['text', 'number', 'integer', 'date', 'boolean']
 
 /* The phone schematics are language-independent drawings and stay in slide order. */
@@ -311,7 +311,7 @@ export default async function ProductPage() {
           <p>{c.formLede}</p>
         </div>
         {/* The type names are identifiers from the code, not prose, so they are the same in both
-            languages — a project form's `boolean` field is called boolean whichever way the site
+            languages: a project form's `boolean` field is called boolean whichever way the site
             is being read. */}
         <ul className="mk-tags" style={{ marginBottom: 18 }}>
           {fieldTypes.map((t) => (

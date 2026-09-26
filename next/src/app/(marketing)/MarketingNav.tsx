@@ -11,7 +11,7 @@ import { LogoLockup } from '@/components/Logo'
  *
  * Stays a client component because it marks the current route with aria-current, which needs
  * usePathname. The locale is resolved on the server and handed down as a prop rather than read
- * again here — one source of truth per request, and the labels are already correct in the HTML.
+ * again here: one source of truth per request, and the labels are already correct in the HTML.
  */
 export function MarketingNav({ locale }: { locale: Locale }) {
   const pathname = usePathname()
@@ -29,7 +29,7 @@ export function MarketingNav({ locale }: { locale: Locale }) {
 
   return (
     <nav className="mk-nav" aria-label={c.a11y.nav}>
-      <Link href="/" className="mk-wordmark" aria-label="GeoFold — home">
+      <Link href="/" className="mk-wordmark" aria-label="GeoFold: home">
         <LogoLockup size={26} />
       </Link>
 

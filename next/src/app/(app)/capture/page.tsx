@@ -141,7 +141,7 @@ export default function CapturePage() {
         <div className="card" style={{ textAlign: 'center', padding: 28 }}>
           <div style={{ width: 46, height: 46, borderRadius: '50%', background: 'var(--spruce-soft)', color: 'var(--spruce-ink)', display: 'grid', placeItems: 'center', margin: '0 auto 12px' }}><Check size={24} /></div>
           <div className="card-title" style={{ justifyContent: 'center' }}>Saved to your device</div>
-          <p className="muted">{pending > 0 ? `${pending} survey${pending > 1 ? 's' : ''} syncing in the background — you can keep working, even offline.` : 'Uploaded.'}</p>
+          <p className="muted">{pending > 0 ? `${pending} survey${pending > 1 ? 's' : ''} syncing in the background. You can keep working, even offline.` : 'Uploaded.'}</p>
           <button onClick={reset} style={{ marginTop: 8 }}><Camera size={16} style={{ verticalAlign: -3, marginRight: 6 }} /> Capture another</button>
         </div>
       </div>
@@ -203,12 +203,12 @@ export default function CapturePage() {
             </div>
             {manualInvalid ? (
               <p className="error" style={{ marginTop: 10 }}>
-                Enter decimal degrees — latitude between -90 and 90, longitude between -180 and 180.
+                Enter decimal degrees: latitude between -90 and 90, longitude between -180 and 180.
               </p>
             ) : manualFix ? (
               <p className="hint" style={{ marginTop: 8 }}>
                 <span className="coord">◎ {manualFix.lat.toFixed(6)}, {manualFix.lng.toFixed(6)}</span>
-                <span style={{ marginLeft: 8 }}>entered manually — no accuracy recorded</span>
+                <span style={{ marginLeft: 8 }}>entered manually, no accuracy recorded</span>
               </p>
             ) : (
               <p className="hint" style={{ marginTop: 8 }}>Decimal degrees, e.g. -0.037622 / 111.283981.</p>

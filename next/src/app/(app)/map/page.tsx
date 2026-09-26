@@ -36,7 +36,7 @@ export default function MapPage() {
       {!error && fc === null && <div className="center" style={{ minHeight: '72vh' }}>Loading…</div>}
       {fc !== null && <MapView features={features} />}
       {fc !== null && features.length === 0 && !error && (
-        <p className="muted">No surveys yet — points will appear here once field data is synced.</p>
+        <p className="muted">No surveys yet. Points will appear here once field data is synced.</p>
       )}
     </div>
   )

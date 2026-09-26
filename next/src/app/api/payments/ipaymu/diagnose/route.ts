@@ -90,7 +90,7 @@ export async function GET(req: Request) {
       ...base,
       ms: Date.now() - started,
       signature: 'accepted',
-      note: 'Credentials and signature are good. No payments row was written — this is not the real checkout.',
+      note: 'Credentials and signature are good. No payments row was written. This is not the real checkout.',
       orderId,
       amountIdr: PREMIUM_PRICE_IDR,
       sessionId: payment.sessionId,
@@ -100,7 +100,7 @@ export async function GET(req: Request) {
     const message = String(e)
     // The three failures worth telling apart, because the fix differs completely for each.
     const diagnosis = message.includes('ipaymu_auth_rejected')
-      ? 'Credentials rejected. Check for a sandbox key paired with the production host (or the reverse) — the two are separate accounts.'
+      ? 'Credentials rejected. Check for a sandbox key paired with the production host (or the reverse): the two are separate accounts.'
       : message.includes('ipaymu_origin_rejected') || message.includes('ipaymu_bad_response')
         ? 'iPaymu answered with something other than JSON, which usually means an unregistered IP or a wrong host.'
         : message.includes('ipaymu_timeout')

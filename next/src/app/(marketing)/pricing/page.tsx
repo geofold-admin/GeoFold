@@ -11,7 +11,7 @@ import { PricingCheckoutButton } from '@/components/PricingCheckoutButton'
 
 /*
  * Rewritten 2026-09-07. The previous version sold an "Enterprise" tier offering SSO, role-based
- * access and direct ArcGIS Online integration. None of those exist — there is no team model, no
+ * access and direct ArcGIS Online integration. None of those exist: there is no team model, no
  * roles beyond the one that lifts quota limits, and no ArcGIS integration of any kind. Selling a
  * tier built entirely from unbuilt features is worse than having no third tier.
  *
@@ -43,9 +43,9 @@ type Copy = {
 const copy: Record<Locale, Copy> = {
   id: {
     meta: {
-      title: 'Harga — GeoFold',
+      title: 'Harga | GeoFold',
       description:
-        'Gratis untuk 2 proyek, selamanya. Premium sekali bayar untuk membuka batasnya — bukan langganan otomatis.',
+        'Gratis untuk 2 proyek, selamanya. Premium sekali bayar untuk membuka batasnya, bukan langganan otomatis.',
     },
     eyebrow: 'Harga',
     h1: { before: 'Gratis dulu. ', em: 'Selamanya', after: ', kalau cukup.' },
@@ -97,19 +97,19 @@ const copy: Record<Locale, Copy> = {
     faqs: [
       {
         q: 'Ini langganan bulanan?',
-        a: `Bukan. Premium adalah pembelian sekali bayar untuk ${PREMIUM_DAYS} hari. Tidak ada penagihan berulang, tidak ada auto-debit, dan tidak ada yang perlu dibatalkan — masa aktifnya berakhir dengan sendirinya.`,
+        a: `Bukan. Premium adalah pembelian sekali bayar untuk ${PREMIUM_DAYS} hari. Tidak ada penagihan berulang, tidak ada auto-debit, dan tidak ada yang perlu dibatalkan: masa aktifnya berakhir dengan sendirinya.`,
       },
       {
         q: `Apa yang dihitung terhadap penyimpanan ${PREMIUM_STORAGE_LABEL}?`,
-        a: `Foto survei yang tersimpan di cloud. Jumlah proyek, survei dan foto tidak dibatasi — yang dibatasi adalah total ukurannya, ${PREMIUM_STORAGE_LABEL}. Kalau penuh, data lama tetap aman dan bisa diekspor; unggahan baru berhenti sampai Anda menghapus foto atau proyek yang tidak diperlukan.`,
+        a: `Foto survei yang tersimpan di cloud. Jumlah proyek, survei dan foto tidak dibatasi: yang dibatasi adalah total ukurannya, ${PREMIUM_STORAGE_LABEL}. Kalau penuh, data lama tetap aman dan bisa diekspor; unggahan baru berhenti sampai Anda menghapus foto atau proyek yang tidak diperlukan.`,
       },
       {
         q: 'Apa yang terjadi kalau masa Premium habis?',
-        a: 'Data Anda tidak pernah dihapus. Jika isi workspace melampaui batas Gratis saat itu, workspace dibekukan: semuanya tetap bisa dibaca, dilihat di peta, dan diekspor — hanya penambahan data baru yang berhenti sampai Anda memperpanjang atau kembali di bawah batas.',
+        a: 'Data Anda tidak pernah dihapus. Jika isi workspace melampaui batas Gratis saat itu, workspace dibekukan: semuanya tetap bisa dibaca, dilihat di peta, dan diekspor. Hanya penambahan data baru yang berhenti sampai Anda memperpanjang atau kembali di bawah batas.',
       },
       {
         q: 'Bagaimana cara membayarnya?',
-        a: 'Lewat gerbang pembayaran berizin di Indonesia — QRIS, transfer/virtual account, dompet digital, kartu, atau gerai ritel, sesuai yang tersedia di halaman pembayaran. GeoFold tidak pernah menerima atau menyimpan nomor kartu, CVV, PIN, atau OTP Anda.',
+        a: 'Lewat gerbang pembayaran berizin di Indonesia, QRIS, transfer/virtual account, dompet digital, kartu, atau gerai ritel, sesuai yang tersedia di halaman pembayaran. GeoFold tidak pernah menerima atau menyimpan nomor kartu, CVV, PIN, atau OTP Anda.',
       },
       {
         q: 'Siapa pemilik data survei saya?',
@@ -131,9 +131,9 @@ const copy: Record<Locale, Copy> = {
 
   en: {
     meta: {
-      title: 'Pricing — GeoFold',
+      title: 'Pricing | GeoFold',
       description:
-        'Free for 2 projects, forever. Premium is a one-off payment that lifts the limits — not an auto-renewing subscription.',
+        'Free for 2 projects, forever. Premium is a one-off payment that lifts the limits: not an auto-renewing subscription.',
     },
     eyebrow: 'Pricing',
     h1: { before: 'Free first. ', em: 'Forever', after: ', if that is enough.' },
@@ -185,19 +185,19 @@ const copy: Record<Locale, Copy> = {
     faqs: [
       {
         q: 'Is this a monthly subscription?',
-        a: `No. Premium is a one-off purchase for ${PREMIUM_DAYS} days. There is no recurring billing, no auto-debit and nothing to cancel — the period simply ends on its own.`,
+        a: `No. Premium is a one-off purchase for ${PREMIUM_DAYS} days. There is no recurring billing, no auto-debit and nothing to cancel: the period simply ends on its own.`,
       },
       {
         q: `What counts towards the ${PREMIUM_STORAGE_LABEL}?`,
-        a: `Survey photos held in the cloud. There is no cap on how many projects, surveys or photos you create — the cap is on their combined size, ${PREMIUM_STORAGE_LABEL}. When it is full, everything already stored stays safe and exportable; new uploads stop until you delete photos or projects you no longer need.`,
+        a: `Survey photos held in the cloud. There is no cap on how many projects, surveys or photos you create: the cap is on their combined size, ${PREMIUM_STORAGE_LABEL}. When it is full, everything already stored stays safe and exportable; new uploads stop until you delete photos or projects you no longer need.`,
       },
       {
         q: 'What happens when Premium runs out?',
-        a: 'Your data is never deleted. If the workspace is over the Free limits at that point it is frozen: everything stays readable, viewable on the map and exportable — only adding new data stops, until you renew or come back under the limits.',
+        a: 'Your data is never deleted. If the workspace is over the Free limits at that point it is frozen: everything stays readable, viewable on the map and exportable: only adding new data stops, until you renew or come back under the limits.',
       },
       {
         q: 'How do I pay?',
-        a: 'Through a licensed Indonesian payment gateway — QRIS, bank transfer / virtual account, e-wallet, card, or a retail outlet, whichever is offered on the payment page. GeoFold never receives or stores your card number, CVV, PIN or OTP.',
+        a: 'Through a licensed Indonesian payment gateway, QRIS, bank transfer / virtual account, e-wallet, card, or a retail outlet, whichever is offered on the payment page. GeoFold never receives or stores your card number, CVV, PIN or OTP.',
       },
       {
         q: 'Who owns my survey data?',
@@ -233,8 +233,8 @@ export default async function PricingPage() {
   return (
     <>
       {/* The SoftwareApplication node with both offers. The prices are read from lib/pricing, the
-          same constants the checkout charges, so the structured data cannot drift from the page —
-          a structured price that disagrees with the visible one is the kind of mismatch that gets
+          same constants the checkout charges, so the structured data cannot drift from the page.
+          A structured price that disagrees with the visible one is the kind of mismatch that gets
           a merchant flagged. No aggregateRating: there are no reviews to average. */}
       <script
         type="application/ld+json"

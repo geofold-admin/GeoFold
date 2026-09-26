@@ -10,8 +10,8 @@ import { getLocale } from '@/lib/i18n.server'
 import { pageMetadata } from '@/lib/seo'
 
 /*
- * The chrome around the answers — heading, lede, page title, and the "still stuck" block below —
- * follows the visitor's language. The ANSWERS THEMSELVES do not: BilingualDoc renders both sets
+ * The chrome around the answers: heading, lede, page title, and the "still stuck" block below all
+ * follow the visitor's language. The ANSWERS THEMSELVES do not: BilingualDoc renders both sets
  * into the HTML and only takes the site language decides which set is visible, so nothing is behind
  * a click for a reader who cannot run scripts. See BilingualDoc.tsx.
  */
@@ -30,12 +30,12 @@ const chrome: Record<Locale, {
   otherAfter: string
 }> = {
   id: {
-    title: 'FAQ — GeoFold',
+    title: 'FAQ | GeoFold',
     description:
       'Pertanyaan yang sering diajukan tentang GeoFold: akun, harga, metode pembayaran, pengembalian dana, data dan dukungan.',
     eyebrow: 'FAQ',
     h1: 'Pertanyaan yang sering diajukan.',
-    lede: 'Akun, harga, pembayaran, pengembalian dana, dan data — dijawab lengkap.',
+    lede: 'Akun, harga, pembayaran, pengembalian dana, dan data: dijawab lengkap.',
     stuck: 'Tidak menemukan jawabannya?',
     email: 'Email',
     phone: 'Telepon / WhatsApp',
@@ -45,12 +45,12 @@ const chrome: Record<Locale, {
     otherAfter: ' untuk alamat usaha dan jam operasional.',
   },
   en: {
-    title: 'FAQ — GeoFold',
+    title: 'FAQ | GeoFold',
     description:
       'Frequently asked questions about GeoFold: accounts, pricing, payment methods, refunds, data and support.',
     eyebrow: 'FAQ',
     h1: 'Frequently asked questions.',
-    lede: 'Accounts, pricing, payment, refunds and your data — answered in full.',
+    lede: 'Accounts, pricing, payment, refunds and your data: answered in full.',
     stuck: 'Did not find your answer?',
     email: 'Email',
     phone: 'Phone / WhatsApp',
@@ -88,7 +88,7 @@ const GROUPS_ID: Group[] = [
       },
       {
         q: 'Apakah GeoFold butuh koneksi internet?',
-        a: 'Tidak untuk pengambilan data. Aplikasi dirancang bekerja penuh secara offline — foto dan titik tersimpan di perangkat, lalu terkirim otomatis ke server begitu ada sinyal. Melihat peta dan mengekspor data membutuhkan koneksi.',
+        a: 'Tidak untuk pengambilan data. Aplikasi dirancang bekerja penuh secara offline: foto dan titik tersimpan di perangkat, lalu terkirim otomatis ke server begitu ada sinyal. Melihat peta dan mengekspor data membutuhkan koneksi.',
       },
       {
         q: 'Perangkat apa saja yang didukung?',
@@ -114,8 +114,8 @@ const GROUPS_ID: Group[] = [
         a: (
           <>
             Gunakan <Link href="/reset">halaman atur ulang kata sandi</Link>. Tautan pemulihan akan
-            dikirim ke email Anda. Jika Anda mendaftar lewat Google, masuklah kembali lewat Google —
-            akun tersebut tidak memiliki kata sandi terpisah.
+            dikirim ke email Anda. Jika Anda mendaftar lewat Google, masuklah kembali lewat Google.
+            Akun tersebut tidak memiliki kata sandi terpisah.
           </>
         ),
       },
@@ -192,7 +192,7 @@ const GROUPS_ID: Group[] = [
         q: 'Kapan Premium saya aktif setelah membayar?',
         a: (
           <>
-            Segera setelah gerbang pembayaran mengonfirmasi transaksi — pada umumnya kurang dari 5
+            Segera setelah gerbang pembayaran mengonfirmasi transaksi: pada umumnya kurang dari 5
             menit. Untuk metode seperti transfer bank manual atau pembayaran di gerai, konfirmasi
             dapat memakan waktu lebih lama sesuai proses penyedia. Jika lebih dari 1 jam sejak
             pembayaran berhasil dan status masih belum berubah, hubungi kami di{' '}
@@ -242,7 +242,7 @@ const GROUPS_ID: Group[] = [
       },
       {
         q: 'Apa itu kunci aktivasi (activation key)?',
-        a: 'Kode yang dapat ditukarkan menjadi masa Premium tanpa melalui pembayaran daring — dipakai untuk pengadaan instansi, program pelatihan, atau kompensasi dukungan. Tukarkan pada halaman Subscription. Setiap kode hanya dapat dipakai satu kali.',
+        a: 'Kode yang dapat ditukarkan menjadi masa Premium tanpa melalui pembayaran daring: dipakai untuk pengadaan instansi, program pelatihan, atau kompensasi dukungan. Tukarkan pada halaman Subscription. Setiap kode hanya dapat dipakai satu kali.',
       },
       {
         q: 'Apa yang terjadi ketika masa Premium habis?',
@@ -250,7 +250,7 @@ const GROUPS_ID: Group[] = [
           <>
             <strong>Data Anda tidak pernah dihapus.</strong> Jika saat itu isi workspace melampaui
             batas paket Gratis, workspace dibekukan: seluruh data tetap dapat dibaca, dilihat di
-            peta, dan diekspor — hanya penambahan data baru yang dihentikan sampai Anda memperpanjang
+            peta, dan diekspor: hanya penambahan data baru yang dihentikan sampai Anda memperpanjang
             Premium atau kembali di bawah batas Gratis.
           </>
         ),
@@ -277,7 +277,7 @@ const GROUPS_ID: Group[] = [
       },
       {
         q: 'Bagaimana cara membatalkan langganan?',
-        a: `Tidak ada yang perlu dibatalkan. Premium tidak diperpanjang otomatis — masa aktif ${PREMIUM_DAYS} hari berakhir dengan sendirinya. Anda juga dapat berhenti memakai layanan dan menghapus akun kapan saja.`,
+        a: `Tidak ada yang perlu dibatalkan. Premium tidak diperpanjang otomatis: masa aktif ${PREMIUM_DAYS} hari berakhir dengan sendirinya. Anda juga dapat berhenti memakai layanan dan menghapus akun kapan saja.`,
       },
     ],
   },
@@ -356,7 +356,7 @@ const GROUPS_EN: Group[] = [
       },
       {
         q: 'Does GeoFold need an internet connection?',
-        a: 'Not for capture. The app is built to work fully offline — photos and points are stored on the device and upload automatically once there is signal. Viewing the map and exporting need a connection.',
+        a: 'Not for capture. The app is built to work fully offline: photos and points are stored on the device and upload automatically once there is signal. Viewing the map and exporting need a connection.',
       },
       {
         q: 'Which devices are supported?',
@@ -382,7 +382,7 @@ const GROUPS_EN: Group[] = [
         a: (
           <>
             Use the <Link href="/reset">password reset page</Link>. A recovery link is emailed to
-            you. If you registered through Google, sign in with Google again — that account has no
+            you. If you registered through Google, sign in with Google again: that account has no
             separate password.
           </>
         ),
@@ -457,7 +457,7 @@ const GROUPS_EN: Group[] = [
         q: 'How soon is Premium active after I pay?',
         a: (
           <>
-            As soon as the gateway confirms the transaction — usually under 5 minutes. Methods such
+            As soon as the gateway confirms the transaction: usually under 5 minutes. Methods such
             as manual bank transfer or retail outlet payment can take longer to confirm, per the
             provider. If more than 1 hour has passed since a successful payment and nothing has
             changed, email {mail(BUSINESS.email.billing)} with your proof of payment.
@@ -484,7 +484,7 @@ const GROUPS_EN: Group[] = [
               <li>Close and reopen the app, then reload the Subscription page.</li>
               <li>Check you are signed in as the same account you paid from.</li>
               <li>
-                Still not active after 1 hour — email {mail(BUSINESS.email.billing)} with the order
+                Still not active after 1 hour: email {mail(BUSINESS.email.billing)} with the order
                 ID, date and time of payment, amount, payment method and your account email. We
                 resolve these within {BUSINESS.responseTime.en}.
               </li>
@@ -505,7 +505,7 @@ const GROUPS_EN: Group[] = [
       },
       {
         q: 'What is an activation key?',
-        a: 'A code redeemable for Premium time without an online payment — used for agency procurement, training programmes, or support goodwill. Redeem it on the Subscription page. Each key works once.',
+        a: 'A code redeemable for Premium time without an online payment: used for agency procurement, training programmes, or support goodwill. Redeem it on the Subscription page. Each key works once.',
       },
       {
         q: 'What happens when Premium expires?',
@@ -539,7 +539,7 @@ const GROUPS_EN: Group[] = [
       },
       {
         q: 'How do I cancel my subscription?',
-        a: `There is nothing to cancel. Premium does not auto-renew — the ${PREMIUM_DAYS}-day period simply ends. You can also stop using the service and delete your account at any time.`,
+        a: `There is nothing to cancel. Premium does not auto-renew: the ${PREMIUM_DAYS}-day period simply ends. You can also stop using the service and delete your account at any time.`,
       },
     ],
   },
@@ -595,7 +595,7 @@ const GROUPS_EN: Group[] = [
         ),
       },
       {
-        q: 'I hit a technical problem — what should I include?',
+        q: 'I hit a technical problem: what should I include?',
         a: 'Your account email, the project name, the survey reference if there is one, the app version, your device model, and a screenshot. For sync problems, also say how many points are held on the Sync screen.',
       },
     ],
@@ -610,7 +610,7 @@ function Groups({ groups }: { groups: Group[] }) {
           <h2>{group.title}</h2>
           <div className="mk-faq-list">
             {group.items.map(({ q, a }, i) => (
-              /* Exactly one row is open on arrival — the very first. Opening the first row of every
+              /* Exactly one row is open on arrival: the very first. Opening the first row of every
                  group was tried and rejected: with twelve groups that is twelve answers already
                  expanded, which is 4116px of page and most of the problem this change exists to
                  fix. One open row still shows the reader the shape of what is behind the rest,
@@ -625,7 +625,7 @@ function Groups({ groups }: { groups: Group[] }) {
 }
 
 export default async function FaqPage() {
-  /* Chooses which of the two documents is visible. Both are still in the HTML — see the header
+  /* Chooses which of the two documents is visible. Both are still in the HTML: see the header
      of BilingualDoc. Indonesian remains the governing version. */
   const locale = await getLocale()
   const c = chrome[locale]
