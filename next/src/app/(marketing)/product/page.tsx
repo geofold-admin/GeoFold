@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Carousel } from '../Carousel'
+import { ElevationGrid } from '@/components/ElevationGrid'
 import {
   PhoneMock,
   ScreenCapture,
@@ -326,6 +327,14 @@ export default async function ProductPage() {
       </section>
 
       <section className="mk-sec mk-sec-dark">
+        {/* A live elevation model behind the export copy. Adapted from React Bits' "GridRise": the
+            idea is theirs, the material is ours. A grid of blocks rising in a wave is decoration on
+            most sites; here it is the thing being exported. See ElevationGrid.tsx for why it is
+            canvas, why the height function is sine waves rather than noise, and which house rules
+            it obeys. */}
+        <div className="mk-sec-field" aria-hidden="true">
+          <ElevationGrid />
+        </div>
         <div className="mk-sec-head" data-anim="up">
           <span className="mk-kick on-dark">{c.exportKick}</span>
           <h2>{c.exportTitle}</h2>

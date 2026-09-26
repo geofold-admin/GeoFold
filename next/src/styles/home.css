@@ -65,6 +65,78 @@
 }
 .mk-car-track::-webkit-scrollbar { display: none; }
 .mk-car-slide { flex: 0 0 84%; scroll-snap-align: center; }
+
+/* =====================================================================================
+   THE LENTICULAR TREATMENT ON THE CAROUSEL.
+
+   ADAPTED FROM REACT BITS' "LenticularCarousel", not copied: that component is Pro-tier and there
+   is no source to copy. What its preview shows is the physical lenticular effect: the centred card
+   is full size and in focus, and the ones beside it recede, dim and blur, so the eye is pulled to
+   the middle while still seeing that there is more. That is the idea applied here.
+
+   WHY IT SUITS THIS CAROUSEL SPECIFICALLY. The slides are phone mocks: the point of the section is
+   to show what the app looks like in the hand, one screen at a time. Depth and a slight blur on the
+   neighbours say "that one is the subject, these are the others" without adding a single word or a
+   single control, which is exactly what a carousel of device screenshots needs and what a row of
+   equally-weighted cards does not say.
+
+   HOW IT IS DRIVEN. `animation-timeline: view()` where the browser supports it, so the depth is a
+   pure function of scroll position: no JavaScript, no listener, and it stays correct while a thumb
+   is dragging, which a JS version never quite does. Where it is unsupported the slides simply sit
+   flat, which is the correct fallback rather than a broken state. The @supports guard is what keeps
+   that honest.
+
+   REDUCED MOTION: the effect is tied to scroll position, not to time, so it is not the kind of
+   motion the preference is about, but the blur is still dropped there because blur is the part
+   that costs legibility. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .mk-car-slide {
+      animation: mk-lenticular linear both;
+      animation-timeline: view(x);
+      animation-range: cover 12% cover 88%;
+    }
+    @keyframes mk-lenticular {
+      /* Entering and leaving: receded and softened. */
+      0% { transform: scale(.9); opacity: .55; filter: blur(2.5px) saturate(.85); }
+      /* Centred: the subject. */
+      50% { transform: scale(1); opacity: 1; filter: blur(0) saturate(1); }
+      100% { transform: scale(.9); opacity: .55; filter: blur(2.5px) saturate(.85); }
+    }
+  }
+}
+
+/* Without view() timelines there is nothing to drive the scale from, so the centred slide is picked
+   out by the existing snap position instead: a slide that is snapped to centre gets a shadow, which
+   is a static hint rather than a broken animation. */
+@supports not (animation-timeline: view()) {
+  .mk-car-slide { scroll-snap-align: center; }
+  .mk-car-slide > * { transition: box-shadow .25s ease; }
+}
+
+/* =====================================================================================
+   THE SECTION FIELD — the elevation model's mount.
+
+   Absolute and behind the copy, faded at the edges so it reads as ground rather than as a bordered
+   panel, and clipped so the canvas can never push a horizontal scrollbar onto the page (the classic
+   canvas-in-a-section overflow leak).
+   ===================================================================================== */
+.mk-sec-field {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  /* The dark band is the one place a full-strength field is safe: the copy sits on top of it at a
+     contrast this project has already measured, and the fade keeps the headline clear. */
+  opacity: .5;
+  mask-image: linear-gradient(180deg, transparent 0, #000 22%, #000 78%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 22%, #000 78%, transparent 100%);
+}
+/* The canvas is the field's only child and must not introduce layout of its own. */
+.mk-sec-field > canvas { display: block; }
+.mk-sec-dark { position: relative; }
+/* The copy must sit above the field. */
+.mk-sec-dark > .mk-sec-head, .mk-sec-dark > .mk-why { position: relative; z-index: 1; }
 .mk-car-controls { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 14px; }
 .mk-car-arrow {
   width: 34px; height: 34px; border-radius: 100px; border: 1px solid var(--mk-line);
