@@ -216,7 +216,13 @@
 .mk .mk-btn, .mk .pg-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   font-family: var(--font-inter), sans-serif; font-size: 15px; font-weight: 500;
-  letter-spacing: -.005em; border-radius: 6px; padding: 13px 22px; border: 1px solid transparent;
+  /* line-height is set EXPLICITLY, and it has to be. A <button> defaults to `normal` while an
+     <a> inherits whatever its container declares — on the pricing cards that was 24px, so the
+     two buttons in the same row came out 52px and 47px tall. Same padding, same font, different
+     element, different height. Pinning it here makes the control the same size whatever tag it
+     is built from. */
+  line-height: 1.25; letter-spacing: -.005em; border-radius: 6px; padding: 13px 22px;
+  border: 1px solid transparent;
   cursor: pointer; text-decoration: none;
   transition: background-color .2s ease, border-color .2s ease, color .2s ease, transform .2s ease;
 }
@@ -703,10 +709,24 @@
 .mk .pg-quote-body strong { color: var(--mk-deep-ink); font-weight: 500; }
 
 /* ---------- pricing ---------- */
-.mk .pg-price { display: grid; gap: 20px; }
+.mk .pg-price { display: grid; gap: 20px; align-items: stretch; }
 .mk .pg-price-card {
   border: 1px solid var(--mk-line); border-radius: 10px; padding: clamp(26px, 3vw, 38px);
   display: grid; gap: 16px; align-content: start; background: var(--mk-panel);
+}
+/*
+ * Equal-height cards with the buttons on one line.
+ *
+ * Two cards holding different amounts of copy used to end wherever their text ended, so the two
+ * calls to action sat at different heights and the pair read as two separate objects rather than
+ * one choice. `1fr` on the copy row pushes everything after it down, and `align-self: end` pins the
+ * button row to the bottom of whatever height the taller card establishes.
+ */
+.mk .pg-price-card > .pg-body { align-self: start; }
+.mk .pg-price-card > div:last-child { align-self: end; margin-top: auto; }
+@media (min-width: 760px) {
+  .mk .pg-price { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mk .pg-price-card { grid-template-rows: auto auto 1fr auto; }
 }
 /* Same fix, same reason: the featured card is a SURFACE, so it takes the surface token. In dark
    this card is deliberately inverted back to near-white further down the file — but explicitly,

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/AuthContext'
 import { api } from '@/lib/api-client'
@@ -385,12 +386,32 @@ export function CheckoutModal({
    */
   const pressTarget = useRef<EventTarget | null>(null)
 
+  /*
+   * PORTAL, and why it is not optional.
+   *
+   * `position: fixed` is only fixed relative to the viewport until an ancestor creates a containing
+   * block — which happens for ANY ancestor with a transform, perspective, filter, or will-change:
+   * transform. The pricing cards now carry a 3D tilt (perspective + transform), so when this modal
+   * was rendered inside one it was positioned against that card instead of the screen and opened
+   * hundreds of pixels off-viewport. Rendering into document.body puts it outside every transformed
+   * ancestor, which is the only robust fix; a z-index or a transform on the overlay would not help.
+   *
+   * `mounted` guards the server render: createPortal needs a real DOM node, and this component
+   * renders on the server first.
+   */
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+
   if (!isOpen) return null
 
   const total = instructions ? (instructions.totalIdr || instructions.amountIdr) : null
   const fee = instructions?.feeIdr ?? 0
 
-  return (
+  // Nothing to portal into until the client has mounted; the dialog is never open on the server
+  // render anyway, so this only guards the very first client frame.
+  if (!mounted) return null
+
+  return createPortal(
     <div
       className="gf-ck-overlay"
       onMouseDown={(e) => { pressTarget.current = e.target }}
@@ -666,7 +687,8 @@ export function CheckoutModal({
           {c.secured}
         </footer>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 
