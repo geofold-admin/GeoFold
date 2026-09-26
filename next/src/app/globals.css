@@ -180,7 +180,9 @@ a:not(.mk a):hover { color: var(--accent); }
   border: 1px solid var(--line); border-radius: 0; box-shadow: none; padding: var(--space-3) var(--space-4); margin-bottom: 8px; }
 .list-row:hover { background: color-mix(in srgb, var(--ink) 4%, transparent); }
 
-label { display: block; font-size: 12.5px; font-weight: 500; color: var(--ink-2); margin: var(--space-3) 0 5px; }
+/* Scoped out of `.mk` like the other element selectors: the marketing pages load this file, and
+   the honeypot field on /contact deliberately carries no class, so it inherited this rule. */
+label:not(.mk label) { display: block; font-size: 12.5px; font-weight: 500; color: var(--ink-2); margin: var(--space-3) 0 5px; }
 /* Scoped out of `.mk`. The honeypot field on /contact deliberately carries no class, so it used
    to inherit the portal's input colours: measured #232326 on #e8e8ea in dark mode. */
 input:not(.mk input), textarea:not(.mk textarea), select:not(.mk select) { width: 100%; padding: 8px 12px; font: inherit; font-size: 13px; color: var(--ink);

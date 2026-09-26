@@ -341,12 +341,12 @@ export default async function ProductPage() {
             is being read. */}
         <ul className="mk-tags" style={{ marginBottom: 18 }}>
           {fieldTypes.map((t) => (
-            <li key={t} style={{ fontFamily: 'var(--font-mono), monospace', fontSize: 12.5 }}>
+            <li key={t} style={{ fontFamily: 'var(--font-mono), monospace', fontSize: 12 }}>
               {t}
             </li>
           ))}
         </ul>
-        <p style={{ padding: '0 var(--mk-pad)', fontSize: 13.5, color: 'var(--mk-muted)', margin: 0 }}>
+        <p style={{ padding: '0 var(--mk-pad)', fontSize: 14, color: 'var(--mk-muted)', margin: 0 }}>
           {c.formNote}
         </p>
       </section>
@@ -373,7 +373,7 @@ export default async function ProductPage() {
             <strong>.csv</strong>
             {c.csv}
           </p>
-          <p style={{ fontSize: 13.5, opacity: 0.85 }}>
+          <p style={{ fontSize: 14, opacity: 0.85 }}>
             {c.gap.before}
             <Link href="/contact">{c.gap.link}</Link>
             {c.gap.after}

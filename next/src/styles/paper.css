@@ -49,6 +49,10 @@
      /login, which are not in this palette at all. Declaring it here means the subtree is
      self-contained whatever it is mounted inside. */
   color: var(--mk-ink);
+  /* And its own base size, for the same reason. Without it the subtree inherits the
+     PORTAL's `body { font-size: 13.5px }` out of globals.css: measured 13.5px on plain
+     text that no rule here sets, a value that is not on this scale. */
+  font-size: 16px;
 
   /* ---- GeoFold palette: "Precision Topography" ----
      Client-supplied. Biru Geospasial #014AB5, Oranye Marker #F35D19, Batu Tulis #334155,
@@ -199,16 +203,16 @@
   font-weight: 300; letter-spacing: -.035em; line-height: .96; margin: 0;
 }
 .mk .pg-d2 {
-  font-size: clamp(28px, 3.8vw, 54px);
+  font-size: clamp(30px, 3.8vw, 60px);
   font-weight: 300; letter-spacing: -.03em; line-height: 1.02; margin: 0;
 }
 .mk .pg-d3 {
-  font-size: clamp(21px, 2vw, 28px);
+  font-size: clamp(20px, 2vw, 30px);
   font-weight: 500; letter-spacing: -.015em; line-height: 1.2; margin: 0;
 }
 .mk .pg-lede {
   font-family: var(--font-inter), sans-serif;
-  font-size: clamp(16.5px, 1.35vw, 20px);
+  font-size: clamp(16px, 1.35vw, 20px);
   font-weight: 400; line-height: 1.55; color: var(--mk-prose); margin: 0; max-width: 54ch;
 }
 .mk .pg-body { font-size: 16px; line-height: 1.65; color: var(--mk-prose); margin: 0; }
@@ -217,7 +221,7 @@
    site, so a small uppercase label always means the same thing. */
 .mk .pg-micro {
   font-family: var(--font-inter), sans-serif;
-  font-size: 10.5px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase;
+  font-size: 11px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase;
   color: var(--mk-faint); margin: 0;
 }
 .mk .pg-micro.accent { color: var(--mk-green); }
@@ -311,7 +315,7 @@
 /* ---- buttons: 6px radius, no shadow, no gradient ---- */
 .mk .mk-btn, .mk .pg-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  font-family: var(--font-inter), sans-serif; font-size: 15px; font-weight: 500;
+  font-family: var(--font-inter), sans-serif; font-size: 16px; font-weight: 500;
   /* line-height is set EXPLICITLY, and it has to be. A <button> defaults to `normal` while an
      <a> inherits whatever its container declares — on the pricing cards that was 24px, so the
      two buttons in the same row came out 52px and 47px tall. Same padding, same font, different
@@ -329,8 +333,20 @@
 .mk .mk-btn-primary:hover, .mk .pg-btn-primary:hover {
   background: var(--mk-green-2); border-color: var(--mk-green-2); opacity: 1;
 }
+/* THE OUTLINE BUTTON IS OPAQUE, and that is a fix rather than a style choice.
+ *
+ * It was `background: transparent`, which is what an outline button normally is. But it sits over
+ * `.pg-hero-field`, a full-bleed coordinate canvas at `z-index: -1`, and on a phone that canvas
+ * spans the entire width — so the field's grid and its coordinate readout showed straight through
+ * the button. On a desktop the field only covers the right half and the buttons are on the left,
+ * which is why this went unnoticed: it was reported from a phone screenshot, and the hit test
+ * confirmed it, with the field registering at 35 of 35 sample points inside the button's box.
+ *
+ * An outline button with a transparent ground is only safe over a flat surface. This one is over a
+ * drawing, so it takes the page ground and keeps its outline. The primary button was already
+ * opaque, which is why only this one was affected. */
 .mk .mk-btn-outline, .mk .pg-btn-outline {
-  background: transparent; color: var(--mk-ink); border-color: var(--mk-control-line);
+  background: var(--mk-bg); color: var(--mk-ink); border-color: var(--mk-control-line);
 }
 .mk .mk-btn-outline:hover, .mk .pg-btn-outline:hover {
   border-color: var(--mk-ink); color: var(--mk-ink); opacity: 1;
@@ -342,7 +358,7 @@
 
 .mk-portal {
   border: 1px solid var(--mk-control-line); color: var(--mk-ink); border-radius: 6px;
-  padding: 8px 15px; font-size: 13.5px; font-weight: 500; letter-spacing: -.005em;
+  padding: 8px 15px; font-size: 14px; font-weight: 500; letter-spacing: -.005em;
   transition: border-color .2s ease, background-color .2s ease;
 }
 .mk-portal:hover { background: var(--mk-ink); border-color: var(--mk-ink); color: #fff; opacity: 1; }
@@ -350,16 +366,16 @@
 /* ---- footer ---- */
 .mk-footer { background: var(--mk-bg); border-top: 1px solid var(--mk-line); color: var(--mk-muted); }
 .mk-footer-brand {
-  font-family: var(--font-tight), sans-serif; font-weight: 500; font-size: 19px;
+  font-family: var(--font-tight), sans-serif; font-weight: 500; font-size: 20px;
   letter-spacing: -.02em; text-transform: none; color: var(--mk-ink);
 }
 .mk-footer-col span {
-  color: var(--mk-faint); font-family: var(--font-inter), sans-serif; font-size: 10.5px;
+  color: var(--mk-faint); font-family: var(--font-inter), sans-serif; font-size: 11px;
   font-weight: 500; letter-spacing: .14em; text-transform: uppercase;
 }
 .mk-footer-col a { color: var(--mk-muted); font-size: 14px; transition: color .2s ease; }
 .mk-footer-col a:hover { color: var(--mk-ink); opacity: 1; }
-.mk-copy { color: var(--mk-faint); font-size: 13px; line-height: 1.6; }
+.mk-copy { color: var(--mk-faint); font-size: 14px; line-height: 1.6; }
 .mk-copy a { color: var(--mk-muted); }
 
 /* =====================================================================================
@@ -416,17 +432,17 @@
 
 /* The blurb. Same job as the reference paragraph: say who makes this and where. */
 .mk .mk-footer-blurb {
-  margin: 0; font-size: 12.5px; line-height: 1.6; color: var(--mk-faint); max-width: 38ch;
+  margin: 0; font-size: 12px; line-height: 1.6; color: var(--mk-faint); max-width: 38ch;
 }
 
-.mk .mk-footer-col { display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
+.mk .mk-footer-col { display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
 .mk .mk-footer-col > span {
   font-family: var(--font-inter), sans-serif;
   font-size: 10px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase;
   color: var(--mk-faint);
 }
 .mk .mk-footer-col a {
-  color: var(--mk-muted); font-size: 13px; text-decoration: none; width: fit-content;
+  color: var(--mk-muted); font-size: 14px; text-decoration: none; width: fit-content;
   transition: color .2s ease;
 }
 .mk .mk-footer-col a:hover { color: var(--mk-ink); opacity: 1; }
@@ -446,11 +462,11 @@
 }
 
 .mk .mk-seal-entity {
-  margin: 0 0 9px; font-size: 13.5px; line-height: 1.3; color: var(--mk-ink);
+  margin: 0 0 9px; font-size: 14px; line-height: 1.3; color: var(--mk-ink);
   font-family: var(--font-inter), sans-serif; letter-spacing: -.005em;
 }
 .mk .mk-seal-entity strong { font-weight: 600; }
-.mk .mk-seal-scale { color: var(--mk-muted); font-size: 12.5px; }
+.mk .mk-seal-scale { color: var(--mk-muted); font-size: 12px; }
 
 /* The two figures, side by side. A label and its value are one line each; stacking them cost 93px
    of height for no gain in legibility. */
@@ -461,7 +477,7 @@
   letter-spacing: .12em; text-transform: uppercase; color: var(--mk-faint);
 }
 .mk .mk-seal-rows dd {
-  margin: 0; font-family: var(--font-inter), sans-serif; font-size: 13px; font-weight: 500;
+  margin: 0; font-family: var(--font-inter), sans-serif; font-size: 14px; font-weight: 500;
   color: var(--mk-ink); font-variant-numeric: tabular-nums; letter-spacing: .01em;
 }
 .mk .mk-seal-kbli-label {
@@ -476,7 +492,7 @@
 .mk .mk-seal-oss {
   display: inline-flex; align-items: center; gap: 7px;
   padding: 4px 11px 4px 5px; border: 1px solid var(--mk-control-line); border-radius: 100px;
-  background: var(--mk-panel); color: var(--mk-prose); font-size: 11.5px; font-weight: 500;
+  background: var(--mk-panel); color: var(--mk-prose); font-size: 12px; font-weight: 500;
   text-decoration: none; width: fit-content; transition: border-color .2s ease, color .2s ease;
 }
 .mk .mk-seal-oss:hover { border-color: var(--mk-ink); color: var(--mk-ink); opacity: 1; }
@@ -494,7 +510,7 @@
 .mk .mk-parent-link {
   display: inline-flex; align-items: baseline; gap: 5px; margin-top: 11px;
   font-family: var(--font-tight), sans-serif; font-weight: 600;
-  font-size: 14.5px; letter-spacing: -.02em; line-height: 1.15;
+  font-size: 14px; letter-spacing: -.02em; line-height: 1.15;
   color: var(--mk-ink); text-decoration: none;
   transition: color .2s ease;
 }
@@ -569,12 +585,12 @@
    number means. Only the leading, the gaps and the description size come down. */
 @media (max-width: 620px) {
   .mk .mk-footer-main { padding: 26px var(--mk-pad) 22px; gap: 22px 20px; }
-  .mk .mk-footer-col { gap: 6px; font-size: 12.5px; }
-  .mk .mk-footer-col a { font-size: 12.5px; }
+  .mk .mk-footer-col { gap: 6px; font-size: 12px; }
+  .mk .mk-footer-col a { font-size: 12px; }
   .mk .mk-seal-rows { gap: 4px 18px; margin-bottom: 9px; }
-  .mk .mk-seal-kbli-label { font-size: 10.5px; line-height: 1.35; }
-  .mk .mk-seal-note { margin-top: 7px; font-size: 10.5px; }
-  .mk .mk-footer-bar { gap: 4px 16px; padding: 12px var(--mk-pad) 16px; font-size: 11.5px; }
+  .mk .mk-seal-kbli-label { font-size: 11px; line-height: 1.35; }
+  .mk .mk-seal-note { margin-top: 7px; font-size: 11px; }
+  .mk .mk-footer-bar { gap: 4px 16px; padding: 12px var(--mk-pad) 16px; font-size: 12px; }
 }
 
 /* =====================================================================================
@@ -592,13 +608,13 @@
 .mk .mk-sec-head h2, .mk .mk-close h2, .mk .mk-centered-h2 {
   font-family: var(--font-tight), sans-serif; font-weight: 300;
   text-transform: none; letter-spacing: -.03em; line-height: 1;
-  font-size: clamp(28px, 4.2vw, 56px); color: var(--mk-ink);
+  font-size: clamp(30px, 4.2vw, 60px); color: var(--mk-ink);
 }
 
 .mk-h-eyebrow, .mk-kick, .mk-cap-kick, .mk-price-name, .mk-facts dt, .mk-eyebrow, .mk-label,
 .mk-row dt, .mk-faq-group > h2 {
   font-family: var(--font-inter), sans-serif !important;
-  font-size: 10.5px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase;
+  font-size: 11px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase;
 }
 .mk-h-eyebrow {
   display: inline-block; background: transparent; border: 1px solid var(--mk-line);
@@ -637,14 +653,14 @@
   margin: 24px auto 0; max-width: 720px; padding: 24px;
   border: 1px dashed var(--mk-line); border-radius: 10px; background: var(--mk-raise);
 }
-.mk .mk-ipaymu-test h2 { margin: 7px 0 8px; font-size: clamp(21px, 2.4vw, 28px); }
+.mk .mk-ipaymu-test h2 { margin: 7px 0 8px; font-size: clamp(20px, 2.4vw, 30px); }
 .mk .mk-ipaymu-test > p { max-width: 60ch; color: var(--mk-muted); margin: 0; }
 .mk .mk-ipaymu-test-action { margin-top: 18px; }
 .mk .mk-ipaymu-test-action .mk-btn { min-height: 44px; }
 .mk .mk-ipaymu-test-action .mk-btn:disabled { cursor: wait; opacity: .65; }
 .mk .mk-ipaymu-test-error { margin: 10px 0 0; color: var(--mk-error, #a33); font-size: 14px; }
 .mk .mk-ipaymu-result { max-width: 680px; display: grid; gap: 18px; }
-.mk .mk-ipaymu-result p { margin: 0; font-size: 17px; line-height: 1.65; color: var(--mk-deep-prose); }
+.mk .mk-ipaymu-result p { margin: 0; font-size: 18px; line-height: 1.65; color: var(--mk-deep-prose); }
 .mk .mk-ipaymu-result .mk-ipaymu-result-note { color: var(--mk-muted); font-size: 14px; }
 .mk-price-num {
   font-family: var(--font-tight), sans-serif; font-weight: 300; letter-spacing: -.03em;
@@ -657,7 +673,7 @@
      never wrapped, which is why this only ever showed on one of the two cards.
      44px brings the row to about 245px, inside the 256px box with room for a wider locale string.
      The lower bound and the vw slope are unchanged, so nothing below 1024px moves. */
-  color: var(--mk-ink); font-size: clamp(34px, 3.6vw, 44px);
+  color: var(--mk-ink); font-size: clamp(38px, 3.6vw, 48px);
   /* THE UNIT SITS ON THE SAME LINE AS THE AMOUNT AT EVERY WIDTH, and `nowrap` is what actually
      guarantees it. Without it a longer amount ("Rp 1.250.000") could still break between the two,
      and the misalignment would return on a future price change rather than on a viewport change. */
@@ -799,7 +815,7 @@
 .mk .pg-stat dt { margin-bottom: 8px; }
 .mk .pg-stat dd {
   margin: 0; font-family: var(--font-tight), sans-serif; font-weight: 300;
-  font-size: clamp(26px, 2.6vw, 38px); letter-spacing: -.03em; color: var(--mk-ink);
+  font-size: clamp(24px, 2.6vw, 38px); letter-spacing: -.03em; color: var(--mk-ink);
   line-height: 1;
 }
 .mk .pg-stat dd small { font-size: .46em; font-weight: 400; color: var(--mk-muted); margin-left: 9px; letter-spacing: 0; }
@@ -839,7 +855,7 @@
   background: var(--mk-raise);
   border-right: 1px solid var(--mk-line);
   font-family: var(--font-inter), sans-serif;
-  font-size: 10.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
+  font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
   color: var(--mk-faint);
   white-space: nowrap;
   pointer-events: none;
@@ -867,7 +883,7 @@
 .mk .pg-marquee-row { display: flex; gap: 0; flex: none; align-items: center; }
 .mk .pg-marquee-item {
   font-family: var(--font-tight), sans-serif;
-  font-size: 15px; font-weight: 500; letter-spacing: -.01em;
+  font-size: 16px; font-weight: 500; letter-spacing: -.01em;
   color: var(--mk-ink);
   white-space: nowrap; display: inline-flex;
   align-items: center; gap: 38px;
@@ -907,14 +923,14 @@
 .mk .pg-globe-canvas { --globe-accent: #F35D19; --globe-line: #9DB4D4; width: 100%; aspect-ratio: 1 / 1; display: block; }
 .mk .pg-globe-cap {
   display: flex; align-items: flex-start; gap: 11px;
-  font-size: 13.5px; line-height: 1.5; color: var(--mk-deep-prose);
+  font-size: 14px; line-height: 1.5; color: var(--mk-deep-prose);
   margin-top: -8%;
 }
 .mk .pg-globe-cap strong { font-weight: 600; display: block; }
 /* The caption on the dark band. --mk-faint is tuned for the paper ground; on the band the
    deep-prose value is the one that was measured against this exact surface, so it is used
    directly rather than a hand-picked literal. */
-.mk .pg-globe-sub { display: block; color: #C3CEDC; font-size: 12.5px; margin-top: 2px; }
+.mk .pg-globe-sub { display: block; color: #C3CEDC; font-size: 12px; margin-top: 2px; }
 .mk .pg-globe-dot {
   flex: none; width: 8px; height: 8px; border-radius: 100px; margin-top: 5px;
   background: var(--mk-marker, #F35D19); box-shadow: 0 0 0 4px rgba(243, 93, 25, .18);
@@ -1127,7 +1143,7 @@
 /* ---------- pull quote band ---------- */
 .mk .pg-quote { max-width: 20ch; }
 .mk .pg-quote-body { display: grid; gap: 18px; max-width: 60ch; }
-.mk .pg-quote-body p { color: var(--mk-deep-prose); font-size: clamp(15.5px, 1.3vw, 18px); line-height: 1.7; margin: 0; }
+.mk .pg-quote-body p { color: var(--mk-deep-prose); font-size: clamp(16px, 1.3vw, 18px); line-height: 1.7; margin: 0; }
 .mk .pg-quote-body strong { color: var(--mk-deep-ink); font-weight: 500; }
 
 /* ---------- pricing ---------- */
@@ -1390,7 +1406,7 @@
     background: transparent;
     color: var(--mk-ink);
     font: inherit;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 500;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
@@ -1496,12 +1512,12 @@
     padding: 0 2px;
     border-bottom: 1px solid var(--mk-line);
     color: var(--mk-ink);
-    font-size: 19px;
+    font-size: 20px;
     font-weight: 500;
     letter-spacing: -.01em;
     text-decoration: none;
   }
-  .mk .mk-menu-link > span { color: var(--mk-faint); font-size: 15px; }
+  .mk .mk-menu-link > span { color: var(--mk-faint); font-size: 16px; }
   .mk .mk-menu-link[aria-current='page'] { color: var(--mk-green); }
   .mk .mk-menu-link[aria-current='page'] > span { color: var(--mk-green); }
   .mk .mk-menu-link:active { background: var(--mk-raise); }
@@ -1542,7 +1558,7 @@
   .mk .mk-nav { gap: 10px 12px; padding-block: 10px; }
   .mk .mk-nav-tools { gap: 10px; }
   .mk .mk-nav-tools .mk-lang-seg { display: none; }
-  .mk .mk-portal { padding: 7px 11px; font-size: 12.5px; }
+  .mk .mk-portal { padding: 7px 11px; font-size: 12px; }
   .mk .mk-menu-btn { padding: 0 11px; }
   .mk .mk-menu-label { display: none; } /* icon only: the aria-label still names it */
 }
@@ -1964,7 +1980,7 @@ html[data-theme='dark'] .mk .mk-theme-btn .mk-icon-moon { display: none; }
    their own scrollable row, which is the layout that was already working on phones. */
 @media (max-width: 900px) {
   .mk .mk-nav-tools { gap: 8px; margin-left: auto; }
-  .mk .mk-lang-seg button { padding: 6px 8px; font-size: 10.5px; }
+  .mk .mk-lang-seg button { padding: 6px 8px; font-size: 11px; }
   .mk .mk-theme-btn { width: 30px; height: 30px; }
 }
 
@@ -1997,7 +2013,7 @@ html[data-theme='dark'] .mk .mk-theme-btn .mk-icon-moon { display: none; }
 .gf-lockup { display: inline-flex; align-items: center; gap: 9px; }
 .gf-lockup-word {
   font-family: var(--font-sans), sans-serif;
-  font-weight: 700; font-size: 19px; letter-spacing: -0.022em;
+  font-weight: 700; font-size: 20px; letter-spacing: -0.022em;
   color: var(--mk-ink); line-height: 1;
 }
 
@@ -2219,7 +2235,7 @@ html[data-theme='dark'] .mk .mk-theme-btn .mk-icon-moon { display: none; }
   border-bottom: 1px solid var(--mk-line);
 }
 .mk .mk-compare thead th {
-  font-family: var(--font-inter), sans-serif; font-size: 10.5px; font-weight: 600;
+  font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 600;
   letter-spacing: .12em; text-transform: uppercase; color: var(--mk-faint);
   background: var(--mk-raise);
 }
@@ -2248,7 +2264,7 @@ html[data-theme='dark'] .mk .mk-theme-btn .mk-icon-moon { display: none; }
   }
   .mk .mk-compare tbody tr:last-child { border-bottom: 0; }
   .mk .mk-compare tbody th, .mk .mk-compare tbody td { border: 0; padding: 0; }
-  .mk .mk-compare tbody th { font-size: 13px; margin-bottom: 6px; }
+  .mk .mk-compare tbody th { font-size: 14px; margin-bottom: 6px; }
   .mk .mk-compare tbody td { font-size: 14px; display: flex; gap: 8px; }
   /* The two value lines sit closer together than they should. A design review of the phone layout
      called the block "dense... tiring to scan quickly", and the measurement agrees: with a 20.3px
@@ -2262,7 +2278,7 @@ html[data-theme='dark'] .mk .mk-theme-btn .mk-icon-moon { display: none; }
      cannot drift. */
   .mk .mk-compare tbody td::before {
     content: attr(data-plan); flex: none; width: 62px;
-    font-size: 10.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+    font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
     color: var(--mk-faint); padding-top: 3px;
   }
   .mk .mk-compare .mk-compare-prem { background: none; }
@@ -2311,7 +2327,7 @@ html[data-theme='dark'] .mk .mk-theme-btn .mk-icon-moon { display: none; }
   margin: 0; font-family: var(--font-tight), sans-serif; font-weight: 500;
   font-size: 16px; letter-spacing: -.015em; color: var(--mk-ink);
 }
-.mk .mk-build-sum { margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--mk-prose); }
+.mk .mk-build-sum { margin: 0; font-size: 14px; line-height: 1.6; color: var(--mk-prose); }
 .mk .mk-build-facts {
   margin: 0; display: grid; gap: 7px;
   border-top: 1px solid var(--mk-line); padding-top: 12px;
@@ -2323,16 +2339,16 @@ html[data-theme='dark'] .mk .mk-theme-btn .mk-icon-moon { display: none; }
   color: var(--mk-faint);
 }
 .mk .mk-build-facts dd {
-  margin: 0; font-size: 12.5px; color: var(--mk-ink);
+  margin: 0; font-size: 12px; color: var(--mk-ink);
   /* The package names and sizes line up as a column of values, which is the point of the grid. */
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
 }
 .mk .mk-build-cta {
-  font-size: 13.5px; font-weight: 500; color: var(--mk-green);
+  font-size: 14px; font-weight: 500; color: var(--mk-green);
   text-decoration: underline; text-underline-offset: 3px; justify-self: start;
 }
-.mk .mk-build-note { margin: 0; font-size: 12.5px; line-height: 1.55; color: var(--mk-muted); }
+.mk .mk-build-note { margin: 0; font-size: 12px; line-height: 1.55; color: var(--mk-muted); }
 .mk .mk-build-note a { color: var(--mk-ink); text-decoration: underline; text-underline-offset: 3px; }
 
 /* =====================================================================================

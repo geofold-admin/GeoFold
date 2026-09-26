@@ -67,16 +67,16 @@
 .mk-portal {
   display: inline-flex; align-items: center; gap: 6px; flex: none;
   border: 1px solid var(--mk-green); color: var(--mk-green);
-  padding: 9px 16px; border-radius: 3px; font-size: 13px; font-weight: 600;
+  padding: 9px 16px; border-radius: 3px; font-size: 14px; font-weight: 600;
 }
 
 .mk-footer {
   padding: 36px var(--mk-pad); border-top: 1px solid var(--mk-line);
   display: flex; justify-content: space-between; align-items: flex-start; gap: 32px; flex-wrap: wrap;
 }
-.mk-footer-brand { font-family: var(--font-sans), sans-serif; font-weight: 700; font-size: 17px; margin-bottom: 8px; }
-.mk-copy { font-size: 12.5px; color: var(--mk-faint); }
-.mk-footer-cols { display: flex; gap: 56px; font-size: 13px; flex-wrap: wrap; }
+.mk-footer-brand { font-family: var(--font-sans), sans-serif; font-weight: 700; font-size: 18px; margin-bottom: 8px; }
+.mk-copy { font-size: 12px; color: var(--mk-faint); }
+.mk-footer-cols { display: flex; gap: 56px; font-size: 14px; flex-wrap: wrap; }
 .mk-footer-col { display: flex; flex-direction: column; gap: 8px; }
 .mk-footer-col > span { font-weight: 600; margin-bottom: 2px; }
 .mk-footer-col a { color: var(--mk-muted); }
@@ -90,9 +90,9 @@
   text-transform: uppercase; color: var(--mk-sand-ink); background: var(--mk-sand);
   padding: 6px 14px; border-radius: 20px; margin-bottom: 24px;
 }
-.mk-hero h1 { font-weight: 700; font-size: 46px; line-height: 1.12; margin: 0 auto 20px; max-width: 760px; }
-.mk-hero.lg h1 { font-size: 54px; line-height: 1.1; max-width: 820px; }
-.mk-lede { font-size: 17px; line-height: 1.6; color: var(--mk-muted); max-width: 580px; margin: 0 auto; }
+.mk-hero h1 { font-weight: 700; font-size: 48px; line-height: 1.12; margin: 0 auto 20px; max-width: 760px; }
+.mk-hero.lg h1 { font-size: 60px; line-height: 1.1; max-width: 820px; }
+.mk-lede { font-size: 18px; line-height: 1.6; color: var(--mk-muted); max-width: 580px; margin: 0 auto; }
 .mk-hero.lg .mk-lede { font-size: 18px; max-width: 600px; margin-bottom: 32px; }
 
 .mk-section { padding: 72px var(--mk-pad); }
@@ -100,13 +100,13 @@
 .mk-inner { max-width: 1200px; margin: 0 auto; }
 .mk-band { background: var(--mk-green); color: var(--mk-bg); padding: 64px var(--mk-pad); }
 .mk-band.tall { padding: 72px var(--mk-pad); }
-.mk-kicker { font-size: 12.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 14px; }
+.mk-kicker { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 14px; }
 .mk-kicker.on-green { color: var(--mk-on-green-dim); }
 .mk-kicker.on-paper { color: var(--mk-sand-ink); }
 
 .mk-btn {
   display: inline-block; text-align: center; padding: 14px 26px; border-radius: 3px;
-  font-weight: 600; font-size: 15px; border: 1px solid transparent; cursor: pointer;
+  font-weight: 600; font-size: 16px; border: 1px solid transparent; cursor: pointer;
   font-family: inherit;
 }
 .mk-btn-primary { background: var(--mk-green); color: var(--mk-bg); }
@@ -117,38 +117,38 @@
 .mk-shot {
   aspect-ratio: 16 / 9; max-width: 1200px; margin: 0 auto; background: var(--mk-line);
   border-radius: 6px; display: flex; align-items: center; justify-content: center;
-  font-size: 13px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--mk-faint);
+  font-size: 14px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--mk-faint);
 }
 .mk-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; }
-.mk-step-n { font-family: var(--font-sans), sans-serif; font-weight: 700; font-size: 15px; color: var(--mk-green); margin-bottom: 10px; }
-.mk-step-t { font-family: var(--font-sans), sans-serif; font-weight: 600; font-size: 19px; margin-bottom: 10px; }
-.mk-step-b { font-size: 14.5px; line-height: 1.6; color: var(--mk-on-green); }
+.mk-step-n { font-family: var(--font-sans), sans-serif; font-weight: 700; font-size: 16px; color: var(--mk-green); margin-bottom: 10px; }
+.mk-step-t { font-family: var(--font-sans), sans-serif; font-weight: 600; font-size: 20px; margin-bottom: 10px; }
+.mk-step-b { font-size: 14px; line-height: 1.6; color: var(--mk-on-green); }
 .mk-features { display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; }
 .mk-feature svg { margin-bottom: 14px; }
 .mk-feature-t { font-family: var(--font-sans), sans-serif; font-weight: 600; font-size: 16px; margin-bottom: 8px; }
-.mk-feature-b { font-size: 13.5px; line-height: 1.6; color: var(--mk-muted); }
+.mk-feature-b { font-size: 14px; line-height: 1.6; color: var(--mk-muted); }
 .mk-closer { padding: 64px var(--mk-pad); text-align: center; border-top: 1px solid var(--mk-line); }
-.mk-closer h2 { font-weight: 700; font-size: 25px; margin: 0 0 20px; }
+.mk-closer h2 { font-weight: 700; font-size: 24px; margin: 0 0 20px; }
 
 /* ---- product ---- */
 .mk-split { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
-.mk-split h2 { font-weight: 700; font-size: 28px; margin: 0 0 16px; }
-.mk-dashes { display: flex; flex-direction: column; gap: 12px; font-size: 14.5px; }
+.mk-split h2 { font-weight: 700; font-size: 30px; margin: 0 0 16px; }
+.mk-dashes { display: flex; flex-direction: column; gap: 12px; font-size: 14px; }
 .mk-dashes.on-green { color: var(--mk-on-green); }
 .mk-dashes.on-paper { color: var(--mk-muted); }
 .mk-slot {
   border-radius: 6px; aspect-ratio: 4 / 3; display: flex; align-items: center; justify-content: center;
-  font-size: 12.5px; letter-spacing: 0.05em; text-transform: uppercase;
+  font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase;
 }
 .mk-slot.on-green { background: var(--mk-green-2); color: var(--mk-on-green-dim); }
 .mk-slot.on-paper { background: var(--mk-line); color: var(--mk-faint); }
 .mk-chips { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
-.mk-chip { border: 1px solid var(--mk-green-line); color: var(--mk-on-green); padding: 6px 12px; border-radius: 3px; font-size: 13px; }
+.mk-chip { border: 1px solid var(--mk-green-line); color: var(--mk-on-green); padding: 6px 12px; border-radius: 3px; font-size: 14px; }
 .mk-meta-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
 .mk-meta { border: 1px solid var(--mk-line); border-radius: 6px; padding: 18px; }
-.mk-meta-t { font-family: var(--font-sans), sans-serif; font-weight: 600; font-size: 14.5px; margin-bottom: 6px; }
-.mk-meta-b { font-size: 13px; color: var(--mk-muted); }
-.mk-centered-h2 { font-weight: 700; font-size: 26px; margin: 0 0 36px; text-align: center; }
+.mk-meta-t { font-family: var(--font-sans), sans-serif; font-weight: 600; font-size: 14px; margin-bottom: 6px; }
+.mk-meta-b { font-size: 14px; color: var(--mk-muted); }
+.mk-centered-h2 { font-weight: 700; font-size: 24px; margin: 0 0 36px; text-align: center; }
 
 /* ---- pricing ---- */
 .mk-plans { max-width: 1080px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; align-items: stretch; }
@@ -160,13 +160,13 @@
   padding: 5px 12px; border-radius: 12px;
 }
 .mk-plan-name { font-family: var(--font-sans), sans-serif; font-weight: 600; font-size: 18px; margin-bottom: 6px; }
-.mk-plan-for { font-size: 13.5px; color: var(--mk-muted); margin-bottom: 20px; }
+.mk-plan-for { font-size: 14px; color: var(--mk-muted); margin-bottom: 20px; }
 .mk-plan.featured .mk-plan-for { color: var(--mk-on-green); }
-.mk-plan-price { font-family: var(--font-sans), sans-serif; font-weight: 700; font-size: 36px; margin-bottom: 24px; }
-.mk-plan-price small { font-size: 15px; font-weight: 500; }
+.mk-plan-price { font-family: var(--font-sans), sans-serif; font-weight: 700; font-size: 38px; margin-bottom: 24px; }
+.mk-plan-price small { font-size: 16px; font-weight: 500; }
 .mk-plan-price.tight { margin-bottom: 2px; }
-.mk-plan-note { font-size: 12.5px; color: var(--mk-on-green-dim); margin-bottom: 22px; }
-.mk-plan-list { display: flex; flex-direction: column; gap: 12px; font-size: 13.5px; color: var(--mk-muted); margin-bottom: 28px; flex: 1; }
+.mk-plan-note { font-size: 12px; color: var(--mk-on-green-dim); margin-bottom: 22px; }
+.mk-plan-list { display: flex; flex-direction: column; gap: 12px; font-size: 14px; color: var(--mk-muted); margin-bottom: 28px; flex: 1; }
 .mk-plan.featured .mk-plan-list { color: var(--mk-on-green); }
 .mk-plan-list > li { display: flex; gap: 8px; align-items: flex-start; list-style: none; }
 .mk-plan-list svg { margin-top: 2px; flex: none; }
@@ -281,7 +281,7 @@ html[data-theme='dark'] .mk-faq-item { --faq-glow: #7FA8E8; }
 .mk-faq-btn {
   width: 100%; display: flex; align-items: flex-start; gap: 18px; text-align: left;
   background: none; border: 0; cursor: pointer; padding: 18px 2px;
-  font-family: var(--font-sans), sans-serif; font-weight: 600; font-size: 15.5px;
+  font-family: var(--font-sans), sans-serif; font-weight: 600; font-size: 16px;
   color: var(--mk-ink); line-height: 1.4;
 }
 .mk-faq-btn:hover .mk-faq-q { color: var(--mk-green); }
@@ -321,7 +321,7 @@ html[data-theme='dark'] .mk-faq-item { --faq-glow: #7FA8E8; }
 /* ---- contact ---- */
 .mk-contact { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: 1.3fr 1fr; gap: 56px; }
 .mk-form { display: flex; flex-direction: column; gap: 18px; }
-.mk-label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--mk-muted); }
+.mk-label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px; color: var(--mk-muted); }
 /* THE FORM FIELD CONTRAST BUG — a real one, found on a user's screenshot.
  *
  * `.mk-input` was written as `color: var(--mk-ink); background: #fff`. That is only correct while
@@ -353,11 +353,11 @@ html[data-theme='dark'] .mk-faq-item { --faq-glow: #7FA8E8; }
 textarea.mk-input { min-height: 0; resize: vertical; }
 .mk-send {
   align-self: flex-start; background: var(--mk-green); color: var(--mk-bg); border: none;
-  padding: 13px 26px; border-radius: 3px; font-weight: 600; font-size: 14.5px; cursor: pointer; font-family: inherit;
+  padding: 13px 26px; border-radius: 3px; font-weight: 600; font-size: 14px; cursor: pointer; font-family: inherit;
 }
 .mk-aside { background: var(--mk-panel); border-radius: 8px; padding: 28px; height: fit-content; display: flex; flex-direction: column; gap: 22px; }
-.mk-aside-t { font-family: var(--font-sans), sans-serif; font-weight: 600; font-size: 14.5px; margin-bottom: 4px; }
-.mk-aside-b { font-size: 13.5px; color: var(--mk-muted); line-height: 1.6; }
+.mk-aside-t { font-family: var(--font-sans), sans-serif; font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+.mk-aside-b { font-size: 14px; color: var(--mk-muted); line-height: 1.6; }
 
 /* ---- login ---- */
 .mk-login-shell { min-height: 100vh; display: flex; flex-direction: column; }
@@ -380,16 +380,16 @@ textarea.mk-input { min-height: 0; resize: vertical; }
   width: 380px; max-width: 100%; background: var(--mk-panel); border: 1px solid var(--mk-line);
   border-radius: 8px; padding: 36px 32px;
 }
-.mk-card-t { font-family: var(--font-sans), sans-serif; font-weight: 700; font-size: 22px; margin-bottom: 8px; }
+.mk-card-t { font-family: var(--font-sans), sans-serif; font-weight: 700; font-size: 24px; margin-bottom: 8px; }
 .mk-card-sub { font-size: 14px; color: var(--mk-muted); margin-bottom: 28px; }
 .mk-card-fields { display: flex; flex-direction: column; gap: 16px; margin-bottom: 22px; }
 .mk-submit {
   display: block; width: 100%; text-align: center; background: var(--mk-green); color: var(--mk-on-green);
-  padding: 13px; border-radius: 4px; font-weight: 600; font-size: 14.5px; margin-bottom: 14px;
+  padding: 13px; border-radius: 4px; font-weight: 600; font-size: 14px; margin-bottom: 14px;
   border: none; cursor: pointer; font-family: inherit;
 }
 .mk-submit:disabled { opacity: 0.6; cursor: default; }
-.mk-consent { display: flex; gap: 10px; align-items: flex-start; margin: 2px 0 18px; font-size: 13px; line-height: 1.55; color: var(--mk-muted); }
+.mk-consent { display: flex; gap: 10px; align-items: flex-start; margin: 2px 0 18px; font-size: 14px; line-height: 1.55; color: var(--mk-muted); }
 .mk-consent input[type="checkbox"] { margin-top: 2px; flex-shrink: 0; width: 17px; height: 17px; accent-color: var(--mk-green); cursor: pointer; }
 .mk-consent a { color: var(--mk-green); text-decoration: underline; }
 /* ---- social sign-in ---- */
@@ -406,15 +406,15 @@ textarea.mk-input { min-height: 0; resize: vertical; }
 .mk-or { display: flex; align-items: center; gap: 12px; margin: 6px 0 2px; color: var(--mk-faint); font-size: 12px; }
 .mk-or::before, .mk-or::after { content: ''; flex: 1; height: 1px; background: var(--mk-line); }
 
-.mk-card-foot { text-align: center; font-size: 12.5px; color: var(--mk-faint); }
+.mk-card-foot { text-align: center; font-size: 12px; color: var(--mk-faint); }
 .mk-card-foot a { color: var(--mk-muted); }
 .mk-error {
   background: color-mix(in srgb, var(--mk-amber) 10%, transparent);
   border: 1px solid color-mix(in srgb, var(--mk-amber) 34%, transparent);
   color: var(--mk-amber);
-  border-radius: 4px; padding: 10px 12px; font-size: 13px; margin-bottom: 16px;
+  border-radius: 4px; padding: 10px 12px; font-size: 14px; margin-bottom: 16px;
 }
-.mk-note { background: var(--mk-sand); color: var(--mk-sand-ink); border-radius: 4px; padding: 10px 12px; font-size: 13px; margin-bottom: 16px; }
+.mk-note { background: var(--mk-sand); color: var(--mk-sand-ink); border-radius: 4px; padding: 10px 12px; font-size: 14px; margin-bottom: 16px; }
 
 /* ---- responsive: the source design is desktop-only, these are additive ---- */
 @media (max-width: 1000px) {
@@ -426,8 +426,8 @@ textarea.mk-input { min-height: 0; resize: vertical; }
   .mk-split { grid-template-columns: 1fr; gap: 32px; }
   .mk-split .mk-slot { order: -1; }
   .mk-hero { padding-left: 32px; padding-right: 32px; }
-  .mk-hero.lg h1 { font-size: 40px; }
-  .mk-hero h1 { font-size: 34px; }
+  .mk-hero.lg h1 { font-size: 38px; }
+  .mk-hero h1 { font-size: 38px; }
 }
 
 @media (max-width: 900px) {
@@ -446,7 +446,7 @@ textarea.mk-input { min-height: 0; resize: vertical; }
   .mk-steps, .mk-features, .mk-pillars, .mk-meta-grid { grid-template-columns: 1fr; gap: 28px; }
   .mk-footer { flex-direction: column; gap: 28px; }
   .mk-footer-cols { gap: 32px; }
-  .mk-hero.lg h1 { font-size: 32px; }
+  .mk-hero.lg h1 { font-size: 30px; }
   .mk-hero h1 { font-size: 30px; }
   .mk-section, .mk-band, .mk-band.tall, .mk-section.tight { padding-top: 48px; padding-bottom: 48px; }
 }
@@ -457,7 +457,7 @@ textarea.mk-input { min-height: 0; resize: vertical; }
 
 .mk-lang { display: flex; gap: 6px; justify-content: center; margin: 0 auto 40px; }
 .mk-lang button {
-  font: inherit; font-size: 12.5px; padding: 7px 14px; cursor: pointer;
+  font: inherit; font-size: 12px; padding: 7px 14px; cursor: pointer;
   border: 1px solid var(--mk-line); background: transparent; color: var(--mk-muted); border-radius: 4px;
 }
 .mk-lang button:hover { background: var(--mk-raise); }
@@ -465,12 +465,12 @@ textarea.mk-input { min-height: 0; resize: vertical; }
 
 .mk-doc { max-width: 760px; margin: 0 auto; }
 .mk-doc h2 {
-  font-family: var(--font-sans), sans-serif; font-weight: 700; font-size: 19px;
+  font-family: var(--font-sans), sans-serif; font-weight: 700; font-size: 20px;
   margin: 40px 0 12px; padding-top: 20px; border-top: 1px solid var(--mk-line);
 }
 .mk-doc h2:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
-.mk-doc h3 { font-family: var(--font-sans), sans-serif; font-weight: 600; font-size: 15px; margin: 24px 0 6px; }
-.mk-doc p, .mk-doc li { font-size: 14.5px; line-height: 1.75; color: var(--mk-prose); }
+.mk-doc h3 { font-family: var(--font-sans), sans-serif; font-weight: 600; font-size: 16px; margin: 24px 0 6px; }
+.mk-doc p, .mk-doc li { font-size: 14px; line-height: 1.75; color: var(--mk-prose); }
 .mk-doc p { margin: 0 0 12px; }
 .mk-doc ul, .mk-doc ol { margin: 0 0 14px; padding-left: 20px; }
 .mk-doc li { margin-bottom: 7px; }
@@ -490,13 +490,13 @@ textarea.mk-input { min-height: 0; resize: vertical; }
   font-family: var(--font-sans), sans-serif; font-size: 12px; font-weight: 600;
   letter-spacing: .04em; text-transform: uppercase; color: var(--mk-muted); padding-top: 2px;
 }
-.mk-row dd { margin: 0; font-size: 14.5px; line-height: 1.6; color: var(--mk-prose); }
+.mk-row dd { margin: 0; font-size: 14px; line-height: 1.6; color: var(--mk-prose); }
 .mk-row dd a { color: var(--mk-green); }
 
 /* Grouped FAQ: a heading per topic, questions beneath. */
 .mk-faq-group + .mk-faq-group { margin-top: 44px; }
 .mk-faq-group > h2 {
-  font-family: var(--font-sans), sans-serif; font-size: 13px; font-weight: 600;
+  font-family: var(--font-sans), sans-serif; font-size: 14px; font-weight: 600;
   letter-spacing: .09em; text-transform: uppercase; color: var(--mk-muted);
   text-align: left; margin: 0 0 18px; padding-bottom: 10px; border-bottom: 1px solid var(--mk-line);
 }

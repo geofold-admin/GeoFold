@@ -244,7 +244,7 @@ export default async function ContactPage() {
             </div>
           </dl>
 
-          <p style={{ fontSize: 13.5, color: 'var(--mk-muted)' }}>
+          <p style={{ fontSize: 14, color: 'var(--mk-muted)' }}>
             {c.note.before}
             <Link href="/refund-policy">{c.note.refund}</Link>
             {c.note.mid}
