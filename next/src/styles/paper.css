@@ -475,8 +475,23 @@
 .mk .mk-ipaymu-result .mk-ipaymu-result-note { color: var(--mk-muted); font-size: 14px; }
 .mk-price-num {
   font-family: var(--font-tight), sans-serif; font-weight: 300; letter-spacing: -.03em;
-  color: var(--mk-ink); font-size: clamp(34px, 3.6vw, 50px);
+  /* THE CEILING IS 44px, NOT 50px, AND THAT IS A FIT CALCULATION RATHER THAN A TASTE CALL.
+     The price row is the amount plus its `<small>` unit ("Rp 35.000" + "/ 30 days"). The pricing
+     grid is capped at 720px with a 12px gap, so a card's text box is 256px wide at every viewport
+     from 1024px up. At the previous 50px ceiling the Premium row needed 276px of that 256px, so it
+     wrapped: the amount broke onto a second line and pushed the blurb and feature list 80px below
+     the Free card's, leaving two cards side by side visibly out of step. The Free card ("Rp 0")
+     never wrapped, which is why this only ever showed on one of the two cards.
+     44px brings the row to about 245px, inside the 256px box with room for a wider locale string.
+     The lower bound and the vw slope are unchanged, so nothing below 1024px moves. */
+  color: var(--mk-ink); font-size: clamp(34px, 3.6vw, 44px);
+  /* THE UNIT SITS ON THE SAME LINE AS THE AMOUNT AT EVERY WIDTH, and `nowrap` is what actually
+     guarantees it. Without it a longer amount ("Rp 1.250.000") could still break between the two,
+     and the misalignment would return on a future price change rather than on a viewport change. */
+  white-space: nowrap;
 }
+
+.mk-price-num small { white-space: nowrap; }
 
 .mk-input { border-radius: 6px; border-color: var(--mk-control-line); }
 .mk-input:focus { border-color: var(--mk-green); box-shadow: 0 0 0 3px rgba(1, 74, 181, .12); }

@@ -82,7 +82,7 @@ const copy: Record<Locale, Copy> = {
     },
     close: {
       title: 'Coba dulu, gratis.',
-      body: 'Tiga proyek pertama tidak dipungut biaya.',
+      body: 'Dua proyek pertama tidak dipungut biaya.',
       ctaPrimary: 'Buat akun',
       ctaOutline: 'Lihat produknya',
     },
@@ -138,7 +138,7 @@ const copy: Record<Locale, Copy> = {
     },
     close: {
       title: 'Try it first, free.',
-      body: 'The first three projects cost nothing.',
+      body: 'The first two projects cost nothing.',
       ctaPrimary: 'Create an account',
       ctaOutline: 'See the product',
     },

@@ -14,7 +14,7 @@ import { pageMetadata } from '@/lib/seo'
  */
 const chrome: Record<Locale, { title: string; description: string; eyebrow: string; h1: string; lede: string }> = {
   id: {
-    title: 'Kebijakan Privasi (Privacy Policy), GeoFold',
+    title: 'Kebijakan Privasi (Privacy Policy) | GeoFold',
     description:
       'Data apa yang GeoFold kumpulkan, untuk apa digunakan, di mana disimpan, dengan siapa dibagikan, dan hak Anda atasnya.',
     eyebrow: 'Legal',

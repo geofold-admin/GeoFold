@@ -9,6 +9,7 @@ import type { Locale } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'
 import { pageMetadata } from '@/lib/seo'
 import { PREMIUM_DAYS, PREMIUM_PRICE_LABEL, PREMIUM_STORAGE_LABEL } from '@/lib/pricing'
+import { FREE_PROJECTS, FREE_PHOTOS_PER_PROJECT } from '@/lib/quota'
 import { PricingCheckoutButton } from '@/components/PricingCheckoutButton'
 
 /*
@@ -19,9 +20,12 @@ import { PricingCheckoutButton } from '@/components/PricingCheckoutButton'
  * reports metres. That copy was live on a site a payment gateway was verifying, which is a bad
  * place to overstate a product. If a capability is added later, add it here: not before.
  *
- * The same rule covers the counters in the hero: 3 projects, 20 photos per project and 2 export
- * formats are the actual free-plan limits and the actual writers in lib/export.ts. A number that
- * animates draws the eye straight to it, so it had better survive being checked.
+ * The same rule covers the counters in the hero: the free-plan project and photo caps and the 2
+ * export formats in lib/export.ts are the actual limits. They are READ FROM lib/quota.ts rather
+ * than typed here, because they were typed here once and went stale: commit 44ee4b0 changed the
+ * free tier to 2 projects and 3 photos per project and updated the FAQ and the pricing page, but
+ * missed this file, so the hero advertised 3 projects and 20 photos for a while after. A number
+ * that animates draws the eye straight to it, so it had better survive being checked.
  *
  * AND IT COVERS BOTH LANGUAGES. The English column below is a translation of the Indonesian, not
  * a second draft with its own ideas: if one side ever promises something the other does not, the
@@ -69,7 +73,7 @@ type Copy = {
 const copy: Record<Locale, Copy> = {
   id: {
     meta: {
-      title: 'GeoFold, Survei lapangan yang tidak kehilangan satu titik pun',
+      title: 'Survei lapangan yang tidak kehilangan satu titik pun | GeoFold',
       description:
         'Foto berkoordinat, bekerja penuh offline, sinkron sendiri begitu ada sinyal. Ekspor ke Excel dan CSV dengan foto tertanam. Gratis untuk 2 proyek.',
     },
@@ -184,7 +188,7 @@ const copy: Record<Locale, Copy> = {
 
   en: {
     meta: {
-      title: 'GeoFold, Field surveys that never lose a point',
+      title: 'Field surveys that never lose a point | GeoFold',
       description:
         'Photos with the coordinates printed into them, full offline capture, syncing themselves the moment there is a signal. Exports to Excel and CSV with the photos embedded. Free for 2 projects.',
     },
@@ -315,8 +319,8 @@ function figures(locale: Locale): ReactNode[] {
     <FigAerial key="aerial" locale={locale} />,
   ]
 }
-const STAT_VALUES = [3, 20, 2, 0]
-const STAT_DISPLAY = ['3', '20', '2', 'Rp 0']
+const STAT_VALUES = [FREE_PROJECTS, FREE_PHOTOS_PER_PROJECT, 2, 0]
+const STAT_DISPLAY = [String(FREE_PROJECTS), String(FREE_PHOTOS_PER_PROJECT), '2', 'Rp 0']
 const STAT_PREFIX = [undefined, undefined, undefined, 'Rp ']
 /* Row 05 is the aerial one. The palette's secondary accent is reserved for aerial material and
    appears nowhere else: see the token block in paper.css. */

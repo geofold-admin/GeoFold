@@ -15,7 +15,7 @@ import { pageMetadata } from '@/lib/seo'
  */
 const chrome: Record<Locale, { title: string; description: string; eyebrow: string; h1: string; lede: string }> = {
   id: {
-    title: 'Kebijakan Pengembalian Dana (Refund Policy), GeoFold',
+    title: 'Kebijakan Pengembalian Dana (Refund Policy) | GeoFold',
     description:
       'Syarat, pengecualian, tata cara, dan jangka waktu pengembalian dana untuk pembelian GeoFold Premium.',
     eyebrow: 'Pengembalian Dana',
@@ -80,8 +80,8 @@ function Indonesian() {
         </li>
         <li>
           Manfaat Premium <strong>belum dimanfaatkan secara berarti</strong>. Yaitu Anda belum
-          melampaui batas paket Gratis dengan memakai kuota Premium (misalnya membuat proyek keempat
-          dan seterusnya, mengunggah foto melebihi 20 per proyek, atau melampaui batas harian).
+          melampaui batas paket Gratis dengan memakai kuota Premium (misalnya membuat proyek ketiga
+          dan seterusnya, mengunggah foto melebihi 3 per proyek, atau melampaui batas harian).
         </li>
         <li>Pembayaran dilakukan dari akun yang mengajukan permintaan.</li>
       </ul>
@@ -277,7 +277,7 @@ function English() {
         </li>
         <li>
           Premium has <strong>not been used in any material way</strong>. That is, you have not gone
-          past the Free plan limits on Premium quota (a fourth project or beyond, more than 20 photos
+          past the Free plan limits on Premium quota (a third project or beyond, more than 3 photos
           on a project, or past the daily caps).
         </li>
         <li>The payment was made from the account making the request.</li>

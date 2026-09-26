@@ -15,7 +15,7 @@ import { pageMetadata } from '@/lib/seo'
  */
 const chrome: Record<Locale, { title: string; description: string; eyebrow: string; h1: string; lede: string }> = {
   id: {
-    title: 'Syarat & Ketentuan (Terms & Conditions), GeoFold',
+    title: 'Syarat & Ketentuan (Terms & Conditions) | GeoFold',
     description:
       'Syarat dan ketentuan penggunaan layanan GeoFold: akun, penggunaan yang diperbolehkan, kepemilikan data, harga, pembayaran, pengembalian dana, dan hukum yang berlaku.',
     eyebrow: 'Legal',

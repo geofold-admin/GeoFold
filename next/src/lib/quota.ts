@@ -17,10 +17,17 @@ import { PREMIUM_STORAGE_BYTES, FREE_STORAGE_BYTES, PREMIUM_STORAGE_LABEL } from
  * ⚠️ TUNE THESE. The project/photo numbers come straight from the product decision in the
  * migration; the two DAILY caps were not specified, so these are sensible defaults — set them
  * to your real values before launch.
+ *
+ * THE PROJECT AND PHOTO CAPS ARE EXPORTED, and that is deliberate. The marketing pages quote these
+ * numbers to prospective customers ("2 active projects", "3 photos per project"), and they used to
+ * hardcode their own copies of them. Those copies had drifted: the homepage hero advertised 3
+ * projects and 20 photos per project while this file enforced 2 and 3, so the site promised more
+ * than the product delivered. Exporting them means the page that advertises the limit and the code
+ * that enforces it cannot disagree again.
  */
-const FREE_PROJECTS = 2
-const PROJECT_COOLDOWN_HOURS = 24
-const FREE_PHOTOS_PER_PROJECT = 3
+export const FREE_PROJECTS = 2
+export const PROJECT_COOLDOWN_HOURS = 24
+export const FREE_PHOTOS_PER_PROJECT = 3
 const FREE_DAILY_SURVEYS = 30 // ⚠️ placeholder — confirm the real daily cap
 const FREE_DAILY_PHOTOS = 60 // ⚠️ placeholder — confirm the real daily cap
 
