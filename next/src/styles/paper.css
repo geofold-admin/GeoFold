@@ -1012,7 +1012,7 @@
   gap: 14px;
   align-content: start;
   padding: 26px 24px 24px;
-  border: 1px solid var(--mk-line);
+  border: 1px solid var(--mk-control-line);
   border-radius: 10px;
   background: var(--mk-panel);
   position: relative;
@@ -1178,8 +1178,14 @@
 
 /* ---------- pricing ---------- */
 .mk .pg-price { display: grid; gap: 20px; align-items: stretch; }
+/* THE BORDER IS A BOUNDARY, NOT A DIVIDER.
+   This card declared `--mk-line`, which is the token for a rule between two rows of a table. A
+   card's edge is not a divider: it is the thing that tells a reader there is a card here at all,
+   and WCAG 1.4.11 asks for 3:1 on it. `--mk-control-line` exists in this file for exactly that
+   job. Measured in dark mode before this change: the border was 1.37:1 against the page and the
+   card's own fill was 1.04:1, so neither the edge nor the fill said "card". */
 .mk .pg-price-card {
-  border: 1px solid var(--mk-line); border-radius: 10px; padding: clamp(26px, 3vw, 38px);
+  border: 1px solid var(--mk-control-line); border-radius: 10px; padding: clamp(26px, 3vw, 38px);
   display: grid; gap: 16px; align-content: start; background: var(--mk-panel);
 }
 /*
@@ -1662,7 +1668,8 @@ html[data-theme='dark'] .mk {
      neutrals belong to the same family as the blue. Every ratio below was measured. */
   --mk-bg: #0F172A;
   --mk-raise: #131C2B;
-  --mk-panel: #131C2B;
+  --mk-panel: #182238; /* raised from #131C2B: at the old value the card sat 1.04:1
+                              against the page and did not read as a card at all. */
   --mk-line: #24314A;
   --mk-input-line: #33425E;
   --mk-field-bg: #1B2537;
@@ -1722,7 +1729,8 @@ html[data-theme='dark'] .mk {
 
     --mk-bg: #0F172A;
     --mk-raise: #131C2B;
-    --mk-panel: #131C2B;
+    --mk-panel: #182238; /* raised from #131C2B: at the old value the card sat 1.04:1
+                              against the page and did not read as a card at all. */
     --mk-line: #24314A;
     --mk-input-line: #33425E;
     /* Same reasoning as the light theme: a decorative hairline is 1.37:1 here, which is right for
@@ -2426,7 +2434,7 @@ html[data-theme='dark'] .mk .mk-theme-btn .mk-icon-moon { display: none; }
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
 }
 .mk .mk-build {
-  border: 1px solid var(--mk-line); border-radius: 10px; background: var(--mk-panel);
+  border: 1px solid var(--mk-control-line); border-radius: 10px; background: var(--mk-panel);
   padding: 20px 20px 18px;
   display: grid; gap: 12px; align-content: start;
   position: relative; overflow: hidden;
