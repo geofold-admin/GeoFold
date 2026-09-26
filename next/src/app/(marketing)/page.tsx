@@ -470,10 +470,15 @@ export default async function HomePage() {
           {/* A bento, not a list. The lead cell is the product's core act and gets a double cell;
               the rest take single cells around it. See the .pg-bento block in paper.css for why the
               sizes differ and what was deliberately not taken from the component it adapts. */}
+          {/* The bento fills exactly: the lead spans 4 of 6 columns beside one small cell, and three
+              small cells close the second row. 4+2 / 2+2+2 is twelve columns over two rows, so there
+              is no hole in the grid and no cell is stretched to fill one. An earlier version made
+              the last cell span 4 as well, which left two empty columns at the end of the second
+              row; a bento is a packing problem and that one does not pack. */}
           <div className="pg-bento">
             {c.caps.map((cap, i) => (
               <article
-                className={`pg-cell${i === 0 ? ' pg-cell--lead' : ''}${i === 4 ? ' pg-cell--wide' : ''}`}
+                className={`pg-cell${i === 0 ? ' pg-cell--lead' : ''}`}
                 data-anim="up"
                 data-spotlight
                 key={cap.title}
