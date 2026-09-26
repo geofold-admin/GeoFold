@@ -69,6 +69,7 @@ type Copy = {
   priceNote: { text: string; link: string }
   close: { title: string; body: string; ctaPrimary: string; ctaGhost: string }
   audience: string[]
+  audienceLabel: string
 }
 
 const copy: Record<Locale, Copy> = {
@@ -175,6 +176,7 @@ const copy: Record<Locale, Copy> = {
       ctaPrimary: 'Buat akun',
       ctaGhost: 'Tanya dulu',
     },
+    audienceLabel: 'Untuk siapa',
     audience: [
       'Konservasi satwa liar',
       'Kehutanan & perkebunan',
@@ -289,6 +291,7 @@ const copy: Record<Locale, Copy> = {
       ctaPrimary: 'Create an account',
       ctaGhost: 'Ask a question',
     },
+    audienceLabel: 'Who it is for',
     audience: [
       'Wildlife conservation',
       'Forestry & plantations',
@@ -413,8 +416,11 @@ export default async function HomePage() {
           Two identical rows so the loop is seamless without cloning a node React does not know
           about. The second is hidden from assistive tech: it is the same eight words again. */}
       <div className="pg-marquee" data-marquee>
-        <MarqueeRow items={c.audience} />
-        <MarqueeRow items={c.audience} hidden />
+        <p className="pg-marquee-label">{c.audienceLabel}</p>
+        <div className="pg-marquee-scroll">
+          <MarqueeRow items={c.audience} />
+          <MarqueeRow items={c.audience} hidden />
+        </div>
       </div>
 
       {/* ================= capabilities ================= */}

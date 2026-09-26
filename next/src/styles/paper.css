@@ -552,6 +552,12 @@
 
 .mk .pg-wrap { max-width: var(--pg-max); margin: 0 auto; padding-inline: var(--mk-pad); width: 100%; }
 .mk .pg-sec { padding-block: clamp(72px, 11vw, 150px); position: relative; }
+/* The section that follows the audience band opens tighter than the standard rhythm. A design
+   review called the gap there a "dead zone": the band is a full-bleed strip, so the section under
+   it was carrying its own 150px top padding on top of the band's own height, and the two together
+   read as the page having stopped rather than moved on. The standard rhythm is right between two
+   ordinary sections; after a full-bleed band it is one measure too much. */
+.mk .pg-marquee + .pg-sec { padding-top: clamp(52px, 7vw, 96px); }
 .mk .pg-sec-tint { background: var(--mk-raise); }
 
 /* The contour field layer, behind the how-it-works section.
@@ -666,17 +672,86 @@
 /* ---------- marquee ---------- */
 /* A single strip of who this is for, moving continuously. It is the one piece of ambient motion
    on the page: everything else is triggered by scroll and then stops. */
+/* ---------- the audience band ----------
+   A design review called this "the weakest thing on the page": 14px grey text on a plain band,
+   visually empty, easy to scroll straight past. The content is right (these ARE the trades that
+   buy this product) so the fix is weight rather than removal.
+
+   The label sits OUTSIDE the scrolling area, and that is the whole point of the wrapper. The first
+   attempt put it absolutely positioned over the row with a gradient fade, and a review of that
+   screenshot caught the flaw immediately: the words scroll continuously, so they passed underneath
+   the label and emerged half-eaten on the other side, which reads as a rendering fault rather than
+   as a heading. A label that the content collides with is worse than no label. Now the band is a
+   flex row of two parts, the label is flex-none with a solid ground, and only the second part
+   scrolls. Nothing can ever pass under it.
+
+   The rest: the items take the ink colour at 15px/500 so the band carries its own contrast; the
+   separators become small survey marks (a dot inside a ring, the same idiom as the recorded points
+   on the maps) rather than anonymous bullets; and the scrolling edge is masked so the row reads as
+   continuing rather than as starting and stopping mid-word. */
 .mk .pg-marquee {
-  border-block: 1px solid var(--mk-line); padding: 20px 0; overflow: hidden;
-  display: flex; gap: 0; user-select: none;
+  border-block: 1px solid var(--mk-line);
+  background: var(--mk-raise);
+  overflow: hidden;
+  display: flex;
+  align-items: stretch;
+  user-select: none;
 }
-.mk .pg-marquee-row { display: flex; gap: 44px; padding-right: 44px; flex: none; align-items: center; }
+.mk .pg-marquee-label {
+  flex: none;
+  display: flex; align-items: center;
+  padding: 22px var(--mk-pad);
+  background: var(--mk-raise);
+  border-right: 1px solid var(--mk-line);
+  font-family: var(--font-inter), sans-serif;
+  font-size: 10.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--mk-faint);
+  white-space: nowrap;
+  pointer-events: none;
+  position: relative;
+  z-index: 2;
+}
+/* The scrolling half. The mask lives here, not on the band, so it fades the row and never the
+   label. The falloff is deliberately wide and multi-stop: a short two-stop fade leaves a
+   half-word sitting at the boundary at near-full opacity, which a review of the screenshot read
+   as "chopped off" rather than "continuing". A marquee always has a partial word at its edge;
+   what makes that read as motion instead of damage is how gradually it dissolves. Four stops
+   over 16% of the width does it. */
+.mk .pg-marquee-scroll {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  -webkit-mask-image: linear-gradient(to right,
+    transparent 0, rgba(0,0,0,.12) 5%, rgba(0,0,0,.55) 10%, #000 16%,
+    #000 84%, rgba(0,0,0,.55) 90%, rgba(0,0,0,.12) 95%, transparent 100%);
+  mask-image: linear-gradient(to right,
+    transparent 0, rgba(0,0,0,.12) 5%, rgba(0,0,0,.55) 10%, #000 16%,
+    #000 84%, rgba(0,0,0,.55) 90%, rgba(0,0,0,.12) 95%, transparent 100%);
+}
+.mk .pg-marquee-row { display: flex; gap: 0; flex: none; align-items: center; }
 .mk .pg-marquee-item {
-  font-size: 14px; color: var(--mk-muted); white-space: nowrap; display: inline-flex;
-  align-items: center; gap: 44px;
+  font-family: var(--font-tight), sans-serif;
+  font-size: 15px; font-weight: 500; letter-spacing: -.01em;
+  color: var(--mk-ink);
+  white-space: nowrap; display: inline-flex;
+  align-items: center; gap: 38px;
+  padding: 22px 38px 22px 0;
 }
+/* The separator: a survey mark, not a bullet. A ring with a filled centre, drawn in the accent so
+   the band has one deliberate colour in it rather than being uniformly grey. */
 .mk .pg-marquee-item::after {
-  content: ''; width: 4px; height: 4px; border-radius: 100px; background: var(--mk-line); flex: none;
+  content: '';
+  width: 7px; height: 7px; border-radius: 100px;
+  border: 1px solid var(--mk-green);
+  background: radial-gradient(circle, var(--mk-green) 0 1.5px, transparent 1.6px);
+  flex: none;
+  opacity: .75;
+}
+/* On a phone the label costs a third of the width and the band has nothing to spare, so it goes
+   and the row keeps its full bleed. */
+@media (max-width: 640px) {
+  .mk .pg-marquee-label { display: none; }
 }
 
 /* ---------- the argument: prose + globe ---------- */
