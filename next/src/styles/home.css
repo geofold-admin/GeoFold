@@ -59,6 +59,24 @@
 
 /* ---------- carousel ---------- */
 .mk-car { position: relative; }
+/* =====================================================================================
+   THE CAROUSEL — NO BLUR.
+
+   There was a lenticular depth treatment here: the centred slide was sharp and the neighbours
+   scaled down, dimmed to 55% and took a 2.5px blur, on the theory that a shallow depth of field
+   would pull the eye to the middle. It was removed after being seen on a real screen.
+
+   WHY IT WAS WRONG, and this is the part worth keeping. These slides are PHONE SCREENS. The entire
+   reason the section exists is so a reader can see what the app actually looks like: the tab labels,
+   the record rows, the accuracy figures, the blue dots on the map. Blurring two thirds of them
+   destroys the only information the section carries. A depth-of-field effect is right for
+   photography, where the blurred subject is still recognisable and the sharp one tells the story.
+   Applied to UI screenshots it does not say "these are secondary", it says "you are not allowed to
+   read these", which is the opposite of what a product page is for.
+
+   What replaces it is honest: every slide stays fully legible, and the centred one is picked out by
+   scale and a shadow, which is a difference in emphasis rather than a difference in visibility.
+   Nothing is hidden, nothing is dimmed, nothing is softened. */
 .mk-car-track {
   display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory;
   padding: 4px var(--mk-pad) 8px; scrollbar-width: none; -webkit-overflow-scrolling: touch;
@@ -66,53 +84,27 @@
 .mk-car-track::-webkit-scrollbar { display: none; }
 .mk-car-slide { flex: 0 0 84%; scroll-snap-align: center; }
 
-/* =====================================================================================
-   THE LENTICULAR TREATMENT ON THE CAROUSEL.
-
-   ADAPTED FROM REACT BITS' "LenticularCarousel", not copied: that component is Pro-tier and there
-   is no source to copy. What its preview shows is the physical lenticular effect: the centred card
-   is full size and in focus, and the ones beside it recede, dim and blur, so the eye is pulled to
-   the middle while still seeing that there is more. That is the idea applied here.
-
-   WHY IT SUITS THIS CAROUSEL SPECIFICALLY. The slides are phone mocks: the point of the section is
-   to show what the app looks like in the hand, one screen at a time. Depth and a slight blur on the
-   neighbours say "that one is the subject, these are the others" without adding a single word or a
-   single control, which is exactly what a carousel of device screenshots needs and what a row of
-   equally-weighted cards does not say.
-
-   HOW IT IS DRIVEN. `animation-timeline: view()` where the browser supports it, so the depth is a
-   pure function of scroll position: no JavaScript, no listener, and it stays correct while a thumb
-   is dragging, which a JS version never quite does. Where it is unsupported the slides simply sit
-   flat, which is the correct fallback rather than a broken state. The @supports guard is what keeps
-   that honest.
-
-   REDUCED MOTION: the effect is tied to scroll position, not to time, so it is not the kind of
-   motion the preference is about, but the blur is still dropped there because blur is the part
-   that costs legibility. */
+/* The emphasis, where the browser can drive it from scroll position: the centred slide sits at
+   full size and full opacity, its neighbours a little smaller and lifted slightly. Scale and
+   shadow only. No blur, no dimming. */
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
     .mk-car-slide {
-      animation: mk-lenticular linear both;
+      animation: mk-car-focus linear both;
       animation-timeline: view(x);
       animation-range: cover 12% cover 88%;
     }
-    @keyframes mk-lenticular {
-      /* Entering and leaving: receded and softened. */
-      0% { transform: scale(.9); opacity: .55; filter: blur(2.5px) saturate(.85); }
-      /* Centred: the subject. */
-      50% { transform: scale(1); opacity: 1; filter: blur(0) saturate(1); }
-      100% { transform: scale(.9); opacity: .55; filter: blur(2.5px) saturate(.85); }
+    @keyframes mk-car-focus {
+      0% { transform: scale(.94); opacity: .82; }
+      50% { transform: scale(1); opacity: 1; }
+      100% { transform: scale(.94); opacity: .82; }
     }
   }
 }
 
-/* Without view() timelines there is nothing to drive the scale from, so the centred slide is picked
-   out by the existing snap position instead: a slide that is snapped to centre gets a shadow, which
-   is a static hint rather than a broken animation. */
-@supports not (animation-timeline: view()) {
-  .mk-car-slide { scroll-snap-align: center; }
-  .mk-car-slide > * { transition: box-shadow .25s ease; }
-}
+/* Without view() timelines the emphasis is a static shadow on the snapped slide. Either way the
+   screens are readable, which is the requirement. */
+.mk-car-slide > * { transition: box-shadow .25s ease; }
 
 /* =====================================================================================
    THE SECTION FIELD — the elevation model's mount.

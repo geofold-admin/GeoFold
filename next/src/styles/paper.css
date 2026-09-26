@@ -719,23 +719,118 @@
 /* The old design put these five in a horizontal carousel, which hides four of them behind an
    interaction and gives scroll nothing to reveal. As full-width rows they are the spine of the
    page and each one gets its own entrance. */
-.mk .pg-rows { display: grid; }
-.mk .pg-row {
-  display: grid; gap: 28px; padding-block: clamp(40px, 5vw, 72px);
-  border-top: 1px solid var(--mk-line); align-items: center;
+/* =====================================================================================
+   THE CAPABILITIES — A BENTO GRID, not a list of rows.
+
+   WHAT THIS REPLACES. Five full-width alternating rows, each one a copy block beside a figure,
+   stacked with a hairline between them. It read as a document: correct, orderly, and completely
+   flat. Nothing about the layout said which capability mattered most, and the eye had no reason to
+   stop anywhere. On a phone it was five near-identical screens of scrolling.
+
+   WHAT IT IS NOW. A bento: one grid where the cells have DIFFERENT SIZES, so the layout itself
+   carries the hierarchy. Capture is the product's core act, so it takes a double cell with the
+   largest figure; Offline and Map share the row beside it; Export and Drone close underneath.
+   Adapted from ReactBits' free `MagicBento`, but only the LAYOUT IDEA is taken: that component's
+   implementation is a pointer-tracked spotlight with particle spawning and per-card magnetism, all
+   of which this project already has in a cheaper form (the delegated spotlight in Motion.tsx, the
+   existing data-tilt). Re-implementing them per card would put three more listeners and a canvas on
+   every card for an effect the page already runs once, delegated.
+
+   WHAT IS DELIBERATELY NOT TAKEN: the glow. MagicBento's signature is a coloured border-glow that
+   follows the pointer. This site's whole visual argument is structure by hairline, and a glowing
+   card edge would be the first thing on the page to contradict it. The cells keep the hairline.
+
+   WHY THE CELLS ARE NOT EQUAL. A bento with equal cells is just a grid. The sizes here are chosen,
+   not decorative: 2x2 for the primary act, 1x1 for the two that support it, 1x1 and 2x1 to close,
+   which also makes the last row uneven on purpose so the section does not end on a dead straight
+   line. Every cell still holds a kicker, a heading, a body and a figure: no content is cut to make
+   the shape work. */
+.mk .pg-bento {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 18px;
 }
-.mk .pg-row:last-child { border-bottom: 1px solid var(--mk-line); }
-.mk .pg-row-copy { display: grid; gap: 14px; align-content: start; }
-.mk .pg-row-copy p { max-width: 46ch; }
-.mk .pg-row-n {
-  font-family: var(--font-tight), sans-serif; font-weight: 300; font-size: 13px;
-  color: var(--mk-faint); letter-spacing: 0;
+.mk .pg-cell {
+  grid-column: span 2;
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  padding: 26px 24px 24px;
+  border: 1px solid var(--mk-line);
+  border-radius: 10px;
+  background: var(--mk-panel);
+  position: relative;
+  overflow: hidden;
+  transition: border-color .25s ease, transform .25s cubic-bezier(.22, .61, .36, 1);
 }
+/* The spotlight this project already runs writes --mx/--my onto any [data-spotlight] element, so a
+   cell gets the highlight for free. No new listener, no per-card state. */
+.mk .pg-cell[data-spotlight]::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    340px circle at var(--mx, 50%) var(--my, 50%),
+    color-mix(in srgb, var(--mk-green) 7%, transparent),
+    transparent 70%
+  );
+  transition: opacity .3s ease;
+}
+.mk .pg-cell[data-spotlight]:hover::before { opacity: 1; }
+.mk .pg-cell:hover { border-color: var(--mk-control-line); }
+
+/* The lead cell: the primary act, at twice the width and twice the height. */
+.mk .pg-cell--lead {
+  grid-column: span 4;
+  grid-row: span 2;
+  padding: 30px 28px 26px;
+}
+.mk .pg-cell--wide { grid-column: span 4; }
+
+.mk .pg-cell-copy { display: grid; gap: 10px; align-content: start; }
+.mk .pg-cell-copy p { max-width: 48ch; }
+.mk .pg-cell-n {
+  font-family: var(--font-tight), sans-serif; font-weight: 300; font-size: 12px;
+  color: var(--mk-faint); letter-spacing: .04em;
+}
+.mk .pg-cell-art {
+  border: 1px solid var(--mk-line); border-radius: 8px; background: var(--mk-raise);
+  overflow: hidden; display: grid; place-items: center; padding: 18px;
+  aspect-ratio: 16 / 10; margin-top: 4px;
+}
+.mk .pg-cell--lead .pg-cell-art { aspect-ratio: 16 / 9; padding: 24px; }
+.mk .pg-sec-tint .pg-cell-art { background: var(--mk-raise); }
+
+/* The hero's own figure still carries this class and still needs its box. It is the one place the
+   class survives: the capabilities grid no longer uses it, but the hero's parallax layer does, and
+   removing the rule with the grid took the hero's frame with it. Kept here, deliberately, with the
+   note, because the next person to clean up the bento rules will otherwise delete it again. */
 .mk .pg-row-art {
   border: 1px solid var(--mk-line); border-radius: 8px; background: var(--mk-raise);
   overflow: hidden; aspect-ratio: 4 / 3; display: grid; place-items: center; padding: 22px;
 }
-.mk .pg-sec-tint .pg-row-art { background: var(--mk-panel); }
+
+/* Tablet: two columns, and the lead cell stops being a double. */
+@media (max-width: 1100px) {
+  .mk .pg-bento { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+  .mk .pg-cell { grid-column: span 2; }
+  .mk .pg-cell--lead { grid-column: span 4; grid-row: auto; }
+  .mk .pg-cell--wide { grid-column: span 4; }
+}
+
+/* Phone: one column. A bento on a narrow screen is a list with extra steps, so it becomes one
+   honestly: every cell full width, the lead one first and slightly larger type. */
+@media (max-width: 700px) {
+  .mk .pg-bento { grid-template-columns: 1fr; gap: 14px; }
+  .mk .pg-cell,
+  .mk .pg-cell--lead,
+  .mk .pg-cell--wide { grid-column: auto; grid-row: auto; padding: 22px 20px 20px; }
+  .mk .pg-cell-art,
+  .mk .pg-cell--lead .pg-cell-art { aspect-ratio: 4 / 3; padding: 16px; }
+}
 
 /* ---------- the pinned scene ---------- */
 /* Three steps. The left column pins and its heading swaps as the right column scrolls past it.

@@ -433,18 +433,26 @@ export default async function HomePage() {
             </p>
           </div>
 
-          <div className="pg-rows">
+          {/* A bento, not a list. The lead cell is the product's core act and gets a double cell;
+              the rest take single cells around it. See the .pg-bento block in paper.css for why the
+              sizes differ and what was deliberately not taken from the component it adapts. */}
+          <div className="pg-bento">
             {c.caps.map((cap, i) => (
-              <article className="pg-row" data-anim="row" key={cap.title}>
-                <div className="pg-row-copy">
-                  <p className="pg-row-n pg-num">{String(i + 1).padStart(2, '0')}</p>
+              <article
+                className={`pg-cell${i === 0 ? ' pg-cell--lead' : ''}${i === 4 ? ' pg-cell--wide' : ''}`}
+                data-anim="up"
+                data-spotlight
+                key={cap.title}
+              >
+                <div className="pg-cell-copy">
+                  <p className="pg-cell-n pg-num">{String(i + 1).padStart(2, '0')}</p>
                   <p className={i === AERIAL_INDEX ? 'pg-micro aerial' : 'pg-micro accent'}>
                     {cap.kicker}
                   </p>
                   <h3 className="pg-d3">{cap.title}</h3>
                   <p className="pg-body">{cap.body}</p>
                 </div>
-                <div className="pg-row-art">{figs[i]}</div>
+                <div className="pg-cell-art">{figs[i]}</div>
               </article>
             ))}
           </div>
