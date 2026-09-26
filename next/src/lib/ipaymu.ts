@@ -352,6 +352,17 @@ export interface DirectPayment {
   paymentNo: string
   /** A URL to the QR image, for QRIS. Empty for VA channels. */
   qrUrl: string
+  /**
+   * The EMVCo QRIS payload string, when the gateway returned one.
+   *
+   * KEPT SEPARATE FROM `paymentNo` ON PURPOSE. iPaymu is inconsistent about which field carries
+   * the QR string (`PaymentNo`, `QrString`, or neither with only an image `Url`), and a naive
+   * `PaymentNo || QrString` silently DROPS the payload whenever both are present — which is the
+   * case that produces a checkout with no scannable code. The payload is identified by its
+   * `000201` prefix, which is the EMVCo tag for "payload format indicator" and the one thing
+   * every QRIS string starts with, so the classification does not depend on field naming.
+   */
+  qrPayload: string
   /** What the buyer actually pays, per iPaymu. */
   totalIdr: number
   /** The gateway fee added on top, when fee direction is BUYER. */
@@ -414,14 +425,24 @@ export async function createDirectPayment(
   /* QRIS returns the image under `Url`; some channels return the raw payload under `QrString`.
      A VA channel returns neither — its `PaymentNo` IS the deliverable. At least one of the two
      must be present or there is nothing to show the buyer, and a modal with an empty box is
-     worse than an honest failure. */
+     worse than an honest failure.
+
+     THE CLASSIFICATION IS BY CONTENT, NOT BY FIELD NAME. iPaymu has been seen to put the QRIS
+     payload in `PaymentNo` and to send both `PaymentNo` and `QrString` together. Reading
+     `PaymentNo || QrString` would then hand back a value that is not the payload, and the
+     encoder route would have nothing to draw. So every candidate is collected and the one that
+     actually looks like an EMVCo payload (prefix `000201`) is treated as the QR string; whatever
+     is left over is the human-readable number. */
   const qrUrl = str(data.Url) || str(data.QrUrl)
-  const paymentNo = str(data.PaymentNo) || str(data.QrString)
-  if (!qrUrl && !paymentNo) throw new Error('ipaymu_no_payment_details')
+  const candidates = [str(data.QrString), str(data.PaymentNo)].filter((v) => v.length > 0)
+  const qrPayload = candidates.find((v) => v.startsWith('000201')) ?? ''
+  const paymentNo = candidates.find((v) => v !== qrPayload) ?? ''
+  if (!qrUrl && !paymentNo && !qrPayload) throw new Error('ipaymu_no_payment_details')
 
   return {
     paymentNo,
     qrUrl,
+    qrPayload,
     totalIdr: num(data.Total),
     feeIdr: num(data.Fee),
     channel: str(data.Channel) || input.paymentChannel,

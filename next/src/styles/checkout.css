@@ -35,20 +35,37 @@
 }
 
 .gf-ck {
-  /* Falls back to the light palette's literal values when the modal is rendered outside a
-     `.mk` subtree (the signed-in app can open it too), so it is never unstyled. */
-  --mk-bg: var(--mk-bg, #F8FAFC);
-  --mk-raise: var(--mk-raise, #EEF2F7);
-  --mk-panel: var(--mk-panel, #FFFFFF);
-  --mk-line: var(--mk-line, #DCE3EC);
-  --mk-control-line: var(--mk-control-line, #7A8CA6);
-  --mk-ink: var(--mk-ink, #334155);
-  --mk-prose: var(--mk-prose, #52647D);
-  --mk-muted: var(--mk-muted, #475569);
-  --mk-faint: var(--mk-faint, #475569);
-  --mk-green: var(--mk-green, #014AB5);
-  --mk-green-2: var(--mk-green-2, #013A8F);
-  --mk-on-green: var(--mk-on-green, #F8FAFC);
+  /* ---- the dialog's own palette, and why it is written as LITERALS ----
+
+     These were `var(--mk-panel, #FFFFFF)` and every one of them was broken. A custom property
+     whose value references ITSELF is a cycle: the browser refuses to resolve it, the declaration
+     becomes invalid at computed-value time, and any `var()` that reads it without a fallback
+     drops to the property's initial value. For `background` that initial value is `transparent`,
+     which is precisely the bug: the checkout rendered as a see-through pane with the pricing
+     page legible behind it, and the QR plate floated on nothing.
+
+     WHY IT ONLY BROKE LATER. This dialog is portaled to document.body (see CheckoutModal.tsx:
+     the pricing cards carry a 3D tilt, and a transformed ancestor makes `position: fixed`
+     position against the card rather than the viewport). The portal is right, but it lifts the
+     dialog OUT of the `.mk` subtree, so no `--mk-*` value is inherited and the self-reference
+     had nothing to resolve against.
+
+     The light palette is therefore restated in full, and the dark palette is restated below,
+     scoped to this dialog, because `html[data-theme='dark'] .mk` cannot reach a body-level
+     portal either. Three blocks to keep in sync with paper.css: this one, the two below. */
+  --mk-bg: #F8FAFC;
+  --mk-raise: #EEF2F7;
+  --mk-panel: #FFFFFF;
+  --mk-line: #DCE3EC;
+  --mk-input-line: #C8D3E0;
+  --mk-control-line: #7A8CA6;
+  --mk-ink: #334155;
+  --mk-prose: #52647D;
+  --mk-muted: #475569;
+  --mk-faint: #475569;
+  --mk-green: #014AB5;
+  --mk-green-2: #013A8F;
+  --mk-on-green: #F8FAFC;
 
   width: 100%; max-width: 460px; max-height: calc(100vh - 32px);
   /* 100dvh tracks the shrinking/growing URL bar on mobile; the vh line above is the fallback for
@@ -60,6 +77,45 @@
   border: 1px solid var(--mk-line); border-radius: 14px;
   overflow: hidden;
   animation: gf-ck-rise .22s cubic-bezier(.22, .61, .36, 1) both;
+}
+
+/* The dialog's dark palette. A body-level portal is outside `.mk`, so the theme blocks in
+   paper.css cannot reach it; without these the checkout stayed light on a dark page. Kept
+   token-for-token with `html[data-theme='dark'] .mk` in paper.css. */
+html[data-theme='dark'] .gf-ck {
+  --mk-bg: #0F172A;
+  --mk-raise: #131C2B;
+  --mk-panel: #131C2B;
+  --mk-line: #24314A;
+  --mk-input-line: #33425E;
+  --mk-control-line: #566A90;
+  --mk-ink: #F8FAFC;
+  --mk-prose: #B6C2D4;
+  --mk-muted: #94A3B8;
+  --mk-faint: #94A3B8;
+  --mk-green: #7FA8E8;
+  --mk-green-2: #9DBEF2;
+  --mk-on-green: #0F172A;
+}
+
+/* The same block for a visitor with scripting off whose OS is set to dark. Keep the two in
+   sync with each other and with paper.css. */
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme='light']) .gf-ck {
+    --mk-bg: #0F172A;
+    --mk-raise: #131C2B;
+    --mk-panel: #131C2B;
+    --mk-line: #24314A;
+    --mk-input-line: #33425E;
+    --mk-control-line: #566A90;
+    --mk-ink: #F8FAFC;
+    --mk-prose: #B6C2D4;
+    --mk-muted: #94A3B8;
+    --mk-faint: #94A3B8;
+    --mk-green: #7FA8E8;
+    --mk-green-2: #9DBEF2;
+    --mk-on-green: #0F172A;
+  }
 }
 
 @keyframes gf-ck-fade { from { opacity: 0 } to { opacity: 1 } }

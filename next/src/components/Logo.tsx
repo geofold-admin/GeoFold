@@ -15,97 +15,56 @@
  * the light ground the brand blue measures 7.99:1 and everything is fine; on the dark theme's
  * ground it falls to 2.14:1 and the G effectively disappears.
  *
- * An earlier attempt solved that by repainting the blue to a pale tint. That was wrong — it fixed
- * the contrast by destroying the brand — and the client rejected it. The correct fix is the one
- * every brand guideline already prescribes: give the mark its clear space. On a dark ground the
- * mark sits on a #F8FAFC plate. Because the globe lines are holes, they then show that same
- * #F8FAFC, so the logo reads EXACTLY as it does on the light theme. Nothing about the artwork
- * changes; only what is behind it.
+ * HOW THAT IS SOLVED, AND WHAT WAS REJECTED. Two wrong answers were tried first. Repainting the
+ * blue to a pale tint "fixed" the contrast by destroying the brand. Plating the mark on its own
+ * light rectangle kept the colours but put a stray white box in a dark header, which is not what
+ * the mark should look like.
  *
- * WHY BOTH IMAGES ARE IN THE DOM. Swapping `src` from JavaScript means the wrong variant paints
- * for a frame, and reading the theme in an effect means the server and client disagree on the
- * first render. Rendering both and letting CSS pick is the only approach that is correct before
- * hydration, which is exactly when the header is first painted.
+ * The answer is the third one, and it is the one the artwork was asking for: THE MARK IS ALWAYS ON
+ * A LIGHT GROUND, AND THE GROUND IS THE CHROME. In dark mode the header and footer bands stay
+ * light (see the `.mk-nav` / `.mk-footer` rules in paper.css) while the content between them goes
+ * dark, so the mark sits on the same surface it does in light mode and reads IDENTICALLY in both
+ * themes. Because the globe lines are holes, they then show that same light surface. Nothing about
+ * the artwork changes, no plate is drawn, and the only thing that differs between themes is the
+ * background of the two bands that hold the logo.
+ *
+ * WHY THAT IS ALSO GOOD DESIGN, not just a workaround: the header and footer become a consistent
+ * "map sheet" edge around the content, which is what a survey sheet is — a light border with the
+ * field in the middle. The chrome stays stable while the content is what changes.
+ *
+ * WHY ONE IMAGE AND NOT TWO. There used to be a second, plated file with CSS to pick between them.
+ * With a single artwork that is correct on both grounds that machinery has no job: one <img>,
+ * always the same file, no swap, no per-theme branch, and nothing that can disagree before
+ * hydration.
  *
  * WHY AN <img> AND NOT INLINE SVG. The traced path is ~19 KB. Inlined, it would be parsed and
- * shipped on every page in the HTML; as files they are fetched once, cached, and block nothing.
- * `priority` is deliberately off — the mark never pushes content, so it must not compete with the
- * hero for bandwidth.
+ * shipped on every page in the HTML; as a file it is fetched once, cached, and blocks nothing.
  */
 export function Logo({
   size = 28,
-  variant = 'auto',
   className,
   alt = 'GeoFold',
 }: {
   /** Rendered height in px. The mark is wider than it is tall (578x429). */
   size?: number
-  /**
-   * `auto` follows the site theme (the default, and almost always what you want).
-   * `light` pins the bare mark, for grounds that are already light. `dark` pins the plated mark,
-   * for grounds that are already dark — e.g. a permanently navy band, where `auto` would be wrong
-   * because the band does not follow the theme.
-   */
-  variant?: 'auto' | 'light' | 'dark'
   className?: string
   alt?: string
 }) {
-  // The bare mark's viewBox is 578x429; the plated one is 638x489.
-  //
-  // `size` means THE ARTWORK's height, not the file's. The plated file is taller than the artwork
-  // inside it (it has the plate's padding above and below), so rendering it at `size` would draw
-  // the mark about 12% smaller — and the logo would visibly shrink the moment the theme flipped.
-  // Scaling the plated render height by the file ratio keeps the mark itself the same size in
-  // both themes, which is what "the same logo" has to mean.
-  const PLATE_RATIO = 489 / 429
-  const geom = (src: string) =>
-    src.includes('plate')
-      ? { w: 638, h: 489, render: Math.round(size * PLATE_RATIO) }
-      : { w: 578, h: 429, render: size }
-
-  const base = `gf-logo${className ? ` ${className}` : ''}`
-
-  /*
-   * A plain <img>, deliberately — not next/image.
-   *
-   * These are SVG files served with `unoptimized`, which means next/image performs no resizing,
-   * no format conversion and no CDN work: it is a plain <img> with extra attributes. It also
-   * writes `display: block` as an INLINE STYLE, and an inline style beats the class that hides
-   * the variant this theme does not use — so both marks painted at once, stacked, and the header
-   * showed two logos. Losing next/image costs nothing here and removes the conflict entirely.
-   *
-   * `loading` is explicit because the header mark is above the fold and must not be deferred,
-   * while the footer copy can be.
-   */
-  const mark = (src: string, which: 'light' | 'dark', accessible: boolean, eager: boolean) => {
-    const g = geom(src)
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={src}
-        alt={accessible ? alt : ''}
-        aria-hidden={accessible ? undefined : true}
-        width={g.w}
-        height={g.h}
-        className={`${base} gf-logo-${which}`}
-        style={{ height: g.render, width: 'auto' }}
-        loading={eager ? 'eager' : 'lazy'}
-        decoding="async"
-      />
-    )
-  }
-
-  // A pinned variant renders one file and never flips — no dead weight in the DOM.
-  if (variant === 'light') return mark('/geofold-mark.svg', 'light', true, true)
-  if (variant === 'dark') return mark('/geofold-mark-plate.svg', 'dark', true, true)
-
-  // `auto`: both in the DOM, CSS reveals one. Only the visible one is announced, so a screen
-  // reader says "GeoFold" once rather than twice.
   return (
-    <span className="gf-logo-swap">
-      {mark('/geofold-mark.svg', 'light', true, true)}
-      {mark('/geofold-mark-plate.svg', 'dark', false, false)}
-    </span>
+    // eslint-disable-next-line @next/next/no-img-element -- the file is an SVG served as-is, so
+    // next/image would add an optimizer round-trip and an inline `display:block` style while
+    // changing nothing about the bytes. A plain <img> is the honest element here.
+    <img
+      src="/geofold-mark.svg"
+      alt={alt}
+      width={578}
+      height={429}
+      className={`gf-logo${className ? ` ${className}` : ''}`}
+      style={{ height: size, width: 'auto' }}
+      /* The header mark is above the fold and must not be deferred; the footer copy may be. */
+      loading={size >= 28 ? 'eager' : 'lazy'}
+      decoding="async"
+    />
   )
 }
 
@@ -117,18 +76,10 @@ export function Logo({
  * letterforms means it stays selectable, translatable and crisp at every size — and the mark
  * carries the brand on its own at the sizes where text would not read.
  */
-export function LogoLockup({
-  size = 26,
-  variant = 'auto',
-  className,
-}: {
-  size?: number
-  variant?: 'auto' | 'light' | 'dark'
-  className?: string
-}) {
+export function LogoLockup({ size = 26, className }: { size?: number; className?: string }) {
   return (
     <span className={`gf-lockup${className ? ` ${className}` : ''}`}>
-      <Logo size={size} variant={variant} alt="" />
+      <Logo size={size} alt="" />
       <span className="gf-lockup-word">GeoFold</span>
     </span>
   )

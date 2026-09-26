@@ -352,10 +352,13 @@
   color: var(--mk-muted); letter-spacing: 0; line-height: 1.45; max-width: 46ch;
 }
 
-/* The badge. A pill with a plate and a line — the same idiom as the nav controls. */
+/* The badge. A pill with a plate and a line — the same idiom as the nav controls.
+   The border takes --mk-control-line, not --mk-line: WCAG 1.4.11 wants 3:1 for the visual
+   boundary of something interactive, and this is a link to the OSS checker. --mk-line is a
+   decorative hairline at 1.29:1, which is right for a divider and too faint for a control edge. */
 .mk .mk-seal-oss {
   display: inline-flex; align-items: center; gap: 9px;
-  padding: 7px 14px 7px 8px; border: 1px solid var(--mk-line); border-radius: 100px;
+  padding: 7px 14px 7px 8px; border: 1px solid var(--mk-control-line); border-radius: 100px;
   background: var(--mk-panel); color: var(--mk-prose); font-size: 12.5px; font-weight: 500;
   text-decoration: none; transition: border-color .2s ease, color .2s ease;
 }
@@ -1137,24 +1140,126 @@ html[data-theme='dark'] .mk .mk-price-card.feat .mk-btn-primary:hover {
   }
 }
 
-/* 3. The nav surface, and the few literals elsewhere that a token could not reach. */
-html[data-theme='dark'] .mk-nav { background: rgba(15, 23, 42, .94); }
-html[data-theme='dark'] .mk-nav.is-stuck { background: #0F172A; }
-html[data-theme='dark'] .mk ::selection { background: rgba(127, 168, 232, .26); color: #F8FAFC; }
+/* =====================================================================================
+   THE CHROME STAYS LIGHT IN DARK MODE — 2026-09-26.
+
+   WHY. The mark's globe lines are CUT OUT of the shape, not drawn in white (measured on the
+   source: those pixels are the background colour, and the file has no pure-white pixel at all).
+   So the mark inherits whatever is behind it, and brand blue #0246b1 measures 7.99:1 on the light
+   ground but only 2.14:1 on the dark one — the G effectively disappears.
+
+   Two fixes were tried and rejected. Repainting the blue to a pale tint destroys the brand.
+   Giving the mark its own light plate keeps the colours but drops a stray white box into a dark
+   header, which is not what the mark should look like.
+
+   The fix that works is this one: THE GROUND UNDER THE MARK STAYS LIGHT, AND THE GROUND IS THE
+   CHROME. The header and footer bands keep the paper surface in both themes while the content
+   between them goes dark, so the mark reads identically in both and no plate is ever drawn. The
+   only thing that differs between themes is the background of the two bands that hold the logo.
+
+   HOW IT IS IMPLEMENTED. Rather than override a dozen descendant rules, the light palette is
+   re-declared ON the two bands. Every rule inside them already reads these tokens, so the nav
+   links, the language segment, the theme button, the portal button, the footer columns and the
+   legal panel all flip back to light-ground colours in one move, and stay correct if the palette
+   is ever adjusted. Nothing inside needs to know this is happening.
+
+   WHY IT IS GOOD DESIGN AND NOT A WORKAROUND. A survey sheet is a light sheet with the field in
+   the middle: a stable border, a changing interior. The chrome becomes exactly that, and the
+   identity motif (the map sheet) is reinforced by the fix rather than compromised by it.
+   ===================================================================================== */
+html[data-theme='dark'] .mk .mk-nav,
+html[data-theme='dark'] .mk .mk-footer {
+  --mk-bg: #F8FAFC;
+  --mk-raise: #EEF2F7;
+  --mk-panel: #FFFFFF;
+  --mk-line: #DCE3EC;
+  --mk-input-line: #C8D3E0;
+  --mk-control-line: #7A8CA6;
+  --mk-ink: #334155;
+  --mk-prose: #52647D;
+  --mk-muted: #475569;
+  --mk-faint: #475569;
+  --mk-green: #014AB5;
+  --mk-green-2: #013A8F;
+  --mk-on-green: #F8FAFC;
+  --mk-amber: #C2410C;
+  --mk-marker: #F35D19;
+
+  /* THE COLOR IS DECLARED, NOT JUST THE TOKENS, and this line is load-bearing.
+
+     Re-declaring `--mk-ink` on the band is not enough on its own. `color` is an inherited
+     property, and a descendant that reads `color: inherit` takes the parent's COMPUTED value —
+     it does not re-evaluate `var(--mk-ink)` against the nearer declaration. `.mk a { color:
+     inherit }` in marketing.css has specificity (0,1,1), which beats `.mk-portal`'s (0,1,0), so
+     the Portal link takes its colour from the chain rather than from its own rule. Before this
+     line existed, that chain still resolved at `.mk`, whose computed colour is the DARK theme's
+     --mk-ink (#F8FAFC) — near-white text on what is now a light header, measured at 1.00:1, which
+     is invisible. Declaring the colour here gives every inheriting element in the band the light
+     value, and it stays correct if the palette changes. */
+  color: #334155;
+}
+html[data-theme='dark'] .mk .mk-nav { background: rgba(248, 250, 252, .94); }
+html[data-theme='dark'] .mk .mk-nav.is-stuck { background: #F8FAFC; }
+html[data-theme='dark'] .mk .mk-footer { background: #F8FAFC; }
+
+/* Verbatim copy of the block above, for a visitor with scripting off whose OS is set to dark.
+   Keep the two in sync. */
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme='light']) .mk .mk-nav,
+  html:not([data-theme='light']) .mk .mk-footer {
+    --mk-bg: #F8FAFC;
+    --mk-raise: #EEF2F7;
+    --mk-panel: #FFFFFF;
+    --mk-line: #DCE3EC;
+    --mk-input-line: #C8D3E0;
+    --mk-control-line: #7A8CA6;
+    --mk-ink: #334155;
+    --mk-prose: #52647D;
+    --mk-muted: #475569;
+    --mk-faint: #475569;
+    --mk-green: #014AB5;
+    --mk-green-2: #013A8F;
+    --mk-on-green: #F8FAFC;
+    --mk-amber: #C2410C;
+    --mk-marker: #F35D19;
+
+    /* See the note in the block above: the inherited `color` must be declared on the band, or
+       `.mk a { color: inherit }` walks past the re-declared tokens. */
+    color: #334155;
+  }
+  html:not([data-theme='light']) .mk .mk-nav { background: rgba(248, 250, 252, .94); }
+  html:not([data-theme='light']) .mk .mk-nav.is-stuck { background: #F8FAFC; }
+  html:not([data-theme='light']) .mk .mk-footer { background: #F8FAFC; }
+}
+
+/* The scroll-progress hairline is pinned to the top of the viewport, which means it draws over
+   the nav's first two pixels. The nav is light in both themes now, so the bar has to take the
+   light accent: the dark theme's pale blue (#7FA8E8) on a paper surface is nearly invisible. */
+html[data-theme='dark'] .mk-progress > span {
+  background: linear-gradient(90deg, #014AB5 0%, #013A8F 100%);
+}
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme='light']) .mk-progress > span {
+    background: linear-gradient(90deg, #014AB5 0%, #013A8F 100%);
+  }
+}
+
+html[data-theme='dark'] .mk ::selection { background: rgba(1, 74, 181, .18); color: #334155; }
 html[data-theme='dark'] .mk .mk-input:focus { box-shadow: 0 0 0 3px rgba(127, 168, 232, .18); }
 html[data-theme='dark'] .mk .mk-error { background: #2A1416; border-color: #5C2A2F; color: #FCA5A5; }
 /* A dark phone body on a dark page loses its silhouette, so the frame keeps a visible edge. */
 html[data-theme='dark'] .mk .mk-phone-frame { border-color: #33425E; }
-html[data-theme='dark'] .mk .mk-portal:hover { background: rgba(127, 168, 232, .12); }
+/* The portal button sits in the nav, which is light in both themes, so its hover wash stays the
+   light accent's. It used to be overridden to the dark theme's pale blue, which on paper read as
+   a barely-visible smudge. */
+html[data-theme='dark'] .mk .mk-portal:hover { background: rgba(1, 74, 181, .07); }
 
 @media (prefers-color-scheme: dark) {
-  html:not([data-theme='light']) .mk-nav { background: rgba(15, 23, 42, .94); }
-  html:not([data-theme='light']) .mk-nav.is-stuck { background: #0F172A; }
-  html:not([data-theme='light']) .mk ::selection { background: rgba(127, 168, 232, .26); color: #F8FAFC; }
+  html:not([data-theme='light']) .mk ::selection { background: rgba(1, 74, 181, .18); color: #334155; }
   html:not([data-theme='light']) .mk .mk-input:focus { box-shadow: 0 0 0 3px rgba(127, 168, 232, .18); }
   html:not([data-theme='light']) .mk .mk-error { background: #2A1416; border-color: #5C2A2F; color: #FCA5A5; }
   html:not([data-theme='light']) .mk .mk-phone-frame { border-color: #33425E; }
-  html:not([data-theme='light']) .mk .mk-portal:hover { background: rgba(127, 168, 232, .12); }
+  html:not([data-theme='light']) .mk .mk-portal:hover { background: rgba(1, 74, 181, .07); }
 }
 
 /* =====================================================================================
@@ -1242,30 +1347,23 @@ html[data-theme='dark'] .mk .mk-theme-btn .mk-icon-moon { display: none; }
 /* ---------------------------------------------------------------------------
    THE BRAND MARK.
 
-   The supplied artwork, traced to SVG (public/geofold-mark.svg). Two variants
-   exist because the globe lines inside the G are CUT OUT of the shape rather
-   than drawn in white — measured on the source, those pixels are the background
-   colour, not #fff. So the mark inherits its ground, and the brand blue falls to
-   about 1.4:1 on the near-black dark theme. The `-dark` file repaints the blue to
-   a pale sky tint and leaves the orange alone.
+   The supplied artwork, traced to SVG (public/geofold-mark.svg). ONE file, in
+   both themes, in its own colours: blue #0246b1 and orange #fa5f1f, always.
 
-   Both variants ship in the DOM and CSS chooses: doing it in JS would paint the
-   wrong one for a frame and make the server and client disagree on first render.
+   The globe lines inside the G are CUT OUT of the shape rather than drawn in
+   white — measured on the source, those pixels are the background colour, and
+   the file contains no pure-white pixel at all. So the mark inherits whatever
+   sits behind it, and brand blue falls to 2.14:1 on the dark ground.
 
-   `.gf-logo-swap` is inline-block with a fixed line-height so the two stacked
-   images do not add a baseline gap; only one is ever laid out (`display: none`
-   takes the other out of flow entirely).
+   The answer is not to recolour the mark and not to draw a plate under it: it
+   is to keep the ground under the mark light. The header and footer bands stay
+   on paper in dark mode (see THE CHROME STAYS LIGHT IN DARK MODE above), so the
+   mark reads exactly as it does in the light theme and no plate exists anywhere.
+
+   There used to be a second, plated file and a `.gf-logo-swap` wrapper for CSS
+   to choose between them. With one artwork that is correct on both grounds,
+   both are gone: nothing to swap, nothing to disagree about before hydration.
    --------------------------------------------------------------------------- */
-.gf-logo-swap { position: relative; display: inline-block; line-height: 0; }
-.gf-logo-swap .gf-logo-dark { display: none; }
-
-html[data-theme='dark'] .gf-logo-swap .gf-logo-light { display: none; }
-html[data-theme='dark'] .gf-logo-swap .gf-logo-dark { display: block; }
-
-@media (prefers-color-scheme: dark) {
-  html:not([data-theme='light']) .gf-logo-swap .gf-logo-light { display: none; }
-  html:not([data-theme='light']) .gf-logo-swap .gf-logo-dark { display: block; }
-}
 
 /* The mark + wordmark lockup. `gap` is in em so it tracks the wordmark size. */
 .gf-lockup { display: inline-flex; align-items: center; gap: 9px; }

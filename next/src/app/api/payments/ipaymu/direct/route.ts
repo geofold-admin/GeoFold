@@ -155,8 +155,11 @@ export async function POST(req: Request) {
         { error: 'checkout_in_progress', message: 'Pembayaran sedang disiapkan. Tunggu sebentar, lalu coba lagi.' },
         { status: 409, headers: { 'Cache-Control': 'no-store', 'Retry-After': '3' } },
       )
+    /* `qrPayload` is stripped before the response. It is stored so the encoder route can draw the
+       QR, not so it can be handed to the browser — the modal asks for a PNG instead. */
+    const { qrPayload: _storedPayload, ...publicInstructions } = stored
     return NextResponse.json(
-      { ...stored, orderId: reservation.row.ProviderOrderId, reused: true, amountIdr: amount, grantsDays: days },
+      { ...publicInstructions, orderId: reservation.row.ProviderOrderId, reused: true, amountIdr: amount, grantsDays: days },
       { headers: { 'Cache-Control': 'no-store' } },
     )
   }
@@ -211,9 +214,12 @@ export async function POST(req: Request) {
     method,
     channel: payment.channel,
     label: payment.paymentName || channelLabel(payment.channel),
-    /* The QR image URL is only sent when it passed the host check; otherwise the raw payload
-       string goes instead and the modal renders it as text to be pasted into a banking app. */
+    /* The VA number, or a human-readable payment number. Never the QR payload: that is machine
+       data, and the modal renders it as a scannable image through /api/payments/ipaymu/qr. */
     paymentNo: payment.paymentNo || null,
+    /* The EMVCo string, stored so the encoder route can draw it. It is NOT sent to the browser:
+       the modal requests a PNG instead, which keeps the payload out of the client bundle and
+       stops the endpoint from being usable as an open QR generator. */
     qrUrl,
     totalIdr: payment.totalIdr || amount,
     feeIdr: payment.feeIdr,
@@ -221,10 +227,15 @@ export async function POST(req: Request) {
   }
 
   /* Stored so a reload, a second tab or a re-opened modal gets the SAME invoice rather than a
-     new one — and so the amount the buyer was shown is recoverable for support. */
+     new one — and so the amount the buyer was shown is recoverable for support.
+
+     `qrPayload` is written separately from the public `instructions` object above: the encoder
+     route reads it back out of the row, and it must survive a browser reload. */
   await sql`
     UPDATE payments SET "QrUrl" = ${qrUrl},
-      "RawPayload" = COALESCE("RawPayload", '{}'::jsonb) || ${sql.json({ direct: instructions })}
+      "RawPayload" = COALESCE("RawPayload", '{}'::jsonb) || ${sql.json({
+        direct: { ...instructions, qrPayload: payment.qrPayload || null },
+      })}
     WHERE "ProviderOrderId" = ${orderId} AND "Provider" = 'ipaymu' AND "Status" = 'pending'`
 
   return NextResponse.json(

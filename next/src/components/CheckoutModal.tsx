@@ -56,6 +56,8 @@ type Copy = {
   vaBody: string
   copy: string
   copied: string
+  /** Shown in place of the QR when the image itself could not be loaded. */
+  qrFailed: string
   amount: string
   adminFee: string
   total: string
@@ -105,6 +107,7 @@ const copy: Record<Locale, Copy> = {
     vaBody: 'Masukkan nomor di atas lewat m-banking, ATM, atau aplikasi bank Anda. Nominal harus sama persis.',
     copy: 'Salin',
     copied: 'Tersalin',
+    qrFailed: 'Kode QR gagal dimuat.',
     amount: 'Jumlah',
     adminFee: 'Biaya layanan',
     total: 'Total bayar',
@@ -152,6 +155,7 @@ const copy: Record<Locale, Copy> = {
     vaBody: 'Enter the number above in your banking app, ATM or m-banking. The amount must match exactly.',
     copy: 'Copy',
     copied: 'Copied',
+    qrFailed: 'The QR code could not be loaded.',
     amount: 'Amount',
     adminFee: 'Service fee',
     total: 'Total to pay',
@@ -232,6 +236,11 @@ export function CheckoutModal({
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [checking, setChecking] = useState(false)
   const [copied, setCopied] = useState(false)
+  /* The QR is drawn by our own encoder route, so it can fail on its own — a stale order, a
+     dropped request — without the payment itself being broken. Tracked separately so a failed
+     image shows a retry rather than a broken-image icon next to a live invoice. */
+  const [qrFailed, setQrFailed] = useState(false)
+  const [qrAttempt, setQrAttempt] = useState(0)
   const [channel, setChannel] = useState<Channel>(DEFAULT_CHANNELS[0])
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -255,6 +264,8 @@ export function CheckoutModal({
       setErrorMessage(null)
       setCopied(false)
       setChecking(false)
+      setQrFailed(false)
+      setQrAttempt(0)
     }
   }, [isOpen, stopPolling])
 
@@ -568,27 +579,51 @@ export function CheckoutModal({
                 <p>{instructions.method === 'qris' ? c.qrisBody : c.vaBody}</p>
               </div>
 
-              {instructions.method === 'qris' && instructions.qrUrl && (
+              {/* THE QR. A QRIS response does not always arrive as a hosted image: iPaymu often
+                  answers with only the payload STRING (`QrString`), and the old fallback printed
+                  that string as text — a wall of `0002010102122665...` where a scannable code
+                  should be, which no buyer can use. When there is no image URL we point the <img>
+                  at our own encoder route, which reads the stored payload server-side and returns
+                  a PNG. Either way the buyer sees a code they can scan. */}
+              {instructions.method === 'qris' && !qrFailed && (
                 <div className="gf-ck-qr">
-                  {/* eslint-disable-next-line @next/next/no-img-element -- the source is a
-                      gateway-hosted PNG on an allowlisted host, not a local asset; next/image
-                      would proxy it through the optimizer and the CSP already restricts it. */}
-                  <img src={instructions.qrUrl} alt={instructions.label} width={220} height={220} />
+                  {/* eslint-disable-next-line @next/next/no-img-element -- the source is either a
+                      gateway-hosted PNG on an allowlisted host or our own encoder route; next/image
+                      would proxy it through the optimizer for no benefit, and the CSP already
+                      restricts what can be loaded. `qrAttempt` is in the key so a retry remounts
+                      the element and the browser actually re-requests the image. */}
+                  <img
+                    key={qrAttempt}
+                    src={instructions.qrUrl ?? `/api/payments/ipaymu/qr?order=${encodeURIComponent(instructions.orderId)}`}
+                    alt={`${instructions.label} QR code, ${formatIdr(total ?? instructions.amountIdr)}`}
+                    width={220}
+                    height={220}
+                    onError={() => setQrFailed(true)}
+                  />
                 </div>
               )}
 
-              {/* A QRIS response with no image still carries the raw payload, which every banking
-                  app can accept as a pasted string. Better than a blank box. */}
-              {instructions.method === 'qris' && !instructions.qrUrl && instructions.paymentNo && (
+              {/* The code could not be drawn. The invoice is still live at the gateway, so the
+                  buyer is offered a retry rather than told the payment failed. */}
+              {instructions.method === 'qris' && qrFailed && (
                 <div className="gf-ck-value">
-                  <code>{instructions.paymentNo}</code>
-                  <button type="button" onClick={() => copyValue(instructions.paymentNo!)}>
-                    <Copy size={14} aria-hidden="true" />
-                    {copied ? c.copied : c.copy}
+                  <code>{c.qrFailed}</code>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQrFailed(false)
+                      setQrAttempt((n) => n + 1)
+                    }}
+                  >
+                    <RefreshCw size={14} aria-hidden="true" />
+                    {c.retry}
                   </button>
                 </div>
               )}
 
+              {/* A VA number is typed into a banking app, so it stays selectable text with a copy
+                  button. A QRIS payload is NOT shown: it is machine data, and the encoder above
+                  already turned it into something a human can use. */}
               {instructions.method === 'va' && instructions.paymentNo && (
                 <div className="gf-ck-value">
                   <code>{instructions.paymentNo}</code>
