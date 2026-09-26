@@ -251,7 +251,7 @@ export default async function PricingPage() {
           ),
         }}
       />
-      <section className="mk-h">
+      <section className="mk-h" data-anim="stagger">
         <span className="mk-h-eyebrow">{c.eyebrow}</span>
         <h1 className="mk-h-title">
           {c.h1.before}
@@ -320,7 +320,7 @@ export default async function PricingPage() {
       </section>
 
       <section className="mk-sec mk-sec-tint">
-        <div className="mk-sec-head">
+        <div className="mk-sec-head" data-anim="up">
           <span className="mk-kick">{c.faqKick}</span>
           <h2>{c.faqTitle}</h2>
         </div>

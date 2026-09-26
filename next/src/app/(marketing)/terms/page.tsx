@@ -45,7 +45,7 @@ const billing = <a href={`mailto:${BUSINESS.email.billing}`}>{BUSINESS.email.bil
 
 function Indonesian() {
   return (
-    <div className="mk-doc">
+    <div className="mk-doc" data-anim="up">
       <div className="mk-doc-updated">Berlaku sejak: {UPDATED}</div>
 
       <h2>1. Siapa kami</h2>
@@ -212,7 +212,7 @@ function Indonesian() {
 
 function English() {
   return (
-    <div className="mk-doc">
+    <div className="mk-doc" data-anim="up">
       <div className="mk-doc-updated">Effective: {UPDATED}</div>
 
       <h2>1. Who we are</h2>
@@ -375,7 +375,7 @@ export default async function TermsPage() {
 
   return (
     <>
-      <div className="mk-hero pad-b-sm">
+      <div className="mk-hero pad-b-sm" data-anim="stagger">
         <span className="mk-eyebrow">{c.eyebrow}</span>
         <h1 style={{ maxWidth: 700 }}>{c.h1}</h1>
         <p className="mk-lede" style={{ maxWidth: 560 }}>

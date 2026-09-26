@@ -259,7 +259,7 @@ export default async function ProductPage() {
 
   return (
     <>
-      <section className="mk-h">
+      <section className="mk-h" data-anim="stagger">
         <span className="mk-h-eyebrow">{c.eyebrow}</span>
         <h1 className="mk-h-title">
           {c.h1.before}
@@ -270,7 +270,7 @@ export default async function ProductPage() {
       </section>
 
       <section className="mk-sec mk-sec-tint">
-        <div className="mk-sec-head">
+        <div className="mk-sec-head" data-anim="up">
           <span className="mk-kick">{c.flowKick}</span>
           <h2>{c.flowTitle}</h2>
           <p>{c.flowLede}</p>
@@ -290,13 +290,13 @@ export default async function ProductPage() {
       </section>
 
       <section className="mk-sec">
-        <div className="mk-sec-head">
+        <div className="mk-sec-head" data-anim="up">
           <span className="mk-kick">{c.recordKick}</span>
           <h2>{c.recordTitle}</h2>
         </div>
         <div className="mk-recs">
           {c.record.map((r) => (
-            <div className="mk-rec" key={r.t}>
+            <div className="mk-rec" data-spotlight key={r.t}>
               <div className="mk-rec-t">{r.t}</div>
               <div className="mk-rec-b">{r.b}</div>
             </div>
@@ -305,7 +305,7 @@ export default async function ProductPage() {
       </section>
 
       <section className="mk-sec mk-sec-tint">
-        <div className="mk-sec-head">
+        <div className="mk-sec-head" data-anim="up">
           <span className="mk-kick">{c.formKick}</span>
           <h2>{c.formTitle}</h2>
           <p>{c.formLede}</p>
@@ -326,7 +326,7 @@ export default async function ProductPage() {
       </section>
 
       <section className="mk-sec mk-sec-dark">
-        <div className="mk-sec-head">
+        <div className="mk-sec-head" data-anim="up">
           <span className="mk-kick on-dark">{c.exportKick}</span>
           <h2>{c.exportTitle}</h2>
         </div>

@@ -155,7 +155,7 @@ export default async function ContactPage() {
 
   return (
     <>
-      <div className="mk-hero pad-b-sm">
+      <div className="mk-hero pad-b-sm" data-anim="stagger">
         <span className="mk-eyebrow">{c.eyebrow}</span>
         <h1 style={{ maxWidth: 640 }}>{c.h1}</h1>
         <p className="mk-lede" style={{ maxWidth: 560 }}>
@@ -168,7 +168,7 @@ export default async function ContactPage() {
           and in both languages regardless of which one the visitor is browsing in. See the file
           header for why this one block does not follow the locale. */}
       <div className="mk-section tight" style={{ paddingTop: 0 }}>
-        <div className="mk-doc">
+        <div className="mk-doc" data-anim="up">
           <h2>{c.identity}</h2>
           <dl className="mk-rows">
             <div className="mk-row">

@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { FigAerial, FigCapture, FigExport, FigMap, FigOffline } from './Figures'
-import { Motion } from './Motion'
 import { SurveyField } from '@/components/SurveyField'
 import { SurveyGlobe } from '@/components/SurveyGlobe'
 import { MagnetField } from '@/components/MagnetField'
@@ -342,7 +341,8 @@ export default async function HomePage() {
 
   return (
     <>
-      <Motion />
+      {/* <Motion /> is mounted in the (marketing) layout, not here: it is the whole site's motion
+          system and mounting it per page would tear it down and rebuild it on every navigation. */}
 
       {/* ================= hero =================
           THE SURVEY FIELD. A canvas graticule with waypoints that lean away from the cursor and

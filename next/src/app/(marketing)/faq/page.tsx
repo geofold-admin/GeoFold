@@ -606,7 +606,7 @@ function Groups({ groups }: { groups: Group[] }) {
   return (
     <div className="mk-faq">
       {groups.map((group, gi) => (
-        <section key={group.title} className="mk-faq-group">
+        <section key={group.title} className="mk-faq-group" data-anim="up">
           <h2>{group.title}</h2>
           <div className="mk-faq-list">
             {group.items.map(({ q, a }, i) => (
@@ -632,7 +632,7 @@ export default async function FaqPage() {
 
   return (
     <>
-      <div className="mk-hero pad-b-sm">
+      <div className="mk-hero pad-b-sm" data-anim="stagger">
         <span className="mk-eyebrow">{c.eyebrow}</span>
         <h1 style={{ maxWidth: 700 }}>{c.h1}</h1>
         <p className="mk-lede" style={{ maxWidth: 560 }}>

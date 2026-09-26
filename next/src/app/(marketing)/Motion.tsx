@@ -4,12 +4,25 @@ import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { SplitText } from 'gsap/SplitText'
+import { usePathname } from 'next/navigation'
 
 gsap.registerPlugin(ScrollTrigger, SplitText, useGSAP)
 
 /**
- * The landing page's motion system. One client component; the sections themselves stay on the
+ * The marketing site's motion system. One client component; the sections themselves stay on the
  * server and are driven from here by `data-anim` attributes.
+ *
+ * MOUNTED IN THE LAYOUT, NOT ON THE PAGE, and that needed one non-obvious thing to work.
+ * It used to live inside the landing page, so every effect below existed on `/` and nowhere else:
+ * the other ten marketing pages had a scroll-progress bar that never filled, a nav that never
+ * condensed, and no click mark. Moving it to the layout fixes that for all of them at once.
+ *
+ * BUT A LAYOUT DOES NOT REMOUNT ON NAVIGATION. In the App Router the layout persists across
+ * routes and only its children are replaced, so an effect with no dependencies runs exactly once,
+ * on the first page the visitor lands on. Every `data-anim` element on every page they navigate
+ * to afterwards would be looked for before it existed, found nothing, and never animate. The
+ * `pathname` dependency below is what makes the effect re-run per route; `revertOnUpdate` makes
+ * GSAP revert the previous route's timelines and listeners first, so the two do not stack.
  *
  * TWO RULES THIS FILE KEEPS.
  *
@@ -18,25 +31,31 @@ gsap.registerPlugin(ScrollTrigger, SplitText, useGSAP)
  *    a thrown plugin, the visitor gets the whole site unanimated instead of a blank column.
  *    paper.css has the long version of this argument at the bottom of the file.
  * 2. EVERYTHING IS INSIDE gsap.matchMedia(). Under `prefers-reduced-motion: reduce` not one
- *    timeline is built — the branch simply never runs — so there is no "animate to the same
+ *    timeline is built, the branch simply never runs, so there is no "animate to the same
  *    place instantly" approximation to get subtly wrong. matchMedia also reverts the whole
  *    branch if the preference changes mid-session.
  *
  * ON SPLITTING HEADINGS. SplitText rewrites a heading into per-character spans, which would
  * normally destroy it for a screen reader; GSAP 3.13+ sets `aria-label` to the original string
  * on the split element, so it is still announced as one sentence. `autoSplit: true` re-splits
- * when the web font finishes loading or the box is resized — without it, a headline split
+ * when the web font finishes loading or the box is resized, without it, a headline split
  * against the fallback face keeps the fallback's line breaks forever.
  */
 
-/* One easing and one duration scale for the whole page. Individual tweens vary the numbers, but
+/* One easing and one duration scale for the whole site. Individual tweens vary the numbers, but
    they vary them from here rather than each inventing their own feel. */
 const EASE = 'power3.out'
 const EASE_SOFT = 'power2.out'
 
 export function Motion() {
-  useGSAP(() => {
-    const mm = gsap.matchMedia()
+  /* The route, as the effect's dependency. A layout persists across navigations, so without this
+     the whole system would initialise once and every later page would come up unanimated. See the
+     header comment. */
+  const pathname = usePathname()
+
+  useGSAP(
+    () => {
+      const mm = gsap.matchMedia()
 
     mm.add('(prefers-reduced-motion: no-preference)', () => {
       /* Set only when the spotlight listener is attached; the cleanup below calls it if present. */
@@ -470,8 +489,13 @@ export function Motion() {
     /* Reduced motion: no branch is added for it at all, so nothing is built and nothing needs
        undoing. The page is simply the page. */
 
-    return () => mm.revert()
-  })
+      return () => mm.revert()
+    },
+    /* `revertOnUpdate` makes GSAP revert the previous route's timelines and listeners before the
+       new route's effect runs. Without it the old ScrollTriggers stay alive, measuring elements
+       that no longer exist and, on some routes, pinning a scene that is gone. */
+    { dependencies: [pathname], revertOnUpdate: true },
+  )
 
   return null
 }

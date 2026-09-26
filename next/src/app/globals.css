@@ -330,3 +330,65 @@ a.rec.pending:hover { border-left-color: var(--ochre); }
   font-weight: 500; padding: 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
 .table td { padding: 8px; border-bottom: 1px solid var(--line); }
 .table tr:hover td { background: color-mix(in srgb, var(--ink) 4%, transparent); }
+
+/* ---------------------------------------------------------------------------
+   POINTER SPOTLIGHT ON CARDS AND ROWS.
+
+   The same gesture the marketing site uses, so the two halves of the product
+   feel like one thing, but tuned down for a working screen: the glow here is
+   an accent you notice in passing, not the point of the card.
+
+   The mechanism is deliberately identical to paper.css: AppMotion writes --mx
+   and --my from one delegated listener, the gradient follows those two values,
+   and React never re-renders. Only surfaces that are already interactive get
+   it, because a highlight that appears on something unclickable is a lie about
+   what the thing does.
+
+   WHY .stat IS NOT IN THIS LIST. The Industry system draws "+" registration
+   marks at the corners of framed objects, and on .stat those marks ARE the
+   ::before pseudo-element (see the rule above). Overloading it would delete
+   them. .stat therefore gets its glow on ::after, in its own rule below, and
+   the two pseudo-elements coexist. .hero is excluded for the same kind of
+   reason: it already carries the contour motif, and a glow over it would muddy
+   both effects rather than add to either.
+   --------------------------------------------------------------------------- */
+.pcard, .stat, .list-row, .sub-row { position: relative; }
+
+@media (hover: hover) and (pointer: fine) {
+  .pcard::before, .list-row::before, .sub-row::before {
+    content: '';
+    position: absolute; inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .25s ease;
+    /* 260px: smaller than the marketing site's 420px, because these surfaces
+       are small. At 420 the glow would cover a 210px-wide card completely and
+       read as a hover state rather than a light. */
+    background: radial-gradient(
+      260px circle at var(--mx, 0) var(--my, 0),
+      color-mix(in srgb, var(--accent) 12%, transparent),
+      transparent 60%
+    );
+  }
+  .pcard:hover::before, .list-row:hover::before, .sub-row:hover::before { opacity: 1; }
+
+  /* .stat's glow, on ::after so the corner registration marks on ::before survive. */
+  .stat::after {
+    content: '';
+    position: absolute; inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .25s ease;
+    background: radial-gradient(
+      260px circle at var(--mx, 0) var(--my, 0),
+      color-mix(in srgb, var(--accent) 12%, transparent),
+      transparent 60%
+    );
+  }
+  .stat:hover::after { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pcard::before, .stat::after, .list-row::before, .sub-row::before { display: none; }
+}

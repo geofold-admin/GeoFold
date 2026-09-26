@@ -103,7 +103,7 @@ function Builds({ lang }: { lang: 'id' | 'en' }) {
 
 function Indonesian() {
   return (
-    <div className="mk-doc">
+    <div className="mk-doc" data-anim="up">
       <h2>Aplikasi yang tersedia</h2>
       <p>
         Ketiganya adalah aplikasi survei yang sama dan memakai akun serta data yang sama. Versi drone
@@ -179,7 +179,7 @@ function Indonesian() {
 
 function English() {
   return (
-    <div className="mk-doc">
+    <div className="mk-doc" data-anim="up">
       <h2>Available builds</h2>
       <p>
         All three are the same survey app on the same account and the same data. The drone builds add
@@ -259,7 +259,7 @@ export default async function DownloadPage() {
 
   return (
     <>
-      <div className="mk-hero pad-b-sm">
+      <div className="mk-hero pad-b-sm" data-anim="stagger">
         <span className="mk-eyebrow">{c.eyebrow}</span>
         <h1 style={{ maxWidth: 700 }}>{c.h1}</h1>
         <p className="mk-lede" style={{ maxWidth: 560 }}>

@@ -159,7 +159,7 @@ export default async function SupportPage() {
 
   return (
     <>
-      <div className="mk-hero pad-b-sm">
+      <div className="mk-hero pad-b-sm" data-anim="stagger">
         <span className="mk-eyebrow">{c.eyebrow}</span>
         <h1 style={{ maxWidth: 640 }}>{c.h1}</h1>
         <p className="mk-lede" style={{ maxWidth: 520 }}>

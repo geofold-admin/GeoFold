@@ -19,6 +19,7 @@ import { getLocale } from '@/lib/i18n.server'
 import { organizationJsonLd } from '@/lib/seo'
 import { LogoLockup } from '@/components/Logo'
 import { MarketingNav } from './MarketingNav'
+import { Motion } from './Motion'
 
 /**
  * The marketing subtree is the part of the site that WANTS to be indexed.
@@ -88,6 +89,11 @@ export default async function MarketingLayout({ children }: { children: ReactNod
         <span />
       </div>
       <MarketingNav locale={locale} />
+      {/* The motion system, mounted once for the whole marketing site. It was inside the landing
+          page, which meant every effect it owns existed on `/` and nowhere else: the other ten
+          pages had a progress bar that never filled and a nav that never condensed. See the
+          header comment in Motion.tsx for why a layout needs the pathname dependency. */}
+      <Motion />
       {children}
       {/* The Legal and Help columns are load-bearing: a payment gateway verifying this merchant
           looks for FAQ, Terms, Refund Policy and Contact reachable from every page. Keep all four

@@ -156,7 +156,7 @@ export default async function AboutPage() {
 
   return (
     <>
-      <section className="mk-h">
+      <section className="mk-h" data-anim="stagger">
         <span className="mk-h-eyebrow">{c.eyebrow}</span>
         <h1 className="mk-h-title">
           {c.h1.before}
@@ -179,13 +179,13 @@ export default async function AboutPage() {
       </section>
 
       <section className="mk-sec mk-sec-tint">
-        <div className="mk-sec-head">
+        <div className="mk-sec-head" data-anim="up">
           <span className="mk-kick">{c.pillarsKick}</span>
           <h2>{c.pillarsTitle}</h2>
         </div>
         <div className="mk-recs">
           {c.pillars.map((p) => (
-            <div className="mk-rec" key={p.t}>
+            <div className="mk-rec" data-spotlight key={p.t}>
               <div className="mk-rec-t">{p.t}</div>
               <div className="mk-rec-b">{p.b}</div>
             </div>
@@ -194,7 +194,7 @@ export default async function AboutPage() {
       </section>
 
       <section className="mk-sec">
-        <div className="mk-sec-head">
+        <div className="mk-sec-head" data-anim="up">
           <span className="mk-kick">{c.whoKick}</span>
           <h2>{OPERATOR}</h2>
           <p>
