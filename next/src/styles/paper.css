@@ -58,6 +58,13 @@
   --mk-panel: #FFFFFF;
   --mk-line: #DCE3EC;
   --mk-input-line: #C8D3E0;
+  /* Form fields get their OWN ink and ground, because a field is not page text: it keeps a light
+     ground even on a dark band, so it cannot simply follow --mk-ink (that pairing produced white
+     text on a white input in dark mode, measured 1.05:1). Both values are declared per theme so
+     they can only ever flip together. */
+  --mk-field-bg: #FFFFFF;
+  --mk-field-ink: #1E293B;   /* 14.48:1 on the field ground */
+  --mk-field-hint: #64748B;  /*  4.76:1 — a hint, legible, never mistakable for a value */
   /* The boundary of an INTERACTIVE control. WCAG 1.4.11 wants 3:1 for the visual information
      that identifies a control, and --mk-line is a decorative hairline at 1.24:1 — correct for a
      divider, too faint for the edge of a button someone is meant to press. Measured: 3.27:1. */
@@ -308,40 +315,62 @@
 
 .mk .mk-footer { display: block; padding: 0; }
 
+/* =====================================================================================
+   THE FOOTER, ONE ROW.
+
+   It used to be two stacked bands: brand-and-links, then a separate trust band holding the NIB,
+   the KBLI and the OSS mark. The second band was the bulk of a 411px footer on a 1440px page and
+   it read as a second footer bolted to the bottom of the first, which is exactly what the reader
+   said when they asked for it to be one row.
+
+   The fix is a single five-column grid: brand, four link columns, and the legalitas column sitting
+   BESIDE the navigation instead of beneath it. The reference is the SAYBA ARC footer the user
+   supplied, which is one row plus a hairline plus one line, and that is what this is now.
+
+   Nothing was dropped. Every link, every registration number and the OSS mark are all still here;
+   the height came out of the stacking, not the content.
+   ===================================================================================== */
+
 .mk .mk-footer-main {
-  display: flex; justify-content: space-between; align-items: flex-start;
-  gap: 28px; flex-wrap: wrap; padding: 30px var(--mk-pad) 26px;
+  display: grid;
+  /* SIX tracks for six children: brand, four link columns, and the trust column. The count has to
+     match or the last child wraps to a second row, which is exactly what the first version of this
+     did and what the test caught.
+     The brand takes the slack, the link columns take what their longest word needs, and the trust
+     column is fixed because a NIB is a fixed number of characters wide. */
+  grid-template-columns: minmax(0, 1.5fr) repeat(4, minmax(0, .78fr)) minmax(0, 1.4fr);
+  gap: 34px 26px;
+  align-items: start;
+  padding: 32px var(--mk-pad) 26px;
 }
-.mk .mk-footer-brand-block { max-width: 34ch; }
-.mk .mk-footer-brand { margin-bottom: 8px; }
+.mk .mk-footer-brand-block { max-width: 40ch; }
+.mk .mk-footer-brand { margin-bottom: 10px; }
 
-.mk .mk-footer-cols { display: flex; gap: clamp(24px, 4vw, 48px); font-size: 13px; flex-wrap: wrap; }
-.mk .mk-footer-col { display: flex; flex-direction: column; gap: 7px; min-width: 84px; }
-.mk .mk-footer-col > span { font-weight: 500; margin-bottom: 1px; }
-
-/* ---- the trust panel ----
-   Compacted after measurement. This block was 66% of the footer (407 of 615px on desktop, 545 of
-   1032px on a phone), and the footer as a whole was 115% of a phone viewport, so the panel was
-   carrying most of a defect the reader feels on every page. The content is unchanged and every
-   figure is still here, because this is what a payment gateway's verification team reads. What
-   changed is the packing:
-
-     - NIB and KBLI were stacked label-over-value, two rows of two lines. They are two short
-       facts, so they now sit side by side on one line with the label inline: 139px -> 46px.
-     - The padding was 32/40px. It is 22/26px.
-     - "SAYBA ARC" was set at clamp(26px, 3.4vw, 40px), a hero-sized word inside a footer. It is
-       now clamp(19px, 2.2vw, 27px): still the largest thing in the block, no longer the largest
-       thing on the page.
-     - The explanatory notes drop to 11.5px and tighten to 1.5 line-height. They are read by the
-       person checking the registration, not by every visitor, and they stay legible at that size.
-*/
-.mk .mk-footer-legal {
-  border-top: 1px solid var(--mk-line);
-  background: var(--mk-raise);
-  display: grid; gap: clamp(20px, 3vw, 48px);
-  padding: 22px var(--mk-pad) 26px;
+/* The blurb. Same job as the reference paragraph: say who makes this and where. */
+.mk .mk-footer-blurb {
+  margin: 0; font-size: 12.5px; line-height: 1.6; color: var(--mk-faint); max-width: 38ch;
 }
 
+.mk .mk-footer-col { display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
+.mk .mk-footer-col > span {
+  font-family: var(--font-inter), sans-serif;
+  font-size: 10px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--mk-faint);
+}
+.mk .mk-footer-col a {
+  color: var(--mk-muted); font-size: 13px; text-decoration: none; width: fit-content;
+  transition: color .2s ease;
+}
+.mk .mk-footer-col a:hover { color: var(--mk-ink); opacity: 1; }
+
+/* ---- the trust column ----
+   The seal answers "is this a real registered business?": a NIB, the KBLI it trades under, and the
+   OSS system that issued it. A payment gateway verification team looks for exactly this, and a
+   buyer deciding whether to send money looks for it too. The numbers come from lib/business.ts so
+   no page can drift out of step with another.
+
+   In the row it is a column, so it is packed as one: the entity on its own line, the two figures
+   inline, then the badge, the parent link and the note. */
 .mk .mk-seal-heading {
   font-family: var(--font-inter), sans-serif;
   font-size: 10px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase;
@@ -349,98 +378,136 @@
 }
 
 .mk .mk-seal-entity {
-  margin: 0 0 10px; font-size: 14px; line-height: 1.3; color: var(--mk-ink);
+  margin: 0 0 9px; font-size: 13.5px; line-height: 1.3; color: var(--mk-ink);
   font-family: var(--font-inter), sans-serif; letter-spacing: -.005em;
 }
 .mk .mk-seal-entity strong { font-weight: 600; }
-.mk .mk-seal-scale { color: var(--mk-muted); font-size: 13px; }
+.mk .mk-seal-scale { color: var(--mk-muted); font-size: 12.5px; }
 
 /* The two figures, side by side. A label and its value are one line each; stacking them cost 93px
    of height for no gain in legibility. */
-.mk .mk-seal-rows { margin: 0 0 14px; display: flex; flex-wrap: wrap; gap: 8px 32px; }
-.mk .mk-seal-rows > div { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
+.mk .mk-seal-rows { margin: 0 0 11px; display: flex; flex-wrap: wrap; gap: 6px 20px; }
+.mk .mk-seal-rows > div { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
 .mk .mk-seal-rows dt {
   font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500;
   letter-spacing: .12em; text-transform: uppercase; color: var(--mk-faint);
 }
 .mk .mk-seal-rows dd {
-  margin: 0; font-family: var(--font-inter), sans-serif; font-size: 13.5px; font-weight: 500;
+  margin: 0; font-family: var(--font-inter), sans-serif; font-size: 13px; font-weight: 500;
   color: var(--mk-ink); font-variant-numeric: tabular-nums; letter-spacing: .01em;
 }
 .mk .mk-seal-kbli-label {
-  display: block; margin-top: 2px; font-size: 11.5px; font-weight: 400;
-  color: var(--mk-muted); letter-spacing: 0; line-height: 1.45; max-width: 52ch;
+  display: block; margin-top: 1px; font-size: 11px; font-weight: 400;
+  color: var(--mk-muted); letter-spacing: 0; line-height: 1.4;
 }
 
-/* The badge. A pill with a plate and a line — the same idiom as the nav controls.
+/* The badge. A pill with a plate and a line, the same idiom as the nav controls.
    The border takes --mk-control-line, not --mk-line: WCAG 1.4.11 wants 3:1 for the visual
    boundary of something interactive, and this is a link to the OSS checker. --mk-line is a
    decorative hairline at 1.29:1, which is right for a divider and too faint for a control edge. */
 .mk .mk-seal-oss {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 5px 12px 5px 6px; border: 1px solid var(--mk-control-line); border-radius: 100px;
-  background: var(--mk-panel); color: var(--mk-prose); font-size: 12px; font-weight: 500;
-  text-decoration: none; transition: border-color .2s ease, color .2s ease;
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 4px 11px 4px 5px; border: 1px solid var(--mk-control-line); border-radius: 100px;
+  background: var(--mk-panel); color: var(--mk-prose); font-size: 11.5px; font-weight: 500;
+  text-decoration: none; width: fit-content; transition: border-color .2s ease, color .2s ease;
 }
 .mk .mk-seal-oss:hover { border-color: var(--mk-ink); color: var(--mk-ink); opacity: 1; }
 .mk .mk-seal-oss-mark {
-  display: inline-grid; place-items: center; width: 26px; height: 19px; border-radius: 100px;
+  display: inline-grid; place-items: center; width: 25px; height: 18px; border-radius: 100px;
   background: var(--mk-ink); color: var(--mk-bg);
   font-family: var(--font-inter), sans-serif; font-size: 9px; font-weight: 600;
   letter-spacing: .08em;
 }
 
-.mk .mk-seal-note {
-  margin: 10px 0 0; font-size: 11.5px; line-height: 1.5; color: var(--mk-faint); max-width: 62ch;
-}
-
-/* ---- the parent ---- */
+/* The parent line. It is deliberately a link, not a credit: SAYBA ARC is the entity that holds the
+   NIB, so the two read as one statement, this is a SAYBA ARC product and SAYBA ARC is registered.
+   The wording is "A product of" / "Produk dari" rather than "Part of", because a product of a
+   company is unambiguous in both languages while "part of" reads in Indonesian as a department. */
 .mk .mk-parent-link {
-  display: inline-flex; align-items: baseline; gap: 6px;
-  font-family: var(--font-tight), sans-serif; font-weight: 500;
-  font-size: clamp(19px, 2.2vw, 27px); letter-spacing: -.03em; line-height: 1;
+  display: inline-flex; align-items: baseline; gap: 5px; margin-top: 11px;
+  font-family: var(--font-tight), sans-serif; font-weight: 600;
+  font-size: 14.5px; letter-spacing: -.02em; line-height: 1.15;
   color: var(--mk-ink); text-decoration: none;
   transition: color .2s ease;
 }
 .mk .mk-parent-link:hover { color: var(--mk-green); opacity: 1; }
 .mk .mk-parent-arrow {
-  font-size: .45em; line-height: 1; transform: translateY(-.15em);
+  font-size: .75em; line-height: 1; transform: translateY(-.1em);
   transition: transform .25s ease;
 }
-.mk .mk-parent-link:hover .mk-parent-arrow { transform: translateY(-.35em) translateX(.1em); }
+.mk .mk-parent-link:hover .mk-parent-arrow { transform: translateY(-.3em) translateX(.1em); }
 
-@media (min-width: 860px) {
-  .mk .mk-footer-legal {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    align-items: start;
-    gap: 56px;
+.mk .mk-seal-note {
+  margin: 8px 0 0; font-size: 11px; line-height: 1.45; color: var(--mk-faint); max-width: 46ch;
+}
+
+/* ---- the bar ----
+   One hairline, one line: the copyright, the registered address and both contact links. These used
+   to live in the brand column, stacked with two line breaks, which is part of why the old footer
+   was tall. On the bar they cost one line instead of three. */
+.mk .mk-footer-bar {
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: 6px 22px;
+  padding: 14px var(--mk-pad) 18px;
+  border-top: 1px solid var(--mk-line);
+  font-size: 12px; color: var(--mk-faint);
+}
+.mk .mk-footer-bar a {
+  color: var(--mk-muted); text-decoration: none; transition: color .2s ease;
+}
+.mk .mk-footer-bar a:hover { color: var(--mk-ink); opacity: 1; }
+/* The address is the one item allowed to take the remaining width, and it is pushed to the right so
+   the bar reads as three zones rather than a run-on sentence. */
+.mk .mk-footer-addr { margin-left: auto; text-align: right; }
+
+/* ---- narrower than a full desktop row ----
+   The track count must always equal the child count or a child wraps and the footer grows a row it
+   does not need. The first version of this rule declared four tracks for five unspanned children,
+   and the measurement caught it: 603px at 1024px wide, taller than the two-band footer it
+   replaced.
+
+   So: below 1180px the four link columns get their own row with the brand, and the trust column
+   spans underneath. That is two rows of content, not two sections, and the trust column lays its
+   own contents out horizontally so spanning full width does not make it tall. */
+@media (max-width: 1179px) {
+  .mk .mk-footer-main {
+    grid-template-columns: minmax(0, 1.3fr) repeat(4, minmax(0, .95fr));
   }
-  .mk .mk-parent { padding-left: clamp(0px, 3vw, 36px); border-left: 1px solid var(--mk-line); }
+  /* The trust column spans underneath, laid out as a ROW because it now has the width to be one.
+     The note is the only part allowed to wrap to a second line. */
+  .mk .mk-seal {
+    grid-column: 1 / -1;
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 20px;
+  }
+  .mk .mk-seal-heading { flex-basis: 100%; margin-bottom: 0; }
+  .mk .mk-seal-entity { margin: 0; }
+  .mk .mk-seal-rows { margin: 0; gap: 6px 20px; }
+  .mk .mk-parent-link { margin-top: 0; }
+  .mk .mk-seal-note { flex-basis: 100%; margin-top: 2px; max-width: none; }
 }
 
-@media (max-width: 859px) {
-  .mk .mk-footer-cols { gap: 14px 20px; }
-  .mk .mk-footer-main { padding-bottom: 22px; }
+@media (max-width: 860px) {
+  .mk .mk-footer-main { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 26px 24px; }
+  .mk .mk-footer-brand-block { grid-column: 1 / -1; }
+  .mk .mk-seal { grid-column: 1 / -1; }
+  .mk .mk-footer-addr { margin-left: 0; text-align: left; }
 }
 
-/* A phone gets its own packing. At 390px the footer still measured 846px, 94% of the viewport, and
-   the two blocks responsible were the link columns (230px, because five labelled groups wrap onto
+/* A phone gets its own packing. At 390px the footer measured 846px, 94% of the viewport, and the
+   two blocks responsible were the link columns (230px, because five labelled groups wrapped onto
    two rows) and the registration rows (92px, because the KBLI description runs to two lines at
    that width). Both are made denser rather than shorter: no link is dropped, no figure is removed,
    and the KBLI description stays in full because it is the line that tells a verifier what the
-   number means. Only the leading, the gaps and the description's size come down. */
+   number means. Only the leading, the gaps and the description size come down. */
 @media (max-width: 620px) {
-  .mk .mk-footer-main { padding: 24px var(--mk-pad) 20px; }
-  .mk .mk-footer-cols { gap: 12px 18px; font-size: 12.5px; }
-  .mk .mk-footer-col { gap: 4px; min-width: 76px; }
-  .mk .mk-footer-col > span { margin-bottom: 0; }
-  .mk .mk-copy { line-height: 1.5; }
-  .mk .mk-footer-legal { padding: 18px var(--mk-pad) 22px; gap: 18px; }
-  .mk .mk-seal-rows { gap: 4px 18px; margin-bottom: 10px; }
-  .mk .mk-seal-kbli-label { font-size: 11px; line-height: 1.4; }
-  .mk .mk-seal-note { margin-top: 8px; }
+  .mk .mk-footer-main { padding: 26px var(--mk-pad) 22px; gap: 22px 20px; }
+  .mk .mk-footer-col { gap: 6px; font-size: 12.5px; }
+  .mk .mk-footer-col a { font-size: 12.5px; }
+  .mk .mk-seal-rows { gap: 4px 18px; margin-bottom: 9px; }
+  .mk .mk-seal-kbli-label { font-size: 10.5px; line-height: 1.35; }
+  .mk .mk-seal-note { margin-top: 7px; font-size: 10.5px; }
+  .mk .mk-footer-bar { gap: 4px 16px; padding: 12px var(--mk-pad) 16px; font-size: 11.5px; }
 }
-
 
 /* =====================================================================================
    THE EXISTING PAGES — /about, /product, /pricing, /faq, /terms, /contact, /login
@@ -1453,6 +1520,9 @@ html[data-theme='dark'] .mk {
   --mk-panel: #131C2B;
   --mk-line: #24314A;
   --mk-input-line: #33425E;
+  --mk-field-bg: #1B2537;
+  --mk-field-ink: #F1F5F9;   /* 13.9:1 on the field ground */
+  --mk-field-hint: #8FA0B8;  /*  5.4:1 — the same job as the light hint */
   /* Same reasoning as the light theme: a decorative hairline is 1.37:1 here, which is right for
      a divider and wrong for a control's edge. Measured: 3.28:1. */
   --mk-control-line: #566A90;

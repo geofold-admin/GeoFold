@@ -99,74 +99,72 @@ export default async function MarketingLayout({ children }: { children: ReactNod
           looks for FAQ, Terms, Refund Policy and Contact reachable from every page. Keep all four
           linked here. */}
       <footer className="mk-footer">
+        {/* ONE ROW. The footer used to be two stacked sections: a brand-and-links band, then a
+            separate trust band holding the NIB, the KBLI and the OSS mark. Measured on a 1440px
+            page, that second band was the bulk of a 411px footer, and it read as a second footer
+            bolted to the bottom of the first.
+
+            It is now a single grid row: brand, four link columns, and the legalitas column
+            answering "is this a real registered business?" from where it belongs, beside the
+            navigation rather than underneath it. Under the row there is one hairline and one line
+            carrying the copyright, the address and the two contact links.
+
+            Nothing was dropped to achieve the reduction. Every link that was here is still here,
+            every registration number is still here, and the OSS mark still links out. The saving
+            comes from putting the two bands side by side instead of one after the other. */}
         <div className="mk-footer-main">
           <div className="mk-footer-brand-block">
             <div className="mk-footer-brand">
               <LogoLockup size={24} />
             </div>
-            <div className="mk-copy">
-              © {new Date().getFullYear()} {OPERATOR}. {c.footer.rights}
-              <br />
-              {ADDRESS_ONE_LINE}
-              <br />
-              <a href={`mailto:${BUSINESS.email.general}`}>{BUSINESS.email.general}</a> ·{' '}
-              <a href={`tel:${BUSINESS.phoneHref}`}>{BUSINESS.phone}</a>
-            </div>
+            {/* The blurb is the sentence that used to sit under the parent heading: it says who
+                makes GeoFold and where they are, which is exactly what a brand column is for. */}
+            <p className="mk-footer-blurb">{c.seal.parentNote}</p>
           </div>
 
-          <div className="mk-footer-cols">
-            <div className="mk-footer-col">
-              <span>{c.footer.product}</span>
-              <Link href="/product">{c.footer.features}</Link>
-              <Link href="/pricing">{c.footer.pricing}</Link>
-              <Link href="/download">{c.footer.download}</Link>
-            </div>
-            <div className="mk-footer-col">
-              <span>{c.footer.company}</span>
-              <Link href="/about">{c.footer.about}</Link>
-              <Link href="/contact">{c.footer.contact}</Link>
-            </div>
-            <div className="mk-footer-col">
-              <span>{c.footer.account}</span>
-              <Link href="/login">{c.footer.login}</Link>
-            </div>
-            <div className="mk-footer-col">
-              <span>{c.footer.help}</span>
-              <Link href="/faq">{c.footer.faq}</Link>
-              <Link href="/support">{c.footer.support}</Link>
-              <Link href="/contact">{c.footer.contact}</Link>
-            </div>
-            <div className="mk-footer-col">
-              <span>{c.footer.legal}</span>
-              {/* This used to stay "Syarat & Ketentuan" in both languages, on the theory that a
-                  verifier looks for that exact title. It was wrong: a verifier reading the site in
-                  Indonesian still sees the Indonesian name, and one reading in English was getting a
-                  single stray Indonesian word in an otherwise English footer with no way to tell it
-                  was a link to the terms. The document is identified by its URL, not by the footer
-                  label, and /terms still opens on the Indonesian text for an Indonesian reader. */}
-              <Link href="/terms">{c.footer.terms}</Link>
-              <Link href="/refund-policy">{c.footer.refund}</Link>
-              <Link href="/privacy">{c.footer.privacy}</Link>
-            </div>
-          </div>
-        </div>
+          <nav className="mk-footer-col" aria-labelledby="mk-f-product">
+            <span id="mk-f-product">{c.footer.product}</span>
+            <Link href="/product">{c.footer.features}</Link>
+            <Link href="/pricing">{c.footer.pricing}</Link>
+            <Link href="/download">{c.footer.download}</Link>
+          </nav>
+          <nav className="mk-footer-col" aria-labelledby="mk-f-company">
+            <span id="mk-f-company">{c.footer.company}</span>
+            <Link href="/about">{c.footer.about}</Link>
+            <Link href="/contact">{c.footer.contact}</Link>
+            <Link href="/login">{c.footer.login}</Link>
+          </nav>
+          <nav className="mk-footer-col" aria-labelledby="mk-f-help">
+            <span id="mk-f-help">{c.footer.help}</span>
+            <Link href="/faq">{c.footer.faq}</Link>
+            <Link href="/support">{c.footer.support}</Link>
+          </nav>
+          <nav className="mk-footer-col" aria-labelledby="mk-f-legal">
+            <span id="mk-f-legal">{c.footer.legal}</span>
+            {/* This used to stay "Syarat & Ketentuan" in both languages, on the theory that a
+                verifier looks for that exact title. It was wrong: a verifier reading the site in
+                Indonesian still sees the Indonesian name, and one reading in English was getting a
+                single stray Indonesian word in an otherwise English footer with no way to tell it
+                was a link to the terms. The document is identified by its URL, not by the footer
+                label, and /terms still opens on the Indonesian text for an Indonesian reader. */}
+            <Link href="/terms">{c.footer.terms}</Link>
+            <Link href="/refund-policy">{c.footer.refund}</Link>
+            <Link href="/privacy">{c.footer.privacy}</Link>
+          </nav>
 
-        {/*
-          THE TRUST BLOCK.
-          Two things sit side by side here and they answer two different questions.
+          {/*
+            THE TRUST COLUMN.
+            The seal answers "is this a real registered business?": a NIB, the KBLI it trades
+            under, and the OSS system that issued it. A payment gateway's verification team looks
+            for exactly this, and a buyer deciding whether to send money looks for it too. The
+            numbers come from lib/business.ts so no page can drift out of step with another.
 
-          The seal answers "is this a real registered business?": a NIB, the KBLI it trades
-          under, and the OSS system that issued it. A payment gateway's verification team looks
-          for exactly this, and a buyer deciding whether to send money looks for it too. The
-          numbers come from lib/business.ts so no page can drift out of step with another.
-
-          The parent line answers "who is behind this?", and it is deliberately a link, not a
-          credit. SAYBA ARC is the entity that holds the NIB, so the two blocks read as one
-          statement: this is a SAYBA ARC product, and SAYBA ARC is registered. The wording is
-          "A product of" / "Produk dari" rather than "Part of", because a product of a company is
-          unambiguous in both languages while "part of" reads in Indonesian as a department of it.
-        */}
-        <div className="mk-footer-legal">
+            The parent line answers "who is behind this?", and it is deliberately a link, not a
+            credit. SAYBA ARC is the entity that holds the NIB, so the two read as one statement:
+            this is a SAYBA ARC product, and SAYBA ARC is registered. The wording is "A product of"
+            / "Produk dari" rather than "Part of", because a product of a company is unambiguous in
+            both languages while "part of" reads in Indonesian as a department of it.
+          */}
           <section className="mk-seal" aria-labelledby="mk-seal-heading">
             <h2 id="mk-seal-heading" className="mk-seal-heading">
               {c.seal.heading}
@@ -193,21 +191,26 @@ export default async function MarketingLayout({ children }: { children: ReactNod
               <OssMark />
               <span>{c.seal.oss}</span>
             </a>
-            <p className="mk-seal-note">{c.seal.ossNote}</p>
-          </section>
-
-          <section className="mk-parent" aria-labelledby="mk-parent-heading">
-            <h2 id="mk-parent-heading" className="mk-seal-heading">
-              {c.seal.parentPre}
-            </h2>
             <a className="mk-parent-link" href={LEGAL.parent.url} target="_blank" rel="noopener noreferrer">
-              {LEGAL.parent.name}
+              {c.seal.parentPre} {LEGAL.parent.name}
               <span className="mk-parent-arrow" aria-hidden="true">
                 ↗
               </span>
             </a>
-            <p className="mk-seal-note">{c.seal.parentNote}</p>
+            <p className="mk-seal-note">{c.seal.ossNote}</p>
           </section>
+        </div>
+
+        {/* One hairline, one line. The copyright, the registered address and both contact links
+            live here now rather than in the brand column, which is what lets the row above stay a
+            row. */}
+        <div className="mk-footer-bar">
+          <span className="mk-footer-copy">
+            © {new Date().getFullYear()} {OPERATOR}. {c.footer.rights}
+          </span>
+          <span className="mk-footer-addr">{ADDRESS_ONE_LINE}</span>
+          <a href={`mailto:${BUSINESS.email.general}`}>{BUSINESS.email.general}</a>
+          <a href={`tel:${BUSINESS.phoneHref}`}>{BUSINESS.phone}</a>
         </div>
       </footer>
     </div>

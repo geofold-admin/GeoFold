@@ -183,9 +183,25 @@ input, textarea, select { width: 100%; padding: 8px 12px; font: inherit; font-si
   border: 1px solid var(--line); border-radius: 0; background: var(--surface); min-height: 34px; }
 input:focus, textarea:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
 textarea { min-height: 92px; font-family: var(--font-mono), monospace; font-size: 12.5px; }
-button { padding: 8px 14px; font-family: var(--font-cond); font-size: 14px; font-weight: 600; letter-spacing: .01em;
+/* THE PORTAL'S DEFAULT BUTTON, SCOPED OUT OF THE MARKETING SITE.
+ *
+ * This is a bare element selector, and the marketing pages load globals.css as well. So every
+ * button the marketing site renders — the FAQ disclosures, the pricing CTAs, the language
+ * segmented control, the theme toggle — was inheriting a fill and a hover fill from here. The
+ * marketing stylesheets set `background: none` on their own buttons, but this rule is more
+ * specific on :hover, and the hover state is not overridden everywhere.
+ *
+ * The visible symptom was a full-colour flood on a FAQ row: `button:hover` set
+ * `background: var(--accent-hover)`, which is #597ea3, and the row's own 1px ring could not be
+ * seen for it. That is also an OLD SAYBA ARC palette colour, so a repaint of this project's
+ * marketing pages was being painted over by the palette it replaced.
+ *
+ * `:not(.mk button)` keeps the rule working for the portal and the app shell, which have no .mk
+ * ancestor, and stops it applying inside the marketing subtree. Probed against the live DOM before
+ * being relied on: the selector parses and classifies both buttons correctly. */
+button:not(.mk button) { padding: 8px 14px; font-family: var(--font-cond); font-size: 14px; font-weight: 600; letter-spacing: .01em;
   cursor: pointer; border: 1px solid var(--accent); background: var(--accent); color: #f2f2f3; border-radius: 0; }
-button:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+button:not(.mk button):hover { background: var(--accent-hover); border-color: var(--accent-hover); }
 button.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
 button.ghost:hover { background: color-mix(in srgb, var(--ink) 5%, transparent); }
 button:disabled { opacity: 0.45; cursor: default; }

@@ -168,7 +168,95 @@
    every time the text reflows (font swap, rotation, a link wrapping to a new line) or the panel
    clips; this needs no measurement at all, because the browser interpolates the row itself.
    `overflow: hidden` on the inner element is what makes 0fr actually hide the content. */
-.mk-faq-item { border-bottom: 1px solid var(--mk-line); }
+.mk-faq-item {
+  /* THE CURSOR GLOW, a border and not a fill.
+   *
+   * Adapted from the free ReactBits BorderGlow component. Its default draws a soft-light mesh
+   * gradient over the whole card; on a 760px FAQ row that reads as the row changing colour under
+   * the cursor, which is the "full" treatment the reader asked to have taken off. So the gradient
+   * is masked down to a ring: the row's ground never moves and only the edge lights up.
+   *
+   * The angle comes from the component's cursor maths, written to --faq-angle by the component.
+   * A uniform highlight would read as a state change; a highlight on the side the cursor is on
+   * reads as the cursor casting light, which is the point of the effect.
+   *
+   * --faq-edge is 0 at the centre of the row and 1 at its border, so the glow fades in as the
+   * cursor approaches an edge rather than switching on at the row's boundary. That is what keeps
+   * it from firing as the cursor merely passes over the middle of the list.
+   */
+  --faq-edge: 0;
+  --faq-angle: 45deg;
+  /* The glow takes the brand blue, and in dark mode the lightened accent: #014AB5 is 2.25:1 on the
+     dark ground and would be invisible there, which is the same reason the accent lightens
+     everywhere else. A glow is not read, so it is not bound by the text contrast rules, but an
+     invisible glow is still a defect. */
+  --faq-glow: #014AB5;
+  position: relative;
+  border-bottom: 1px solid var(--mk-line);
+  border-radius: 10px;
+  /* The ring is drawn on a pseudo-element, so it can extend past the row's own box without
+     pushing the list around. */
+  isolation: isolate;
+}
+html[data-theme='dark'] .mk-faq-item { --faq-glow: #7FA8E8; }
+
+.mk-faq-item::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  /* The ring: a conic sweep centred on the cursor's angle, so only one side of the row is lit.
+     The 40%/60% stops are what give it a soft falloff instead of a hard segment. */
+  background: conic-gradient(
+    from var(--faq-angle) at 50% 50%,
+    transparent 0deg,
+    color-mix(in srgb, var(--faq-glow) 62%, transparent) 26deg,
+    transparent 74deg,
+    transparent 286deg,
+    color-mix(in srgb, var(--faq-glow) 62%, transparent) 334deg,
+    transparent 360deg
+  );
+  /* Punch out the middle so only the 1px edge keeps the gradient. Without this the row would be
+     filled, which is the effect that was rejected. Getting this right took three attempts and the
+     two failures are worth recording, because both are silent:
+
+     FAILURE 1. `mask: <content-box> exclude, <full>` — a shorthand `exclude` applies only to the
+     layer it is written on, and mask layers composite bottom-up, so layer one had nothing beneath
+     it to exclude and layer two was ADDED on top with the default `add`. The two summed to a full
+     fill. Measured on rendered pixels: a 1520px solid blue run through the row's middle.
+
+     FAILURE 2. `mask-image: <content-box>, <full>; mask-composite: exclude` — `content-box` is a
+     MASK-CLIP value, which the `mask-image` longhand does not accept. The whole declaration was
+     invalid, the browser dropped it, and `mask-image` computed to `none`: an unmasked element,
+     which is a full fill again. Probed in the live browser by writing candidate declarations onto
+     a scratch node and reading back what survived.
+
+     WHAT WORKS, also probed: the `mask` SHORTHAND, because it is the shorthand that accepts the
+     box value, followed by `mask-composite` as a separate declaration, which then applies to every
+     layer. Verified computed as `exclude, exclude`.
+
+     FAILURE 3, and the one that survived longest: I had also written a `-webkit-` pair as a
+     fallback, and in Chromium `-webkit-mask` is an ALIAS of `mask`. Declaring it second did not
+     add a fallback, it REPLACED the working shorthand and reset `mask-composite` to its initial
+     `add`, which is the full fill again. A "fallback" written after the thing it is meant to
+     support is not a fallback. The unprefixed form is used alone; every browser this site targets
+     supports it. */
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: calc(var(--faq-edge) * var(--faq-edge) * 0.9);
+  transition: opacity .3s ease;
+  z-index: -1;
+}
+/* An open row keeps a quiet version of the same ring, so the reader can see which answers are
+   already showing without the row looking selected. */
+.mk-faq-item[data-open]::after {
+  opacity: max(calc(var(--faq-edge) * var(--faq-edge) * 0.9), .34);
+}
+@media (prefers-reduced-motion: reduce) {
+  .mk-faq-item::after { transition: none; }
+}
 .mk-faq-group .mk-faq-item:first-of-type { border-top: 1px solid var(--mk-line); }
 
 .mk-faq-h { margin: 0; font-size: inherit; font-weight: inherit; }
@@ -216,10 +304,33 @@
 .mk-contact { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: 1.3fr 1fr; gap: 56px; }
 .mk-form { display: flex; flex-direction: column; gap: 18px; }
 .mk-label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--mk-muted); }
+/* THE FORM FIELD CONTRAST BUG — a real one, found on a user's screenshot.
+ *
+ * `.mk-input` was written as `color: var(--mk-ink); background: #fff`. That is only correct while
+ * the page is light. In dark mode `--mk-ink` flips to near-white (#F8FAFC) while the background
+ * stays hardcoded white, so anything a visitor TYPES is white on white. Measured: 1.05:1 against a
+ * 4.5:1 requirement. The user's screenshot caught it on the Contact page; the same rule is used by
+ * every form on the site, so the bug was on all of them.
+ *
+ * The fix is to stop mixing a themed colour with an unthemed one. The field's ink and ground now
+ * both come from tokens, so they can only flip together. `--mk-field-ink` and `--mk-field-bg` are
+ * declared below for both themes rather than reusing --mk-ink, because a field is not page text:
+ * it needs its own ground even where the page ground is a band.
+ *
+ * The placeholder was the second half of the same problem. It measured 4.61:1 in light, which just
+ * clears AA, and the browser default in dark was worse. It now takes its own token at 4.8:1 or
+ * better in both themes, so a hint is legible without being mistaken for a value.
+ */
 .mk-input {
   width: 100%; box-sizing: border-box; min-height: 44px; padding: 10px 14px; font-size: 14px;
-  color: var(--mk-ink); background: #fff; border: 1px solid var(--mk-input-line);
+  color: var(--mk-field-ink); background: var(--mk-field-bg); border: 1px solid var(--mk-input-line);
   border-radius: 4px; font-family: inherit;
+}
+.mk-input::placeholder { color: var(--mk-field-hint); opacity: 1; }
+/* The focus ring. An input the keyboard has reached has to be visible, and the browser default
+   disappears against a white field on a dark band. */
+.mk-input:focus-visible {
+  outline: 2px solid var(--mk-green); outline-offset: 1px; border-color: var(--mk-green);
 }
 textarea.mk-input { min-height: 0; resize: vertical; }
 .mk-send {
