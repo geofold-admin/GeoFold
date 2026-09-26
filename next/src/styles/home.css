@@ -41,7 +41,10 @@
   color: var(--mk-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
-.mk-sec { padding: 56px 0; }
+/* The shared section rhythm. This file used to carry its own (56px, then 84px above a
+   breakpoint) while the landing page carried another and marketing.css a third, so the same
+   site breathed three different amounts. One token now, in paper.css. */
+.mk-sec { padding: var(--mk-rhythm) 0; }
 .mk-sec-tint { background: var(--mk-sand); }
 .mk-sec-dark { background: var(--mk-green); }
 .mk-sec-head { padding: 0 var(--mk-pad); margin-bottom: 26px; }
@@ -331,7 +334,7 @@
   .mk-h-title { font-size: 48px; max-width: 16ch; }
   .mk-h-lede { font-size: 18px; }
   .mk-facts { max-width: 560px; }
-  .mk-sec { padding: 84px 0; }
+  .mk-sec { padding: var(--mk-rhythm) 0; }
   .mk-sec-head h2 { font-size: 38px; max-width: 20ch; }
   .mk-car-slide { flex-basis: 46%; }
   .mk-cap { flex-direction: row; align-items: center; gap: 20px; }

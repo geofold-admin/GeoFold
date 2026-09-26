@@ -39,6 +39,33 @@ export const PUBLIC_PAGES = [
   { path: '/refund-policy', priority: 0.4, changeFrequency: 'yearly' as const },
 ] as const
 
+/**
+ * The phrases the copy is actually written around, per language.
+ *
+ * Deliberately short. A long keyword list is a 2005 technique that modern engines either ignore or
+ * treat as a mismatch signal when the page's own words do not back it up. Four phrases that the
+ * homepage, the product page and the pricing page genuinely argue for are worth more than forty
+ * that appear once in a meta tag and nowhere in the text.
+ *
+ * The two languages get different lists because they are written for different readers: the
+ * Indonesian set is what a surveyor in Pontianak types, the English set is what an English-speaking
+ * reader types. Translating one list into the other would miss both.
+ */
+const KEYWORDS: Record<Locale, string[]> = {
+  id: [
+    'aplikasi survei lapangan',
+    'pemetaan titik koordinat',
+    'aplikasi surveyor Indonesia',
+    'pencatatan titik GPS offline',
+  ],
+  en: [
+    'field survey app',
+    'GPS point mapping software',
+    'offline survey data collection',
+    'geotagged photo survey tool',
+  ],
+}
+
 /** Everything a page needs to describe itself, in one call. */
 export interface PageSeo {
   /** Page title WITHOUT the brand suffix; the helper appends it. */
@@ -98,7 +125,32 @@ export function pageMetadata({ title, description, path, locale }: PageSeo): Met
   return {
     title: fullTitle,
     description,
-    alternates: { canonical: url },
+    /* ---------------------------------------------------------------------------------------
+       THE LANGUAGE ALTERNATES.
+
+       This site serves Indonesian and English from the SAME path by content negotiation, so
+       `alternates.languages` has to point every language at that one URL. It looks redundant, and
+       it is not: `hreflang` is how a search engine knows the two languages are the same page
+       rather than two pages competing for the same query, and without it a bilingual site is
+       routinely read as duplicate content.
+
+       `x-default` is the one that matters most here. There is no `/en` and no `/id` to fall back
+       to, so a crawler asking for a language the site does not have needs to be told which URL
+       serves it anyway. That is exactly what x-default means.
+       --------------------------------------------------------------------------------------- */
+    alternates: {
+      canonical: url,
+      languages: {
+        'id-ID': url,
+        'en-US': url,
+        'x-default': url,
+      },
+    },
+    /* Keywords carry almost no weight with modern search engines, and the ones that DO read them
+       are the ones that punish a list that does not match the page. So this is not a keyword
+       list: it is the four phrases the page's own copy is actually written around, and it stays
+       short on purpose. */
+    keywords: KEYWORDS[locale],
     openGraph: {
       title: fullTitle,
       description,

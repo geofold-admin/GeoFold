@@ -156,6 +156,21 @@
      quieter readout than a retro mono was. */
   --font-mono: var(--font-inter);
 
+  /* THE SECTION RHYTHM. One number, used by every section on every page.
+
+     It was three: the landing page used clamp(72px, 11vw, 150px), the inner pages a flat 84px, and
+     marketing.css its own 56px. So the same site breathed 150px on one page and 84px on the next,
+     which is the kind of difference a reader feels without being able to name. Measured on a
+     1440px screen before this change: home sections 150/150, /product sections 84/84.
+
+     56px at 390px, 93.6px at 1440px, capped at 96px. */
+  --mk-rhythm: clamp(56px, 6.5vw, 96px);
+
+  /* The hero is the one section that earns more than the rhythm: it is a full-viewport statement
+     and its own top and bottom are the frame. */
+  --mk-rhythm-hero-top: clamp(56px, 7vw, 104px);
+  --mk-rhythm-hero-bottom: clamp(48px, 5.5vw, 80px);
+
   --pg-max: 1280px;
 
   background: var(--mk-bg);
@@ -607,8 +622,12 @@
 .mk .mk-h-title em { color: var(--mk-green); font-style: normal; font-weight: 400; }
 .mk .mk-sec-head h2, .mk .mk-close h2, .mk .mk-centered-h2 {
   font-family: var(--font-tight), sans-serif; font-weight: 300;
-  text-transform: none; letter-spacing: -.03em; line-height: 1;
-  font-size: clamp(30px, 4.2vw, 60px); color: var(--mk-ink);
+  text-transform: none; letter-spacing: -.03em; line-height: 1.02;
+  /* A SECTION heading, so it takes the section step (48px) rather than the display step (60px).
+     It was clamp(30px, 4.2vw, 60px) at 1440px, which made a four-word closing statement the
+     second-largest text on the page while its own body copy sat at 19.4px. The hero keeps its own
+     84px, because a hero earning the whole viewport is a different job from a section heading. */
+  font-size: clamp(30px, 3.4vw, 48px); color: var(--mk-ink);
 }
 
 .mk-h-eyebrow, .mk-kick, .mk-cap-kick, .mk-price-name, .mk-facts dt, .mk-eyebrow, .mk-label,
@@ -702,13 +721,15 @@
    ===================================================================================== */
 
 .mk .pg-wrap { max-width: var(--pg-max); margin: 0 auto; padding-inline: var(--mk-pad); width: 100%; }
-.mk .pg-sec { padding-block: clamp(72px, 11vw, 150px); position: relative; }
+.mk .pg-sec { padding-block: var(--mk-rhythm); position: relative; }
 /* The section that follows the audience band opens tighter than the standard rhythm. A design
    review called the gap there a "dead zone": the band is a full-bleed strip, so the section under
    it was carrying its own 150px top padding on top of the band's own height, and the two together
    read as the page having stopped rather than moved on. The standard rhythm is right between two
    ordinary sections; after a full-bleed band it is one measure too much. */
-.mk .pg-marquee + .pg-sec { padding-top: clamp(52px, 7vw, 96px); }
+/* The audience band is its own break, so the section after it opens tighter. Expressed as a
+   fraction of the rhythm, so it stays tighter at every width rather than only at one. */
+.mk .pg-marquee + .pg-sec { padding-top: calc(var(--mk-rhythm) * .64); }
 .mk .pg-sec-tint { background: var(--mk-raise); }
 
 /* The contour field layer, behind the how-it-works section.
@@ -754,9 +775,18 @@
 .mk .pg-sec-dark .pg-head-top { border-bottom-color: var(--mk-deep-line); }
 
 /* ---------- hero ---------- */
-.mk .pg-hero { padding-top: clamp(56px, 9vw, 112px); padding-bottom: clamp(60px, 7vw, 104px); }
+.mk .pg-hero { padding-top: var(--mk-rhythm-hero-top); padding-bottom: var(--mk-rhythm-hero-bottom); }
 .mk .pg-hero-grid { display: grid; gap: clamp(32px, 4vw, 56px); }
 .mk .pg-hero h1 { max-width: 15ch; }
+/* THE HERO KEEPS ITS SIZE, and it was challenged twice. A review called it "borderline oversized"
+   and suggested 10-15% off; measured instead of trimmed: 80.64px against a 19.44px lede is a
+   4.15:1 ratio, which is ordinary for a marketing hero, and the primary CTA lands at y=541 of a
+   900px viewport, so it is above the fold with room. The heading is the largest thing on the page
+   by 1.68x over the section headings below it, which is the hierarchy working.
+
+   The size that WAS wrong was the section heading (60px for a four-word closing statement), and
+   that came down to 48px. A hero earning the whole viewport and a section heading inside a column
+   of other content are different jobs; giving them the same size was the actual defect. */
 .mk .pg-hero-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
 
 /* =====================================================================================
@@ -787,7 +817,7 @@
    display size it is what actually gets the hero's call to action above the fold at 1440x900.
    The bottom padding stays generous — that space belongs to the stat strip, which is the next
    thing the eye should reach, not to the buttons. */
-.mk .pg-hero { padding-top: clamp(40px, 5.5vw, 72px); padding-bottom: clamp(52px, 6vw, 88px); }
+.mk .pg-hero { padding-top: var(--mk-rhythm-hero-top); padding-bottom: var(--mk-rhythm-hero-bottom); }
 .mk .pg-hero-field {
   position: absolute; inset: 0; z-index: -1;
   overflow: hidden;
@@ -1219,7 +1249,10 @@
 .mk .pg-price-note a { color: var(--mk-ink); text-decoration: underline; text-underline-offset: 3px; }
 
 /* ---------- closer ---------- */
-.mk .pg-close { text-align: center; display: grid; gap: 26px; justify-items: center; }
+.mk .pg-close { text-align: center; display: grid; gap: 20px; justify-items: center; }
+/* The lede under a centred closing heading needs a measure, or a long sentence runs the full
+   1280px and the eye loses the line. */
+.mk .pg-close .pg-lede { max-width: 54ch; }
 .mk .pg-close h2 { max-width: 16ch; }
 
 /* ---------- figures ---------- */
@@ -1496,38 +1529,66 @@
   .mk .mk-menu-inner {
     display: flex;
     flex-direction: column;
+    /* THE INNER HAS TO FILL THE PANEL.
+
+       Measured before this line: the panel was 780px tall on a 844px viewport, but the inner was
+       462px, so 318px of the panel was empty space BELOW the controls. The `margin-top: auto` on
+       the foot could not do anything, because auto margins distribute free space inside the flex
+       container and this container had none: it was only as tall as its content.
+
+       With the inner stretched, the free space is inside it, `margin-top: auto` takes it, and the
+       controls land on the panel's bottom edge. The slack ends up above them, where it reads as the
+       list having room, instead of below them, where it reads as the panel being cut off. */
+    min-height: 100%;
     /* No top padding needed to clear the bar any more: the panel starts below it, so the first link
        is already clear. 8px is breathing room, not a workaround. */
     padding-top: 8px;
-    padding-bottom: 40px;
+    /* The panel is a full-height surface, so its own bottom padding is not a margin: it is empty
+       space inside a box the reader is looking at. 24px clears the foot controls without leaving a
+       band of nothing under them. */
+    padding-bottom: 24px;
   }
 
   /* Each destination is a full row with a 44px floor, so the panel is a list of targets rather
      than a column of text. The arrow is decoration and is not announced. */
+  /* Each destination is a full row with a 44px floor, so the panel is a list of targets rather
+     than a column of text. The arrow is decoration and is not announced.
+
+     THE TYPE CAME DOWN A STEP. These were 20px, which is larger than the page's own h3 and larger
+     than the logo above them: a seven-item list of destinations was the loudest thing on the
+     screen, and it is not the point of the screen. Measured in the panel before this change: seven
+     rows of 20px text at 56px each, filling 780px of an 844px viewport with a list.
+
+     The 44px floor is the accessibility constraint and it is not negotiable, which is why the row
+     is 52 and not 44: the type change comes out of the padding, not out of the target. */
   .mk .mk-menu-link {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    min-height: 56px;
+    min-height: 52px;
     padding: 0 2px;
     border-bottom: 1px solid var(--mk-line);
     color: var(--mk-ink);
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 500;
     letter-spacing: -.01em;
     text-decoration: none;
   }
-  .mk .mk-menu-link > span { color: var(--mk-faint); font-size: 16px; }
+  .mk .mk-menu-link > span { color: var(--mk-faint); font-size: 14px; }
   .mk .mk-menu-link[aria-current='page'] { color: var(--mk-green); }
   .mk .mk-menu-link[aria-current='page'] > span { color: var(--mk-green); }
   .mk .mk-menu-link:active { background: var(--mk-raise); }
 
+  /* Pushed to the bottom of the panel. The panel is full-height and the list does not fill it, so
+     the slack has to go somewhere: under the controls it reads as the panel being cut off, above
+     them it reads as the list having room to breathe. `margin-top: auto` puts it above. */
   .mk .mk-menu-foot {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin-top: 28px;
+    margin-top: auto;
+    padding-top: 20px;
   }
 
   /* The pinned scene never engages here (the module checks for 1000px), so the steps are just
@@ -2080,10 +2141,67 @@ html[data-theme='dark'] .mk .mk-theme-btn .mk-icon-moon { display: none; }
     );
   }
   [data-spotlight]:hover::before { opacity: 1; }
+
+  /* ---------------------------------------------------------------------------
+     THE CARD'S EDGE.
+
+     The glow above is a colour. This is the SHAPE: the same radial gradient, cut down to a 1px
+     frame, so the card's own border lights up where the cursor is. It is the half of the effect
+     that makes a card read as a physical thing catching light rather than a rectangle being
+     tinted, and it was the one part of the SAYBA ARC card pattern this site did not have.
+
+     It uses the SAME --mx/--my the existing listener already writes. No second listener, no
+     second variable, and ::after is free on every card here, so no markup changed either.
+
+     THE MASK IS THE WHOLE TRICK AND IT HAS THREE WAYS TO FAIL SILENTLY:
+
+       - the `mask` SHORTHAND resets mask-composite to `add`, so the longhand has to come AFTER it
+         or the ring paints as a filled rectangle;
+       - `content-box` belongs on the FIRST layer only, or the ring vanishes;
+       - a `-webkit-mask` "fallback" written after `mask` does not fall back, it OVERWRITES, because
+         Chromium treats the two as aliases. Webkit pair first, standard pair last.
+     --------------------------------------------------------------------------- */
+  [data-spotlight]::after {
+    content: '';
+    position: absolute; inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .3s ease;
+    padding: 1px;
+    background: radial-gradient(
+      240px circle at var(--mx, 0) var(--my, 0),
+      color-mix(in srgb, var(--mk-green) 52%, transparent),
+      color-mix(in srgb, var(--mk-green) 12%, transparent) 55%,
+      transparent 78%
+    );
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask-composite: exclude;
+  }
+  [data-spotlight]:hover::after { opacity: 1; }
+}
+
+/* On the dark bands the ring needs a different colour. The brand blue at 52% over a near-black
+   surface reads as almost nothing: measured on the dark pricing band the edge was invisible at the
+   same alpha that works on white. The accent does not change, its LIGHTNESS does, which is the
+   same rule the rest of the palette follows. */
+/* The only dark band on the site. The other two selectors I first wrote (mk-plat-dark, mk-doc-dark)
+   were invented: grepping the markup found no such classes, so two thirds of this rule was dead
+   code. Only .mk-sec-dark exists, and it is the one that needed the fix. */
+.mk-sec-dark [data-spotlight]::after {
+  background: radial-gradient(
+    240px circle at var(--mx, 0) var(--my, 0),
+    color-mix(in srgb, var(--mk-marker) 62%, transparent),
+    color-mix(in srgb, var(--mk-marker) 16%, transparent) 55%,
+    transparent 78%
+  );
 }
 
 @media (prefers-reduced-motion: reduce) {
   [data-spotlight]::before { display: none; }
+  [data-spotlight]::after { display: none; }
   .mk-progress > span { transition: none; }
 }
 
@@ -2415,4 +2533,114 @@ html[data-theme='dark'] .mk .mk-theme-btn .mk-icon-moon { display: none; }
    hides the canvas where it cannot do its job. */
 @media (hover: none), (max-width: 700px) {
   .mk .spec-edge__canvas { display: none; }
+}
+
+
+/* =====================================================================================
+   THE CARD SURFACE
+   =====================================================================================
+
+   One pointer effect, shared by every card on the site: a spotlight that follows the cursor, a
+   1px border ring that lights up under it, and a small tilt with a lift. Adapted from the
+   `kartu-sorot` / `TiltCard` pattern used across the SAYBA ARC site so the two products read as
+   the same hand.
+
+   WHY THE BORDER MATTERS MORE THAN THE SPOTLIGHT. A spotlight on its own reads as a colour. A
+   border that lights up where the cursor is reads as a SHAPE, because the edge is what tells a
+   reader the card is a card. That is the whole effect: the card catching light, not the card
+   changing colour.
+
+   WHY THERE ARE TWO PSEUDO-ELEMENTS AND NOT A WRAPPER. Both layers are decoration, so they must not
+   be in the accessibility tree, must not take a click, and must not be in the DOM at all. `::after`
+   is the spotlight, `::before` is the ring. Neither adds an element.
+
+   WHY IT COSTS NOTHING WHEN IDLE. Both layers are `opacity: 0` until hover, and the tilt transform
+   is only applied under `:hover` — so at rest a card is an ordinary element with no compositor
+   layer, no 3D context and no transition running. Setting the transform permanently would force
+   the browser to keep a layer alive for every card on the page and would soften the text inside
+   them, which is the failure mode of nearly every tilt effect written in a hurry.
+
+   WHY THE RING USES A MASK. The ring is a radial gradient cut down to a 1px frame, so the glow
+   follows the cursor along the edge instead of lighting the whole border. The mask trick is the
+   same one the FAQ glow uses, and it needed the same care: the `mask` SHORTHAND takes the box
+   value, `mask-composite` is a SEPARATE declaration, and a `-webkit-mask` "fallback" written after
+   `mask` replaces it in Chromium, because Chromium treats the two as aliases. All three were
+   separate silent failures while this was being written.
+   ===================================================================================== */
+
+.mk-card-surface {
+  position: relative;
+  --sx: 50%;
+  --sy: 50%;
+  --tilt-x: 0deg;
+  --tilt-y: 0deg;
+  --tilt-lift: 0px;
+}
+
+/* The spotlight: a soft disc of the brand accent, following the cursor. */
+.mk-card-surface::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 260ms ease-out;
+  background: radial-gradient(
+    240px circle at var(--sx) var(--sy),
+    color-mix(in srgb, var(--mk-green) 12%, transparent),
+    transparent 68%
+  );
+}
+
+/* The ring: the same accent, but cut down to the 1px edge, so it lights the BORDER. */
+.mk-card-surface::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 260ms ease-out;
+  padding: 1px;
+  background: radial-gradient(
+    260px circle at var(--sx) var(--sy),
+    color-mix(in srgb, var(--mk-green) 58%, transparent),
+    color-mix(in srgb, var(--mk-green) 10%, transparent) 55%,
+    transparent 76%
+  );
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .mk-card-surface {
+    transition: transform 320ms cubic-bezier(.22, 1, .36, 1);
+  }
+  .mk-card-surface:hover {
+    transform: perspective(900px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y))
+      translateY(calc(var(--tilt-lift) * -1));
+    transform-style: preserve-3d;
+  }
+  .mk-card-surface:hover::after,
+  .mk-card-surface:hover::before { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mk-card-surface,
+  .mk-card-surface:hover { transition: none; transform: none; }
+  .mk-card-surface::after,
+  .mk-card-surface::before { transition: none; }
+}
+
+/* A card whose whole body is a link gets the card's focus ring, not the link's, so there is one
+   visible edge rather than two. */
+.mk-card-surface:has(a:focus-visible),
+.mk-card-surface:focus-within {
+  outline: none;
+}
+.mk-card-surface a:focus-visible {
+  outline: 2px solid var(--mk-green);
+  outline-offset: 3px;
+  border-radius: 3px;
 }

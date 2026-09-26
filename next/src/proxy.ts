@@ -53,6 +53,11 @@ export async function proxy(request: NextRequest) {
 
   const withCsp = (res: NextResponse) => {
     res.headers.set('Content-Security-Policy', csp)
+    /* NOTE: `Vary: Accept-Language, Cookie` is set in next.config.ts, NOT here. It was written
+       here first and did not survive: Next.js sets its own `Vary` for the App Router after the
+       proxy runs, and that value replaced this one. Measured on the served response, this version
+       left Next's four entries and neither of ours. The config's `headers()` is applied later and
+       is the layer that actually wins. */
     return res
   }
 
