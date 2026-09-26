@@ -2026,3 +2026,108 @@ html[data-theme='dark'] .mk .mk-theme-btn .mk-icon-moon { display: none; }
   z-index: 70; /* above the nav (50), below the checkout overlay (9999) */
   pointer-events: none;
 }
+
+/* ---------- the plan comparison table ---------- */
+/*
+ * WHY THIS EXISTS. The two cards above it each list their features, and the two lists are in
+ * DIFFERENT order, so a reader cannot line them up: they have to hold one list in their head while
+ * reading the other, and the question they actually have ("what do I lose by staying free") is not
+ * answered by either list on its own.
+ *
+ * The rows where the two plans are identical are kept in deliberately. They are the answer to "is
+ * the free plan crippled", and the answer is no, which is worth showing rather than hiding.
+ *
+ * The table is a real <table>, not divs: these are rows of a comparison, which is what a table
+ * element means, and it gives a screen reader the row and column headers for free. The first column
+ * is a <th scope="row"> for that reason.
+ */
+/* The table sits on the SAME measure as the two cards above it, and that is a fix, not a taste.
+   Measured on a 1440px page: the cards occupy a 720px centred column (x=360..1080) while the table
+   I added spanned the full 1440px from x=0, so the section had two different left edges and the
+   table read as belonging to a different page. A design review saw the symptom without the cause
+   ("the leftmost row-label column is cropped/missing") because the row labels were the part sitting
+   furthest from the eye-line the cards had established.
+   Now it is capped at 720px and centred like the cards, which also means the label column is no
+   longer 52% of the table: at this width the three columns are 245/238/238. */
+.mk .mk-compare {
+  margin-top: 44px;
+  max-width: 720px; margin-inline: auto;
+  padding-inline: var(--mk-pad);
+}
+.mk .mk-compare table {
+  width: 100%; border-collapse: collapse; margin-top: 16px;
+  border: 1px solid var(--mk-line); border-radius: 10px; overflow: hidden;
+  /* The column widths are set, and they have to be. Left to itself the label column took 746px of
+     the 1440px table (52%) while the two columns being COMPARED were squeezed into 444px and 249px,
+     which is backwards: the reader is here to compare the two plans, and the labels are only there
+     to find the row. A design review read that as the table being "cropped" and the Premium column
+     as undifferentiated, which was the same defect seen from the other side.
+     Now the labels take a fixed 34% and the two plan columns split the rest evenly, so the two
+     values sit at the same optical distance from the label and the comparison reads across. */
+  table-layout: fixed;
+}
+.mk .mk-compare col, .mk .mk-compare th:first-child, .mk .mk-compare td:first-child { width: 34%; }
+.mk .mk-compare th:not(:first-child), .mk .mk-compare td:not(:first-child) { width: 33%; }
+.mk .mk-compare th, .mk .mk-compare td {
+  text-align: left; padding: 13px 16px; font-size: 14px; line-height: 1.45;
+  border-bottom: 1px solid var(--mk-line);
+}
+.mk .mk-compare thead th {
+  font-family: var(--font-inter), sans-serif; font-size: 10.5px; font-weight: 600;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--mk-faint);
+  background: var(--mk-raise);
+}
+.mk .mk-compare tbody th { font-weight: 500; color: var(--mk-ink); }
+.mk .mk-compare tbody td { color: var(--mk-prose); }
+/* The premium column is the one the eye should land on, so it takes the ink colour and a faint
+   ground rather than a brighter one: emphasis by weight, not by shouting.
+   A design review of the desktop shot said the Premium column "is not heavily emphasized... looks
+   identical in styling to the middle column", so the emphasis now also runs through the HEADER cell
+   and the whole column keeps its ground from the first row to the last, rather than only the body
+   cells. The premium header takes the accent dot the rest of the site uses for a live thing, which
+   is the same mark the nav puts beside the current page. */
+.mk .mk-compare thead th:last-child { color: var(--mk-green); }
+.mk .mk-compare .mk-compare-prem { color: var(--mk-ink); font-weight: 500; background: var(--mk-raise); }
+.mk .mk-compare tbody tr:last-child th,
+.mk .mk-compare tbody tr:last-child td { border-bottom: 0; }
+
+/* On a phone the table would need horizontal scroll to stay aligned, which is worse than losing the
+   alignment: the rows become stacked pairs instead, each label above its two values. */
+@media (max-width: 640px) {
+  .mk .mk-compare table, .mk .mk-compare thead, .mk .mk-compare tbody,
+  .mk .mk-compare tr, .mk .mk-compare th, .mk .mk-compare td { display: block; width: 100%; }
+  .mk .mk-compare thead { display: none; }
+  .mk .mk-compare tbody tr {
+    padding: 14px 16px; border-bottom: 1px solid var(--mk-line);
+  }
+  .mk .mk-compare tbody tr:last-child { border-bottom: 0; }
+  .mk .mk-compare tbody th, .mk .mk-compare tbody td { border: 0; padding: 0; }
+  .mk .mk-compare tbody th { font-size: 13px; margin-bottom: 6px; }
+  .mk .mk-compare tbody td { font-size: 14px; display: flex; gap: 8px; }
+  /* The two value lines sit closer together than they should. A design review of the phone layout
+     called the block "dense... tiring to scan quickly", and the measurement agrees: with a 20.3px
+     line height the FREE and PREMIUM lines were touching, so the eye had no seam between one plan's
+     value and the next. A 4px gap costs 32px down the whole table and gives each pair a boundary.
+     The label width stays fixed at 62px, which is what keeps every value starting at the same x
+     (measured: all eight rows start at 87px, i.e. aligned). */
+  .mk .mk-compare tbody td + td { margin-top: 4px; }
+  /* The plan name prefixes each value, because with the header row hidden there is nothing else to
+     say which plan a value belongs to. Generated from the same strings the header used, so the two
+     cannot drift. */
+  .mk .mk-compare tbody td::before {
+    content: attr(data-plan); flex: none; width: 62px;
+    font-size: 10.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--mk-faint); padding-top: 3px;
+  }
+  .mk .mk-compare .mk-compare-prem { background: none; }
+}
+
+/* The screen-reader-only utility. Needed by the comparison table's empty corner header cell, which
+   must carry text for assistive tech but must not be visible.
+   NOT clip-path: that is the modern idiom but it has to be paired with `position: fixed` to escape
+   a table's layout, and a fixed element inside a bordered table cell behaves differently across
+   engines. The 1px-clip version is the one that is reliably invisible in a table context. */
+.mk .mk-visually-hidden {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}

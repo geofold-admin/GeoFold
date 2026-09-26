@@ -243,6 +243,7 @@
 .mk-plist.on-dark li { color: var(--mk-prose); }
 .mk .mk-price-card.feat .mk-btn-primary { background: var(--mk-green); color: var(--mk-on-green); }
 .mk-price-note { color: var(--mk-muted); }
+
 .mk-price-note a { color: var(--mk-green); }
 
 /* ---------- closer ---------- */

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { IpaymuSandboxButton } from './IpaymuSandboxButton'
 import { PREMIUM_DAYS, PREMIUM_PRICE_IDR, PREMIUM_PRICE_LABEL, PREMIUM_STORAGE_LABEL, FREE_STORAGE_LABEL } from '@/lib/pricing'
+import { FREE_PROJECTS, FREE_PHOTOS_PER_PROJECT, PROJECT_COOLDOWN_HOURS } from '@/lib/quota'
 import { BUSINESS } from '@/lib/business'
 import { ipaymuConfig } from '@/lib/ipaymu'
 import type { Locale } from '@/lib/i18n'
@@ -32,6 +33,8 @@ type Copy = {
   free: { name: string; blurb: string; cta: string; items: string[] }
   premium: { name: string; per: string; blurb: string; cta: string; items: string[] }
   note: { before: string; link: string; after: string }
+  compareKick: string
+  compare: Array<{ k: string; free: string; prem: string }>
   sandbox: { kicker: string; title: string; body: string; cta: string; loading: string; error: string }
   faqKick: string
   faqTitle: string
@@ -84,6 +87,17 @@ const copy: Record<Locale, Copy> = {
       link: 'Kebijakan Pengembalian Dana',
       after: ' sebelum membeli.',
     },
+    compareKick: 'Bandingkan',
+    compare: [
+      { k: 'Proyek aktif', free: `${FREE_PROJECTS}, lalu +1 setiap ${PROJECT_COOLDOWN_HOURS} jam`, prem: 'Tanpa batas' },
+      { k: 'Foto per proyek', free: `${FREE_PHOTOS_PER_PROJECT}`, prem: 'Tanpa batas' },
+      { k: 'Penyimpanan', free: FREE_STORAGE_LABEL, prem: PREMIUM_STORAGE_LABEL },
+      { k: 'Batas harian', free: 'Ada', prem: 'Tidak ada' },
+      { k: 'Peta & grid kuadrat', free: 'Ya', prem: 'Ya' },
+      { k: 'Ekspor CSV, Excel, KML, GeoJSON', free: 'Ya', prem: 'Ya' },
+      { k: 'Sinkronisasi lintas perangkat', free: 'Tidak', prem: 'Ya' },
+      { k: 'Dukungan prioritas', free: 'Tidak', prem: 'Ya' },
+    ],
     sandbox: {
       kicker: 'Untuk verifikasi iPaymu',
       title: 'Uji halaman pembayaran sandbox',
@@ -172,6 +186,17 @@ const copy: Record<Locale, Copy> = {
       link: 'Refund Policy',
       after: ' before buying.',
     },
+    compareKick: 'Compare',
+    compare: [
+      { k: 'Active projects', free: `${FREE_PROJECTS}, then +1 every ${PROJECT_COOLDOWN_HOURS} h`, prem: 'Unlimited' },
+      { k: 'Photos per project', free: `${FREE_PHOTOS_PER_PROJECT}`, prem: 'Unlimited' },
+      { k: 'Storage', free: FREE_STORAGE_LABEL, prem: PREMIUM_STORAGE_LABEL },
+      { k: 'Daily limits', free: 'Yes', prem: 'None' },
+      { k: 'Map and quadrat grid', free: 'Yes', prem: 'Yes' },
+      { k: 'CSV, Excel, KML and GeoJSON export', free: 'Yes', prem: 'Yes' },
+      { k: 'Sync across devices', free: 'No', prem: 'Yes' },
+      { k: 'Priority support', free: 'No', prem: 'Yes' },
+    ],
     sandbox: {
       kicker: 'For iPaymu verification',
       title: 'Test the sandbox payment page',
@@ -304,6 +329,41 @@ export default async function PricingPage() {
           <Link href="/refund-policy">{c.note.link}</Link>
           {c.note.after}
         </p>
+
+        {/* The comparison, and its absence was the one real gap a design review found on this page:
+            two cards list their features in DIFFERENT order, so a reader cannot line them up and has
+            to hold one list in their head while reading the other. The table answers the only
+            question a buyer actually has, which is not "what is in Premium" but "what do I lose by
+            staying free". So every row is aligned, and the rows where the two plans are identical
+            are kept in on purpose: they are the answer to "is the free plan crippled", and the
+            answer is no.
+            Every value is imported from lib/quota.ts and lib/pricing.ts, the modules the API
+            enforces, for the reason those constants are exported at all: this site once advertised
+            3 projects and 20 photos while the server allowed 2 and 3. */}
+        <div className="mk-compare" data-anim="up">
+          <span className="mk-kick">{c.compareKick}</span>
+          <table>
+            <thead>
+              <tr>
+                <th scope="col"><span className="mk-visually-hidden">{c.compareKick}</span></th>
+                <th scope="col">{c.free.name}</th>
+                <th scope="col">{c.premium.name}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {c.compare.map((r) => (
+                <tr key={r.k}>
+                  <th scope="row">{r.k}</th>
+                  {/* data-plan is what the phone layout prints as the row prefix, since the header
+                      row is hidden there. It comes from the same copy object the header uses, so the
+                      two cannot drift apart. */}
+                  <td data-plan={c.free.name}>{r.free}</td>
+                  <td className="mk-compare-prem" data-plan={c.premium.name}>{r.prem}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
         {sandboxIpaymu && (
           <aside className="mk-ipaymu-test" aria-labelledby="ipaymu-sandbox-title">
