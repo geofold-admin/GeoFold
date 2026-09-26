@@ -913,31 +913,181 @@
 }
 
 /* =====================================================================================
-   PHONE FIXES — 2026-09-26, revised. Three things the desktop composition hid, each measured on
-   a 390x844 and a 360x780 viewport rather than eyeballed.
+   PHONE NAVIGATION — rewritten. Read the header comment in MarketingNav.tsx first.
 
-   1. THE NAV LINKS OVERFLOWED. marketing.css gives .mk-nav-links `flex: 1` and the row was made
-      to scroll horizontally, first bare (trailing link clipped flush, scrollbar showing) and
-      then with a mask fade and the scrollbar hidden.
+   WHAT WAS HERE. A comment explaining that the seven links wrap onto two or three rows on a
+   phone, and defending that as the correct trade because nothing is hidden. The reasoning was
+   right about hiding and wrong about cost, and the cost was never measured. It is now: at 320px
+   the sticky header stood 175px tall, 21% of an 844px viewport, and because it is sticky that
+   space is taken on every screenful, not just the first. The headline started at y=254. The
+   smallest tap target in the header was 23px.
 
-      The fade made the cut look deliberate, but it did not make the links REACHABLE: measured at
-      360px, the row is 467px wide in a 360px box, so "About" and "Contact" sit off-screen. On a
-      phone there is no scrollbar, the fade is subtle, and a row of plain text does not advertise
-      itself as swipeable — two of seven nav links were effectively hidden. A fade is a nicer way
-      to hide content, not a way to show it.
+   WHAT REPLACES IT. Below 900px the link row is not rendered at all; the destinations live in a
+   panel behind a labelled control. The bar keeps the brand, the language toggle, the theme
+   toggle and the menu button, so it stays one short row and the headline comes back up the page.
+   Every destination is still one tap away and now every one of them is a full-size target.
 
-      The row WRAPS now. It costs one extra line of header on a narrow screen and hides nothing,
-      which is the correct trade: navigation that cannot be found is not navigation.
+   The desktop row above 900px is untouched: it was never the problem.
    ===================================================================================== */
 
+/* The compact control exists only below the breakpoint. Hiding it with display:none (rather than
+   rendering it and hiding the panel) keeps the desktop tab order exactly as it was. */
+.mk .mk-menu-btn { display: none; }
+
 @media (max-width: 900px) {
-  .mk .mk-nav { gap: 12px 14px; padding-block: 14px; }
-  .mk .mk-nav-links {
-    margin-inline: 0;
-    padding-inline: 0;
-    flex-wrap: wrap;
-    gap: 8px 16px;
+  .mk .mk-nav { gap: 12px; padding-block: 12px; }
+
+  /* The link row leaves the layout entirely. */
+  .mk .mk-nav-links { display: none; }
+
+  /* The bar's Portal link is redundant here: the panel carries its own copy in .mk-menu-foot, so
+     hiding this one removes a duplicate rather than a destination. It also buys the width that lets
+     the bar stay a single row on a phone. Measured at 390px: brand 130 + tools 240 + gap 12 = 382 in
+     350 of space, which wrapped onto a second row and cost 35px of a sticky header. Without the
+     Portal link the same sum is 305 and it fits on one line. */
+  .mk .mk-nav-tools .mk-portal { display: none; }
+
+  /* Pushed to the right edge, after the toggles, so the bar reads brand | tools | menu.
+
+     `position: relative; z-index: 91` is load-bearing, not decoration. The panel below is a
+     sibling with `z-index: 90` and it comes later in the DOM, so without this the open panel
+     paints over the button and the menu cannot be closed with the control that opened it. */
+  .mk .mk-menu-btn {
+    position: relative;
+    z-index: 91;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 14px;
+    margin-left: 2px;
+    border: 1px solid var(--mk-control-line);
+    border-radius: 100px;
+    background: transparent;
+    color: var(--mk-ink);
+    font: inherit;
     font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color .16s ease, border-color .16s ease;
+  }
+
+  /* 12px, not the 8px the bar used before, because the theme chip's hit area is grown by 6px on
+     each side (see .mk-theme-btn::after). At an 8px gap those two grown areas overlap by 4px and a
+     press in that sliver would hit the theme toggle instead of the language segment. At 12px they
+     meet exactly and each control keeps its own ground. */
+  .mk .mk-nav-tools { gap: 12px; }
+
+  /* The brand link is 130x26: fine to look at, small to hit. It is a real destination (home), so it
+     gets a 44px row of its own to be pressed in, without changing where the mark sits. */
+  .mk .mk-wordmark {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  .mk .mk-menu-btn:hover { background: var(--mk-raise); }
+  .mk .mk-menu-btn[aria-expanded='true'] {
+    background: var(--mk-ink);
+    border-color: var(--mk-ink);
+    color: var(--mk-panel);
+  }
+
+  /* The mark: three rules that become a cross. Drawn rather than a glyph so it is crisp at any
+     density, and the two states share one element so there is nothing to keep in sync. */
+  .mk .mk-menu-icon {
+    position: relative;
+    width: 15px;
+    height: 11px;
+    flex: none;
+  }
+  .mk .mk-menu-icon > span {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 1.5px;
+    border-radius: 2px;
+    background: currentColor;
+    transition: transform .2s ease, opacity .14s ease, top .2s ease;
+  }
+  .mk .mk-menu-icon > span:nth-child(1) { top: 0; }
+  .mk .mk-menu-icon > span:nth-child(2) { top: 4.75px; }
+  .mk .mk-menu-icon > span:nth-child(3) { top: 9.5px; }
+
+  .mk .mk-menu-icon[data-open='true'] > span:nth-child(1) { top: 4.75px; transform: rotate(45deg); }
+  .mk .mk-menu-icon[data-open='true'] > span:nth-child(2) { opacity: 0; }
+  .mk .mk-menu-icon[data-open='true'] > span:nth-child(3) { top: 4.75px; transform: rotate(-45deg); }
+
+  /* The panel hangs off the BOTTOM OF THE BAR, anchored to the nav's own box rather than to a
+     hard-coded offset. `top: 100%` on an absolutely positioned child means "the nav's full height",
+     so the sheet starts exactly where the bar ends at every width and after every future change to
+     the bar, with no magic number to keep in sync. The height then runs to the bottom of the
+     viewport.
+
+     WHY NOT `position: fixed; inset: 0`. Two reasons. The bar has to stay visible, because it holds
+     the control that closes the menu: a full-bleed sheet covers its own close affordance and leaves
+     the reader with only Escape or a navigation to get out. And the panel is a child of a nav that
+     is itself `position: sticky; z-index: 50`, so the nav IS its stacking context: a z-index on the
+     panel cannot lift it above or drop it below the bar, it can only order it among the nav's own
+     children. Anchoring to the nav's bottom is the honest way to express "under the bar". */
+  .mk .mk-menu-panel {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    height: calc(100vh - 100%); /* fallback for browsers without dvh */
+    height: calc(100dvh - 100%);
+    z-index: 40;
+    background: var(--mk-panel);
+    border-top: 1px solid var(--mk-line);
+    padding: 0 var(--mk-pad);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    animation: mk-menu-in .22s cubic-bezier(.22, .61, .36, 1);
+  }
+  .mk .mk-menu-panel[hidden] { display: none; }
+
+  @keyframes mk-menu-in {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  .mk .mk-menu-inner {
+    display: flex;
+    flex-direction: column;
+    /* No top padding needed to clear the bar any more: the panel starts below it, so the first link
+       is already clear. 8px is breathing room, not a workaround. */
+    padding-top: 8px;
+    padding-bottom: 40px;
+  }
+
+  /* Each destination is a full row with a 44px floor, so the panel is a list of targets rather
+     than a column of text. The arrow is decoration and is not announced. */
+  .mk .mk-menu-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 56px;
+    padding: 0 2px;
+    border-bottom: 1px solid var(--mk-line);
+    color: var(--mk-ink);
+    font-size: 19px;
+    font-weight: 500;
+    letter-spacing: -.01em;
+    text-decoration: none;
+  }
+  .mk .mk-menu-link > span { color: var(--mk-faint); font-size: 15px; }
+  .mk .mk-menu-link[aria-current='page'] { color: var(--mk-green); }
+  .mk .mk-menu-link[aria-current='page'] > span { color: var(--mk-green); }
+  .mk .mk-menu-link:active { background: var(--mk-raise); }
+
+  .mk .mk-menu-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 28px;
   }
 
   /* The pinned scene never engages here (the module checks for 1000px), so the steps are just
@@ -947,30 +1097,30 @@
   .mk .pg-stats { gap: 30px 24px; }
 }
 
-/* Below 480px the seven links cannot fit on one line — measured: 398px of labels in 280px of
-   space at 320px wide. Flex wrapping then breaks them 6+1, leaving "Contact" orphaned alone on
-   the second row, which reads as a mistake rather than as a layout.
-   A four-column grid breaks the same seven items 4+3 instead: every row has content, the columns
-   line up with each other, and it reads as a deliberate menu grid rather than as text that ran
-   out of room. Nothing is hidden at any width. */
-@media (max-width: 480px) {
-  .mk .mk-nav-links {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 9px 8px;
-  }
-}
+/* These two blocks used to lay the seven links out as a 4+3 grid and then tighten the three-row
+   header further. Both are obsolete now: below 900px the links are in the panel and .mk-nav-links
+   is `display: none`, so any rule that re-declares its display would bring the row back and undo
+   the fix. That is exactly what happened on the first attempt — the 480px grid rule out-ordered
+   the hide and the header stayed 183px tall at 320px, which the box probe caught by reporting a
+   laid-out .mk-nav-links that should not have had a box at all.
+   Kept as a note rather than deleted silently, because the 4+3 reasoning was sound and the next
+   person to read the history should not have to rediscover why it went. */
 
-/* At 360px and below the header had grown to 205px — 23% of the viewport, which pushes the
-   headline down for no benefit. The three rows are all necessary (brand, tools, links) so the
-   saving comes from the space BETWEEN them, not from hiding any of them. Measured after: the
-   header is a third shorter and every link is still on screen. */
+/* The tools row is the only thing left to tighten on a small phone. The menu button keeps its 44px
+   floor; everything else steps down one notch.
+
+   320px is where the arithmetic runs out. Measured: the content box is 280px (20px of gutter each
+   side), the wordmark needs 130 and the tools cluster needs 177, which is 319px of content in 280px
+   of space, over by 39. Shrinking type would not recover 39px honestly, so the language toggle
+   moves into the panel where it already has a copy in .mk-menu-foot, and the bar keeps brand, theme
+   and menu. Nothing is lost: the same control is one tap away in the same panel as the links. */
 @media (max-width: 400px) {
-  .mk .mk-nav { gap: 10px 12px; padding-block: 12px; }
-  .mk .mk-nav-links { gap: 7px 13px; font-size: 12.5px; }
-  .mk .mk-nav-tools { gap: 6px; }
-  .mk .mk-lang-seg button { padding: 5px 7px; }
+  .mk .mk-nav { gap: 10px 12px; padding-block: 10px; }
+  .mk .mk-nav-tools { gap: 10px; }
+  .mk .mk-nav-tools .mk-lang-seg { display: none; }
   .mk .mk-portal { padding: 7px 11px; font-size: 12.5px; }
+  .mk .mk-menu-btn { padding: 0 11px; }
+  .mk .mk-menu-label { display: none; } /* icon only: the aria-label still names it */
 }
 
 @media (max-width: 460px) {
@@ -1311,6 +1461,12 @@ html[data-theme='dark'] .mk .mk-portal:hover { background: rgba(1, 74, 181, .07)
   appearance: none; border: 0; background: transparent; cursor: pointer;
   font-family: var(--font-inter), sans-serif;
   font-size: 11px; font-weight: 500; letter-spacing: .08em;
+  /* 44px is the target this project holds itself to; the language toggle is a real control, not a
+     label, so it gets a real hit area even though the glyph inside is small. Measured before this
+     change: the buttons were 33x23, under the 24px floor in WCAG 2.5.8. The vertical padding plus
+     min-height does the work, and the visible chip is unchanged because the background is drawn on
+     the segment, not the button. */
+  min-height: 44px; min-width: 44px;
   padding: 7px 9px; color: var(--mk-faint); line-height: 1;
   transition: color .2s ease, background-color .2s ease;
 }
@@ -1323,10 +1479,20 @@ html[data-theme='dark'] .mk .mk-portal:hover { background: rgba(1, 74, 181, .07)
 /* ---- theme ---- */
 .mk .mk-theme-btn {
   appearance: none; cursor: pointer; display: inline-grid; place-items: center;
+  /* The chip stays 32px because that is the size the bar was designed around; the HIT AREA does
+     not. A 32px square is below the 44px target this project holds itself to, so a transparent
+     pseudo-element extends the touchable region to 44px without moving anything on screen. The
+     chip is a real control on the one screen where a thumb is doing the aiming. */
+  position: relative;
   width: 32px; height: 32px; padding: 0;
   border: 1px solid var(--mk-line); border-radius: 6px;
   background: transparent; color: var(--mk-muted);
   transition: color .2s ease, border-color .2s ease, background-color .2s ease;
+}
+.mk .mk-theme-btn::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
 }
 .mk .mk-theme-btn:hover { color: var(--mk-ink); border-color: var(--mk-input-line); }
 /* Both icons ship in the HTML and CSS picks; no state, no effect, correct in the first frame.

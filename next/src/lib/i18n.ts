@@ -108,7 +108,7 @@ export const chrome: Record<Locale, {
     parentPost: string
     parentNote: string
   }
-  a11y: { theme: string; language: string; nav: string }
+  a11y: { theme: string; language: string; nav: string; menu: string; close: string }
 }> = {
   id: {
     nav: {
@@ -157,6 +157,8 @@ export const chrome: Record<Locale, {
       theme: 'Ganti tema terang atau gelap',
       language: 'Bahasa',
       nav: 'Navigasi utama',
+      menu: 'Menu',
+      close: 'Tutup menu',
     },
   },
   en: {
@@ -206,6 +208,8 @@ export const chrome: Record<Locale, {
       theme: 'Toggle light or dark theme',
       language: 'Language',
       nav: 'Main navigation',
+      menu: 'Menu',
+      close: 'Close menu',
     },
   },
 }
