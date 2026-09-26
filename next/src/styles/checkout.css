@@ -47,6 +47,10 @@
   --mk-on-green: var(--mk-on-green, #ffffff);
 
   width: 100%; max-width: 460px; max-height: calc(100vh - 32px);
+  /* 100dvh tracks the shrinking/growing URL bar on mobile; the vh line above is the fallback for
+     browsers without dvh. Without this the footer of a tall modal (the QRIS state) sits under the
+     browser chrome on a phone and cannot be reached. */
+  max-height: calc(100dvh - 32px);
   display: flex; flex-direction: column;
   background: var(--mk-panel); color: var(--mk-ink);
   border: 1px solid var(--mk-line); border-radius: 14px;
@@ -78,7 +82,7 @@
 }
 .gf-ck-close:hover { color: var(--mk-ink); background: var(--mk-raise); }
 
-.gf-ck-body { padding: 20px 18px; overflow-y: auto; flex: 1; }
+.gf-ck-body { padding: 20px 18px; overflow-y: auto; flex: 1; overscroll-behavior: contain; }
 
 .gf-ck-foot {
   display: flex; align-items: center; gap: 7px;

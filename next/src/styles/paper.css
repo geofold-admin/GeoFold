@@ -1163,3 +1163,131 @@ html[data-theme='dark'] .mk .mk-theme-btn .mk-icon-moon { display: none; }
 @media (max-width: 680px) {
   .mk .mk-nav-tools { gap: 8px; margin-left: auto; }
 }
+
+/* ---------------------------------------------------------------------------
+   THE BRAND MARK.
+
+   The supplied artwork, traced to SVG (public/geofold-mark.svg). Two variants
+   exist because the globe lines inside the G are CUT OUT of the shape rather
+   than drawn in white — measured on the source, those pixels are the background
+   colour, not #fff. So the mark inherits its ground, and the brand blue falls to
+   about 1.4:1 on the near-black dark theme. The `-dark` file repaints the blue to
+   a pale sky tint and leaves the orange alone.
+
+   Both variants ship in the DOM and CSS chooses: doing it in JS would paint the
+   wrong one for a frame and make the server and client disagree on first render.
+
+   `.gf-logo-swap` is inline-block with a fixed line-height so the two stacked
+   images do not add a baseline gap; only one is ever laid out (`display: none`
+   takes the other out of flow entirely).
+   --------------------------------------------------------------------------- */
+.gf-logo-swap { position: relative; display: inline-block; line-height: 0; }
+.gf-logo-swap .gf-logo-dark { display: none; }
+
+html[data-theme='dark'] .gf-logo-swap .gf-logo-light { display: none; }
+html[data-theme='dark'] .gf-logo-swap .gf-logo-dark { display: block; }
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme='light']) .gf-logo-swap .gf-logo-light { display: none; }
+  html:not([data-theme='light']) .gf-logo-swap .gf-logo-dark { display: block; }
+}
+
+/* The mark + wordmark lockup. `gap` is in em so it tracks the wordmark size. */
+.gf-lockup { display: inline-flex; align-items: center; gap: 9px; }
+.gf-lockup-word {
+  font-family: var(--font-sans), sans-serif;
+  font-weight: 700; font-size: 19px; letter-spacing: -0.022em;
+  color: var(--mk-ink); line-height: 1;
+}
+
+/* The nav wordmark carries a live status pip (see the rule above); with the mark
+   in place it reads as part of the lockup rather than an afterthought, so it is
+   pulled tight to the wordmark and sized to match its cap height. */
+.mk-wordmark { display: inline-flex; align-items: center; }
+.mk-wordmark::after { margin-left: 8px; }
+
+/* ---------------------------------------------------------------------------
+   SCROLL PROGRESS.
+
+   A 2px hairline across the top of the viewport that fills as you read. Adapted
+   from React Bits' scroll-progress bar, but driven by ScrollTrigger (see
+   Motion.tsx) rather than a React scroll listener, so no component re-renders
+   per frame.
+
+   `transform: scaleX()` rather than `width`, so the fill animates on the
+   compositor instead of forcing layout on every scroll tick. The track is
+   transparent, not a visible groove — the bar should be a hint, not a frame
+   around the top of every page.
+   --------------------------------------------------------------------------- */
+.mk-progress {
+  position: fixed; top: 0; left: 0; right: 0; height: 2px;
+  z-index: 60; /* above .mk-nav's 50, below the checkout overlay's 9999 */
+  pointer-events: none;
+}
+.mk-progress > span {
+  display: block; height: 100%; width: 100%;
+  background: linear-gradient(90deg, var(--mk-green) 0%, var(--mk-green-2, var(--mk-green)) 100%);
+  transform: scaleX(0); transform-origin: 0 50%;
+}
+
+/* ---------------------------------------------------------------------------
+   SPOTLIGHT CARDS.
+
+   A soft glow that tracks the pointer across a card. Adapted from React Bits'
+   SpotlightCard; here the position arrives as --mx/--my written by one delegated
+   listener (Motion.tsx) instead of React state, and the glow itself is a
+   radial-gradient so the compositor paints it.
+
+   OFF BY DEFAULT AND ONLY WHEN THE POINTER EXISTS. On touch there is no hover to
+   follow, and on `prefers-reduced-motion` a light that slides under the cursor is
+   exactly the kind of movement that setting asks us not to make. Both cases fall
+   back to a plain card with no visual loss — the glow is additive.
+   --------------------------------------------------------------------------- */
+[data-spotlight] { position: relative; }
+
+@media (hover: hover) and (pointer: fine) {
+  [data-spotlight]::before {
+    content: '';
+    position: absolute; inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .3s ease;
+    /* 420px keeps the glow wide and soft; `circle at` follows --mx/--my, which the listener
+       rewrites on every move. Until it does, the gradient sits at 0 0 with zero alpha, so a card
+       that is never hovered paints nothing. */
+    background: radial-gradient(
+      420px circle at var(--mx, 0) var(--my, 0),
+      color-mix(in srgb, var(--mk-green) 9%, transparent),
+      transparent 62%
+    );
+  }
+  [data-spotlight]:hover::before { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-spotlight]::before { display: none; }
+  .mk-progress > span { transition: none; }
+}
+
+/* ---------------------------------------------------------------------------
+   CARD TILT.
+
+   The container needs a perspective for rotateX/rotateY to read as depth rather
+   than a flat skew, and `transform-style: preserve-3d` so the card's own children
+   sit on the tilted plane instead of being flattened onto it.
+
+   1200px is a long lens: the card leans, it does not lunge. Anything shorter than
+   about 800px makes the near edge visibly larger and the text along it look
+   distorted, which is the wrong trade for a pricing card someone is reading.
+
+   The rotation itself is written by GSAP (see Motion.tsx) and only ever on
+   pointer-fine devices under prefers-reduced-motion: no-preference.
+   --------------------------------------------------------------------------- */
+@media (hover: hover) and (pointer: fine) {
+  .pg-price, .mk-price { perspective: 1200px; }
+  [data-tilt] { transform-style: preserve-3d; will-change: transform; }
+  /* The spotlight glow sits on ::before, which is a child of the tilted element — keep it on the
+     same plane so it does not slide off the card as the card rotates. */
+  [data-tilt]::before { transform: translateZ(0); }
+}

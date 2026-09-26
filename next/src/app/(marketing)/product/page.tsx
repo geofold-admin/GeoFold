@@ -275,7 +275,7 @@ export default async function ProductPage() {
         </div>
         <Carousel label={c.carouselLabel}>
           {c.slides.map((s, i) => (
-            <article className="mk-cap" key={s.title}>
+            <article className="mk-cap" data-spotlight key={s.title}>
               <PhoneMock>{screens[i]}</PhoneMock>
               <div className="mk-cap-copy">
                 <span className="mk-cap-kick">{s.kicker}</span>

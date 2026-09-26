@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/AuthContext'
 import { api } from '@/lib/api-client'
 import type { Locale } from '@/lib/i18n'
 import { Check, X, Copy, Loader2, Sparkles, ShieldCheck, RefreshCw, AlertCircle } from 'lucide-react'
+import { useModalA11y } from '@/lib/useModalA11y'
 
 /**
  * The in-page checkout.
@@ -233,6 +234,8 @@ export function CheckoutModal({
   const [channel, setChannel] = useState<Channel>(DEFAULT_CHANNELS[0])
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  // The scrollable dialog box. Handed to useModalA11y so focus and the Tab wrap have a boundary.
+  const panelRef = useRef<HTMLDivElement>(null)
 
   const stopPolling = useCallback(() => {
     if (pollRef.current) {
@@ -256,14 +259,9 @@ export function CheckoutModal({
 
   useEffect(() => stopPolling, [stopPolling])
 
-  useEffect(() => {
-    if (!isOpen) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [isOpen, onClose])
+  /* Scroll lock, focus trap, Escape and focus restore for the dialog. Kept in a hook because the
+     app chrome has its own modals and the same three bugs show up in each of them. */
+  useModalA11y(isOpen, onClose, panelRef)
 
   /* ---- settlement polling ----
      The sync route asks iPaymu directly with the merchant key; it is the only thing that can
@@ -373,14 +371,34 @@ export function CheckoutModal({
     }
   }
 
+  /*
+   * Close on a backdrop click — but only a REAL click.
+   *
+   * A click event fires on the nearest common ancestor of the mousedown and the mouseup. So a drag
+   * that starts inside the dialog and ends on the backdrop (selecting the virtual-account number to
+   * copy it, then letting go a few pixels too far) targets the overlay and would close the checkout
+   * mid-payment. Tracking where the press started and requiring the release on the same element is
+   * what tells the two apart.
+   *
+   * Declared up here with the other hooks: it must run on every render, and the `if (!isOpen)
+   * return null` below would otherwise make this a conditional hook (React error #310).
+   */
+  const pressTarget = useRef<EventTarget | null>(null)
+
   if (!isOpen) return null
 
   const total = instructions ? (instructions.totalIdr || instructions.amountIdr) : null
   const fee = instructions?.feeIdr ?? 0
 
   return (
-    <div className="gf-ck-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="gf-ck" role="dialog" aria-modal="true" aria-label={c.title}>
+    <div
+      className="gf-ck-overlay"
+      onMouseDown={(e) => { pressTarget.current = e.target }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget && pressTarget.current === e.currentTarget) onClose()
+      }}
+    >
+      <div className="gf-ck" role="dialog" aria-modal="true" aria-label={c.title} ref={panelRef} tabIndex={-1}>
         <header className="gf-ck-head">
           <span className="gf-ck-mark" aria-hidden="true">
             <Sparkles size={15} />

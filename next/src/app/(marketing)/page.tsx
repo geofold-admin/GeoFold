@@ -466,7 +466,7 @@ export default async function HomePage() {
 
             <ol className="pg-scene-steps" data-scene-steps>
               {c.steps.map((s, i) => (
-                <li className="pg-step" data-scene-step key={s.t}>
+                <li className="pg-step" data-scene-step data-spotlight key={s.t}>
                   <span className="pg-step-n pg-num">{String(i + 1).padStart(2, '0')}</span>
                   <h3 className="pg-d3">{s.t}</h3>
                   <p className="pg-body">{s.b}</p>
@@ -529,7 +529,7 @@ export default async function HomePage() {
           </div>
 
           <div className="pg-price" data-anim="stagger">
-            <div className="pg-price-card">
+            <div className="pg-price-card" data-spotlight data-tilt>
               <p className="pg-micro">{c.free.name}</p>
               <p className="pg-price-fig pg-num">Rp 0</p>
               <p className="pg-body">{c.free.body}</p>
@@ -540,7 +540,7 @@ export default async function HomePage() {
               </div>
             </div>
 
-            <div className="pg-price-card feat">
+            <div className="pg-price-card feat" data-spotlight data-tilt>
               <p className="pg-micro">{c.premium.name}</p>
               <p className="pg-price-fig pg-num">
                 {PREMIUM_PRICE_LABEL}

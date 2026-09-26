@@ -39,6 +39,11 @@ export function Motion() {
     const mm = gsap.matchMedia()
 
     mm.add('(prefers-reduced-motion: no-preference)', () => {
+      /* Set only when the spotlight listener is attached; the cleanup below calls it if present. */
+      let spotCleanup: (() => void) | undefined
+      /* Same for the tilt listeners. */
+      let tiltCleanup: (() => void) | undefined
+
       /* ---------- 1. hero headline: per-character reveal ---------- */
       const splits: SplitText[] = []
 
@@ -257,6 +262,98 @@ export function Motion() {
         })
       }
 
+      /* ---------- 12. scroll progress ----------
+         A hairline readout of how far down the page you are. Adapted from React Bits' scroll
+         progress: the original drives a motion value from a React scroll listener, which re-renders
+         on every frame. This writes one CSS custom property from GSAP's own ScrollTrigger instead,
+         so nothing re-renders and the bar is driven by the same scroll maths as everything else on
+         the page. The element is a <div> in the layout, not a wrapper, so no section moves into the
+         client bundle to get it. */
+      const bar = document.querySelector<HTMLElement>('[data-scroll-progress]')
+      if (bar) {
+        const fill = bar.firstElementChild as HTMLElement | null
+        if (fill) {
+          gsap.to(fill, {
+            scaleX: 1,
+            ease: 'none',
+            scrollTrigger: { start: 0, end: 'max', scrub: 0.25 },
+          })
+        }
+      }
+
+      /* ---------- 13. spotlight cards ----------
+         A soft highlight that follows the pointer across a card's surface. Adapted from React Bits'
+         SpotlightCard: there the position is React state, which re-renders the card on every mouse
+         move — fine for one card, wasteful for a grid of them. This is one delegated listener for
+         the whole page that writes --mx/--my onto whichever card the pointer is over; the glow is a
+         radial-gradient in CSS, so the compositor does the work and React never sees the event.
+         Pointer-fine only: on touch there is no hover to follow. */
+      if (window.matchMedia('(pointer: fine)').matches) {
+        const cards = Array.from(document.querySelectorAll<HTMLElement>('[data-spotlight]'))
+
+        const onMove = (e: MouseEvent) => {
+          const card = (e.target as HTMLElement)?.closest?.('[data-spotlight]') as HTMLElement | null
+          if (!card) return
+          const r = card.getBoundingClientRect()
+          card.style.setProperty('--mx', `${e.clientX - r.left}px`)
+          card.style.setProperty('--my', `${e.clientY - r.top}px`)
+        }
+        const onLeave = (e: MouseEvent) => {
+          const card = (e.target as HTMLElement)?.closest?.('[data-spotlight]') as HTMLElement | null
+          if (!card) return
+          // Drop the highlight when the pointer leaves, so it does not stay lit under the last
+          // position the cursor happened to be in.
+          card.style.removeProperty('--mx')
+          card.style.removeProperty('--my')
+        }
+
+        document.addEventListener('mousemove', onMove, { passive: true })
+        document.addEventListener('mouseout', onLeave, { passive: true })
+        spotCleanup = () => {
+          document.removeEventListener('mousemove', onMove)
+          document.removeEventListener('mouseout', onLeave)
+          for (const c of cards) {
+            c.style.removeProperty('--mx')
+            c.style.removeProperty('--my')
+          }
+        }
+      }
+
+      /* ---------- 14. card tilt ----------
+         A few degrees of perspective tilt as the pointer crosses a card. Adapted from React Bits'
+         TiltedCard: the original maps pointer position to rotateX/rotateY in React state, which
+         re-renders per mousemove. This uses GSAP's quickTo, which writes the transform straight to
+         the element on the compositor.
+
+         CAPPED AT 4 DEGREES, and no scale. More than that reads as a toy and makes text on the
+         card harder to read at the exact moment the visitor is reading it — the tilt is there to
+         say "this surface is live", not to be the attraction. Pointer-fine only. */
+      if (window.matchMedia('(pointer: fine)').matches) {
+        const tilts: Array<() => void> = []
+        document.querySelectorAll<HTMLElement>('[data-tilt]').forEach((el) => {
+          const rxTo = gsap.quickTo(el, 'rotationX', { duration: 0.5, ease: EASE_SOFT })
+          const ryTo = gsap.quickTo(el, 'rotationY', { duration: 0.5, ease: EASE_SOFT })
+
+          const move = (e: MouseEvent) => {
+            const r = el.getBoundingClientRect()
+            const px = (e.clientX - r.left) / r.width - 0.5
+            const py = (e.clientY - r.top) / r.height - 0.5
+            ryTo(px * 8)   // ±4deg
+            rxTo(-py * 8)
+          }
+          const reset = () => { rxTo(0); ryTo(0) }
+
+          el.addEventListener('mousemove', move)
+          el.addEventListener('mouseleave', reset)
+          tilts.push(() => {
+            el.removeEventListener('mousemove', move)
+            el.removeEventListener('mouseleave', reset)
+            gsap.set(el, { rotationX: 0, rotationY: 0 })
+          })
+        })
+        tiltCleanup = () => { for (const off of tilts) off() }
+      }
+
       /* Fonts change line breaking, which changes every ScrollTrigger start position measured
          before they landed. autoSplit handles the splits; this handles everything else. */
       document.fonts?.ready.then(() => ScrollTrigger.refresh())
@@ -265,6 +362,8 @@ export function Motion() {
         for (const off of magnets) off()
         for (const s of splits) s.revert()
         if (nav) nav.classList.remove('is-stuck')
+        spotCleanup?.()
+        tiltCleanup?.()
       }
     })
 

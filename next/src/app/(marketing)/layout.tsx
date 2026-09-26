@@ -15,6 +15,7 @@ import '@/styles/checkout.css'
 import { ADDRESS_ONE_LINE, BUSINESS, LEGAL, OPERATOR } from '@/lib/business'
 import { chrome } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'
+import { LogoLockup } from '@/components/Logo'
 import { MarketingNav } from './MarketingNav'
 
 // Body face for the marketing site. Headings stay on Archivo (--font-sans), which
@@ -55,6 +56,12 @@ export default async function MarketingLayout({ children }: { children: ReactNod
      * and describes exactly the subtree that actually changes language.
      */
     <div className={`mk ${workSans.variable}`} lang={locale}>
+      {/* Scroll progress hairline. Pinned to the very top of the viewport, above the nav's own
+          sticky layer, and driven by Motion.tsx. aria-hidden: it is decoration, and a progress
+          readout that a screen reader announced on every scroll would be unusable. */}
+      <div className="mk-progress" data-scroll-progress aria-hidden="true">
+        <span />
+      </div>
       <MarketingNav locale={locale} />
       {children}
       {/* The Legal and Help columns are load-bearing: a payment gateway verifying this merchant
@@ -63,7 +70,9 @@ export default async function MarketingLayout({ children }: { children: ReactNod
       <footer className="mk-footer">
         <div className="mk-footer-main">
           <div className="mk-footer-brand-block">
-            <div className="mk-footer-brand">Geofold</div>
+            <div className="mk-footer-brand">
+              <LogoLockup size={24} />
+            </div>
             <div className="mk-copy">
               © {new Date().getFullYear()} {OPERATOR}. {c.footer.rights}
               <br />

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { chrome, type Locale } from '@/lib/i18n'
 import { LangToggle, ThemeToggle } from './NavControls'
+import { LogoLockup } from '@/components/Logo'
 
 /**
  * The marketing header.
@@ -28,8 +29,8 @@ export function MarketingNav({ locale }: { locale: Locale }) {
 
   return (
     <nav className="mk-nav" aria-label={c.a11y.nav}>
-      <Link href="/" className="mk-wordmark">
-        Geofold
+      <Link href="/" className="mk-wordmark" aria-label="GeoFold — home">
+        <LogoLockup size={26} />
       </Link>
 
       <div className="mk-nav-links">

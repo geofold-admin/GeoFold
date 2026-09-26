@@ -242,7 +242,7 @@ export default async function PricingPage() {
 
       <section className="mk-sec">
         <div className="mk-price">
-          <div className="mk-price-card">
+          <div className="mk-price-card" data-spotlight data-tilt>
             <div className="mk-price-name">{c.free.name}</div>
             <div className="mk-price-num">Rp 0</div>
             <p>{c.free.blurb}</p>
