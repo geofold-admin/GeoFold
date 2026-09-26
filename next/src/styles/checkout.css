@@ -25,7 +25,10 @@
   position: fixed; inset: 0; z-index: 9999;
   display: flex; align-items: center; justify-content: center;
   padding: 16px;
-  background: rgba(11, 11, 12, .55);
+  /* The scrim. Slate-950 rather than a neutral near-black, so the dimmed page keeps the same
+     hue family as the palette instead of going grey-brown behind a slate page. Alpha .55 is
+     enough to push the content back without making the modal feel like a separate app. */
+  background: rgba(2, 6, 23, .55);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   animation: gf-ck-fade .18s ease both;
