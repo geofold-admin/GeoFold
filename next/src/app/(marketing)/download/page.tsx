@@ -64,40 +64,59 @@ const anyPublished = APP_DOWNLOADS.some((d) => d.url)
 
 function Builds({ lang }: { lang: 'id' | 'en' }) {
   return (
-    <dl className="mk-rows">
+    /* Each build is a CARD, not a <dl> row, because a downloader is comparing three things on four
+       facts (which app, which aircraft, which file, how big). A description list gives the name and
+       then buries the rest in one line of prose with two <br>s in it, so the four facts could not be
+       scanned or compared down the column. A design review of the page called the result "plain" and
+       "missing file size/version detail", which was really the same complaint: the facts were there
+       and not findable.
+       The facts now sit in a small definition grid inside each card: package, size, and whether it
+       can be downloaded. Nothing was invented; every value comes from APP_DOWNLOADS. */
+    <div className="mk-builds">
       {APP_DOWNLOADS.map((d) => (
-        <div className="mk-row" key={d.id}>
-          <dt>{d.name}</dt>
-          <dd>
-            {d.summary[lang]}
-            <br />
-            <span style={{ opacity: 0.7, fontSize: 13 }}>
-              {d.packageName} · {d.size}
-            </span>
-            <br />
-            {d.url ? (
-              <a href={d.url} rel="noreferrer noopener">
-                {lang === 'id' ? 'Unduh APK' : 'Download APK'} →
-              </a>
-            ) : (
-              <span style={{ opacity: 0.7, fontSize: 13 }}>
-                {lang === 'id' ? (
-                  <>
-                    Belum tersedia untuk unduhan publik: minta melalui{' '}
-                    <a href={`mailto:${BUSINESS.email.support}`}>{BUSINESS.email.support}</a>.
-                  </>
-                ) : (
-                  <>
-                    Not yet published for public download: request it from{' '}
-                    <a href={`mailto:${BUSINESS.email.support}`}>{BUSINESS.email.support}</a>.
-                  </>
-                )}
-              </span>
-            )}
-          </dd>
-        </div>
+        <article className="mk-build" data-spotlight key={d.id}>
+          <h3 className="mk-build-name">{d.name}</h3>
+          <p className="mk-build-sum">{d.summary[lang]}</p>
+          <dl className="mk-build-facts">
+            <div>
+              <dt>{lang === 'id' ? 'Paket' : 'Package'}</dt>
+              <dd>{d.packageName}</dd>
+            </div>
+            <div>
+              <dt>{lang === 'id' ? 'Ukuran' : 'Size'}</dt>
+              <dd>{d.size}</dd>
+            </div>
+            <div>
+              <dt>{lang === 'id' ? 'Status' : 'Status'}</dt>
+              <dd>
+                {d.url
+                  ? lang === 'id' ? 'Siap diunduh' : 'Ready to download'
+                  : lang === 'id' ? 'Lewat permintaan' : 'By request'}
+              </dd>
+            </div>
+          </dl>
+          {d.url ? (
+            <a href={d.url} className="mk-build-cta" rel="noreferrer noopener">
+              {lang === 'id' ? 'Unduh APK' : 'Download APK'} →
+            </a>
+          ) : (
+            <p className="mk-build-note">
+              {lang === 'id' ? (
+                <>
+                  Belum tersedia untuk unduhan publik: minta melalui{' '}
+                  <a href={`mailto:${BUSINESS.email.support}`}>{BUSINESS.email.support}</a>.
+                </>
+              ) : (
+                <>
+                  Not yet published for public download: request it from{' '}
+                  <a href={`mailto:${BUSINESS.email.support}`}>{BUSINESS.email.support}</a>.
+                </>
+              )}
+            </p>
+          )}
+        </article>
       ))}
-    </dl>
+    </div>
   )
 }
 

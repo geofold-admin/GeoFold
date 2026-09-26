@@ -2131,3 +2131,60 @@ html[data-theme='dark'] .mk .mk-theme-btn .mk-icon-moon { display: none; }
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
 }
+
+/* ---------- the Android builds ---------- */
+/*
+ * Three builds, four facts each. As a description list the facts were buried in a line of prose with
+ * two <br>s in it, so nothing could be compared down the column, and a design review called the
+ * result "plain" and "missing file size/version detail". They are cards now, and the four facts sit
+ * in a small definition grid: package, size, status. The status row exists because the page's whole
+ * situation is that none of the three can be downloaded yet, and a reader should be able to see that
+ * without reading three paragraphs.
+ */
+.mk .mk-builds {
+  display: grid; gap: 14px; margin-top: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+}
+.mk .mk-build {
+  border: 1px solid var(--mk-line); border-radius: 10px; background: var(--mk-panel);
+  padding: 20px 20px 18px;
+  display: grid; gap: 12px; align-content: start;
+  position: relative; overflow: hidden;
+  transition: border-color .25s ease;
+}
+.mk .mk-build:hover { border-color: var(--mk-control-line); }
+.mk .mk-build[data-spotlight]::before {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; opacity: 0;
+  pointer-events: none;
+  background: radial-gradient(320px circle at var(--mx, 50%) var(--my, 50%),
+    color-mix(in srgb, var(--mk-green) 7%, transparent), transparent 70%);
+  transition: opacity .3s ease;
+}
+.mk .mk-build[data-spotlight]:hover::before { opacity: 1; }
+.mk .mk-build-name {
+  margin: 0; font-family: var(--font-tight), sans-serif; font-weight: 500;
+  font-size: 16px; letter-spacing: -.015em; color: var(--mk-ink);
+}
+.mk .mk-build-sum { margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--mk-prose); }
+.mk .mk-build-facts {
+  margin: 0; display: grid; gap: 7px;
+  border-top: 1px solid var(--mk-line); padding-top: 12px;
+}
+.mk .mk-build-facts > div { display: flex; align-items: baseline; gap: 10px; }
+.mk .mk-build-facts dt {
+  flex: none; width: 62px;
+  font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--mk-faint);
+}
+.mk .mk-build-facts dd {
+  margin: 0; font-size: 12.5px; color: var(--mk-ink);
+  /* The package names and sizes line up as a column of values, which is the point of the grid. */
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.mk .mk-build-cta {
+  font-size: 13.5px; font-weight: 500; color: var(--mk-green);
+  text-decoration: underline; text-underline-offset: 3px; justify-self: start;
+}
+.mk .mk-build-note { margin: 0; font-size: 12.5px; line-height: 1.55; color: var(--mk-muted); }
+.mk .mk-build-note a { color: var(--mk-ink); text-decoration: underline; text-underline-offset: 3px; }
