@@ -404,9 +404,29 @@
 .mk-plist { list-style: none; margin: 0 0 18px; padding: 0; display: grid; gap: 9px; }
 .mk-plist li { font-size: 14px; line-height: 1.5; color: var(--mk-prose); padding-left: 20px;
   position: relative; }
-.mk-plist li::before { content: '—'; position: absolute; left: 0; color: var(--mk-green); }
+.mk-plist li::before {
+  /* A DRAWN TICK, not an em dash. This was `content: '—'`, which rendered an em dash in front
+     of every bullet on the pricing page. The project's copy rule forbids em dashes in
+     anything a reader sees, and a pseudo-element is something a reader sees: it was missed
+     for a long time because `document.body.innerText` does not include generated content, so
+     the copy gate could not see it. The tick is drawn as two borders on a rotated box, the
+     same way `.pg-price-list` does it, so there is no glyph to type. */
+  content: '';
+  position: absolute; left: 0; top: .38em;
+  width: 10px; height: 6px;
+  border-left: 1.5px solid var(--mk-green);
+  border-bottom: 1.5px solid var(--mk-green);
+  transform: rotate(-45deg);
+}
 .mk-plist.on-dark li { color: var(--mk-deep-prose); }
-.mk-plist.on-dark li::before { color: var(--mk-green-line); }
+.mk-plist.on-dark li::before {
+  /* The tick is drawn with borders now, so it takes the colour on the BORDERS. The old
+     `color:` declaration would have been silently ignored and the tick would have kept the
+     light-theme blue on the inverted card, which is the kind of thing that reads as a
+     rendering glitch rather than a colour choice. */
+  border-left-color: var(--mk-deep-accent);
+  border-bottom-color: var(--mk-deep-accent);
+}
 
 /* ---------- shared Q&A block ---------- */
 .mk-qa { padding: 0 var(--mk-pad); display: grid; gap: 20px; max-width: 760px; margin: 0 auto; }
