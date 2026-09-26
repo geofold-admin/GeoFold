@@ -5,6 +5,8 @@ import { FigAerial, FigCapture, FigExport, FigMap, FigOffline } from './Figures'
 import { SurveyField } from '@/components/SurveyField'
 import { SurveyGlobe } from '@/components/SurveyGlobe'
 import { TopographyField } from '@/components/TopographyField'
+import ShapeGridField from '@/components/ShapeGridField'
+import SpecularEdge from '@/components/SpecularEdge'
 import { MagnetField } from '@/components/MagnetField'
 import type { Locale } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'
@@ -404,8 +406,11 @@ export default async function HomePage() {
                 {c.lede}
               </p>
               <div className="pg-hero-cta" data-anim="up" data-anim-delay="0.45">
+                {/* The specular edge goes on the hero CTA and nowhere else: it is a WebGL context,
+                    and one is the right number. It wraps the LINK rather than replacing it, so the
+                    href, the client-side routing and the keyboard behaviour are untouched. */}
                 <Link href="/login" className="pg-btn pg-btn-primary" data-magnetic>
-                  {c.ctaStart}
+                  <SpecularEdge>{c.ctaStart}</SpecularEdge>
                 </Link>
                 <Link href="/download" className="pg-btn pg-btn-outline" data-magnetic>
                   {c.ctaDownload}
@@ -649,7 +654,12 @@ export default async function HomePage() {
 
       {/* ================= closer ================= */}
       <hr className="pg-rule" />
-      <section className="pg-sec">
+      <section className="pg-sec sg-host">
+        {/* The closing section carries the moving graticule. It is the calmest section on the page
+            (a heading, two lines and a pair of buttons), so it is the one place a moving background
+            can be read without competing with anything: a coordinate grid behind a closing
+            statement reads as the map the reader is about to go and fill in. */}
+        <ShapeGridField />
         <div className="pg-wrap pg-close">
           <h2 className="pg-d2" data-anim="lines">
             {c.close.title}

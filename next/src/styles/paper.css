@@ -65,6 +65,15 @@
   --mk-field-bg: #FFFFFF;
   --mk-field-ink: #1E293B;   /* 14.48:1 on the field ground */
   --mk-field-hint: #64748B;  /*  4.76:1 — a hint, legible, never mistakable for a value */
+
+  /* The graticule. A coordinate grid is the most on-theme background this product can have: it is
+     what a map looks like before anything is drawn on it. Deliberately faint, because it sits
+     behind text. Measured against the page ground at 1.19:1 — texture, never content. */
+  --mk-grid-line: rgba(1, 74, 181, .10);
+  /* The specular highlight on the hero CTA, and the static edge stroke beneath it. The line takes
+     the brand blue in light mode, where it reads against the fill; see the dark block. */
+  --spec-line: #7FA8E8;
+  --spec-base: #014AB5;
   /* The boundary of an INTERACTIVE control. WCAG 1.4.11 wants 3:1 for the visual information
      that identifies a control, and --mk-line is a decorative hairline at 1.24:1 — correct for a
      divider, too faint for the edge of a button someone is meant to press. Measured: 3.27:1. */
@@ -229,6 +238,35 @@
   content: ''; display: inline-block; width: 5px; height: 5px; border-radius: 100px;
   background: var(--mk-green); margin-left: 6px; vertical-align: middle;
 }
+/* THE NAV PILL, adapted from the free ReactBits PillNav component.
+   One element that slides behind whichever link the cursor is on and returns to the current page
+   when the cursor leaves. Only the EFFECT is taken from the original: it does not build the nav,
+   and it does not use GSAP. See the component file for why.
+
+   The row needs to be a positioning context for it, and its links need to sit above it, so the
+   pill is behind the text without any of the links changing element or order. */
+.mk .mk-nav-links { position: relative; }
+.mk .mk-nav-links a { position: relative; z-index: 1; }
+.mk .mk-nav-pill {
+  position: absolute;
+  top: 0; left: 0;
+  width: 0; height: 0;
+  border-radius: 100px;
+  background: var(--mk-raise);
+  border: 1px solid var(--mk-line);
+  opacity: 0;
+  pointer-events: none;
+  /* Transform only, so the slide runs on the compositor rather than repainting the row. The
+     easing is a soft curve with no overshoot: this element follows a cursor, and anything bouncy
+     reads as lag. */
+  transition: transform .34s cubic-bezier(.22, .61, .36, 1), width .34s cubic-bezier(.22, .61, .36, 1), opacity .2s ease;
+  will-change: transform, width;
+  z-index: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mk .mk-nav-pill { transition: opacity .2s ease; }
+}
+
 .mk-nav-links a {
   font-size: 14px; font-weight: 400; letter-spacing: -.005em; color: var(--mk-muted);
   padding: 4px 0; position: relative; transition: color .2s ease;
@@ -1523,6 +1561,14 @@ html[data-theme='dark'] .mk {
   --mk-field-bg: #1B2537;
   --mk-field-ink: #F1F5F9;   /* 13.9:1 on the field ground */
   --mk-field-hint: #8FA0B8;  /*  5.4:1 — the same job as the light hint */
+
+  /* The graticule, lightened and cooled so it belongs to the dark ground rather than sitting on
+     top of it. Still texture: 1.14:1 against the page ground. */
+  --mk-grid-line: rgba(127, 168, 232, .11);
+  /* The specular line inverts with the rest of the accent: the brand blue at #014AB5 is 2.25:1 on
+     this ground and would not read as a highlight at all. */
+  --spec-line: #C7DBFA;
+  --spec-base: #3A5A96;
   /* Same reasoning as the light theme: a decorative hairline is 1.37:1 here, which is right for
      a divider and wrong for a control's edge. Measured: 3.28:1. */
   --mk-control-line: #566A90;
@@ -2258,3 +2304,69 @@ html[data-theme='dark'] .mk .mk-theme-btn .mk-icon-moon { display: none; }
 }
 .mk .mk-build-note { margin: 0; font-size: 12.5px; line-height: 1.55; color: var(--mk-muted); }
 .mk .mk-build-note a { color: var(--mk-ink); text-decoration: underline; text-underline-offset: 3px; }
+
+/* =====================================================================================
+   THE GRATICULE, AND THE SPECULAR EDGE.
+
+   Both are adapted from free ReactBits components and both are described in full at their
+   component files. What is here is only the layout they need.
+   ===================================================================================== */
+
+/* The moving coordinate grid. It sits BEHIND its section's content and takes no pointer events, so
+   it can never come between a reader and a link. The host section has to be `position: relative`
+   and its content lifted above the canvas; that is done per section rather than globally, because
+   a blanket `z-index` on every section's children would break the sections that manage their own
+   stacking. */
+.mk .sg-field {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+  z-index: 0;
+}
+/* The content above it. `position: relative` is what gives it a stacking context to sit in. */
+.mk .sg-host { position: relative; }
+.mk .sg-host > :not(.sg-field) { position: relative; z-index: 1; }
+/* The section keeps its own ground, so the grid reads as drawn ON the paper rather than as a
+   separate layer floating in front of it. */
+.mk .sg-host::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* The specular highlight on the hero CTA.
+   The host is a span INSIDE the anchor, so the link keeps its href, its routing and its
+   semantics; the canvas is absolutely positioned over the button's own box and takes no events, so
+   every click, every keyboard activation and every middle-click still lands on the anchor. */
+.mk .spec-edge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  isolation: isolate;
+}
+.mk .spec-edge__canvas {
+  position: absolute;
+  /* The position and size are written by the component, because they depend on the anchor's live
+     box: the host span is only the label, while the highlight traces the whole button. These are
+     only the fallback for the frame before the first measurement. */
+  top: -20px;
+  left: -20px;
+  width: calc(100% + 40px);
+  height: calc(100% + 40px);
+  pointer-events: none;
+  z-index: 2;
+}
+/* The label sits above the canvas so the highlight can never wash over the text. */
+.mk .spec-edge > *:not(.spec-edge__canvas) { position: relative; z-index: 1; }
+
+/* On a phone there is no cursor to follow, so the highlight would never light and the WebGL
+   context would be pure cost. The component checks for reduced motion, but not for touch; this
+   hides the canvas where it cannot do its job. */
+@media (hover: none), (max-width: 700px) {
+  .mk .spec-edge__canvas { display: none; }
+}

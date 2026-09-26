@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useId, useRef, useState } from 'react'
 import { chrome, type Locale } from '@/lib/i18n'
 import { LangToggle, ThemeToggle } from './NavControls'
+import NavPill from '@/components/NavPill'
 import { LogoLockup } from '@/components/Logo'
 
 /**
@@ -103,6 +104,10 @@ export function MarketingNav({ locale }: { locale: Locale }) {
 
       {/* Desktop row. Hidden below 900px by CSS. */}
       <div className="mk-nav-links">
+        {/* The pill is a sibling of the links, absolutely positioned behind them. It is decoration:
+            the nav's own markup, aria-current and routing are untouched, and the underline for the
+            current page is still drawn by CSS, so nothing depends on this element existing. */}
+        <NavPill />
         {links.map(({ href, label }) => (
           <Link key={href} href={href} aria-current={pathname === href ? 'page' : undefined}>
             {label}
