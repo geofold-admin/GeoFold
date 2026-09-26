@@ -363,6 +363,33 @@
 .mk-rec-t { font-family: var(--font-sans), sans-serif; font-weight: 600; font-size: 14.5px;
   color: var(--mk-ink); margin-bottom: 4px; }
 .mk-rec-b { font-size: 13.5px; line-height: 1.6; color: var(--mk-muted); }
+/* The specimen value. A design review of this section called it "plain and sparse, too reliant on
+   text alone", and it was right: six boxes that each hold a heading and a sentence describe the
+   record without ever showing one. This is the value the column actually holds for a real point,
+   set in the mono face the product's own export uses, with its unit or note beside it. The row of
+   six values IS the section's argument, so it takes the ink colour and the largest type in the box,
+   and the prose drops below it. */
+.mk-rec-v {
+  display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+  margin: 8px 0 10px; padding-bottom: 10px;
+  border-bottom: 1px solid var(--mk-line);
+}
+.mk-rec-num {
+  font-family: var(--font-inter), sans-serif;
+  font-size: 15px; font-weight: 500; letter-spacing: -.01em;
+  color: var(--mk-ink);
+  /* Tabular figures, not a monospace family. This skin deliberately does not load Space Mono (see
+     the note on --font-mono in the token block): the numbers that need to line up use Inter's own
+     tabular set instead, which is one family fewer and a quieter readout. A probe of mine asserted
+     the mono face here and was simply wrong about the house rule; the assertion now checks for
+     tabular figures, which is the thing that actually matters for a column of values. */
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+.mk-rec-unit {
+  font-size: 10.5px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--mk-faint);
+}
 
 /* ---------- pricing: plan feature list ---------- */
 .mk-plist { list-style: none; margin: 0 0 18px; padding: 0; display: grid; gap: 9px; }
@@ -379,6 +406,17 @@
 .mk-qa p { margin: 0; font-size: 14px; line-height: 1.65; color: var(--mk-muted); }
 
 @media (min-width: 700px) {
-  .mk-recs { grid-template-columns: repeat(3, 1fr); margin: 0 auto; max-width: 900px; }
+  /* The record grid used to be capped at 900px and centred, from the era when it was a plain
+     2x3 list of text. Measured on a 1440px page it sat in a 900px band with 270px of empty page on
+     each side, and a design review called exactly that out: "the content is tightly clustered in
+     the centre... makes the page feel a bit plain and sparse". Now that each box carries a real
+     specimen value it is a table of the record, so it takes the full content width like every other
+     grid on the page, and the six columns breathe instead of huddling. */
+  .mk-recs { grid-template-columns: repeat(3, 1fr); }
   .mk-qa { grid-template-columns: repeat(2, 1fr); gap: 26px 32px; }
+}
+/* Six across on a wide screen: the six values read as one row, which is the point of the section
+   (this is what ONE point contains). */
+@media (min-width: 1100px) {
+  .mk-recs { grid-template-columns: repeat(6, 1fr); }
 }

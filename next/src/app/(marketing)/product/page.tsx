@@ -44,7 +44,7 @@ type Copy = {
   slides: Array<{ kicker: string; title: string; body: string }>
   recordKick: string
   recordTitle: string
-  record: Array<{ t: string; b: string }>
+  record: Array<{ t: string; b: string; v: string; vk: string }>
   formKick: string
   formTitle: string
   formLede: string
@@ -105,20 +105,28 @@ const copy: Record<Locale, Copy> = {
       {
         t: 'Koordinat',
         b: 'Titik WGS 84, disimpan sebagai geografi PostGIS, dan dicetak ke dalam fotonya.',
+        v: '-0.023405, 109.342101',
+        vk: 'EPSG:4326',
       },
       {
         t: 'Akurasi',
         b: 'Angka ±meter yang dilaporkan perangkat saat itu, disimpan apa adanya. Fix yang buruk tetap terlihat buruk.',
+        v: '± 4 m',
+        vk: 'GNSS',
       },
-      { t: 'Waktu pengambilan', b: 'Kapan tombol rana ditekan, bukan kapan datanya terkirim.' },
+      { t: 'Waktu pengambilan', b: 'Kapan tombol rana ditekan, bukan kapan datanya terkirim.', v: '07/09 14:22', vk: 'lokal' },
       {
         t: 'Waktu sinkron',
         b: 'Kapan titik itu sampai di server. Selisihnya adalah jejak kerja offline Anda.',
+        v: '07/09 19:41',
+        vk: '+5 jam 19 mnt',
       },
-      { t: 'Isian formulir', b: 'Nilai dari field yang Anda tentukan sendiri untuk proyek itu.' },
+      { t: 'Isian formulir', b: 'Nilai dari field yang Anda tentukan sendiri untuk proyek itu.', v: '3 field', vk: 'milik Anda' },
       {
         t: 'Foto',
         b: 'Satu foto per titik, di bucket privat, disajikan lewat tautan bertanda tangan berumur pendek.',
+        v: '1 berkas',
+        vk: 'tautan 60 dtk',
       },
     ],
     formKick: 'Formulir',
@@ -194,20 +202,28 @@ const copy: Record<Locale, Copy> = {
       {
         t: 'Coordinates',
         b: 'A WGS 84 point, stored as PostGIS geography, and printed into the photo.',
+        v: '-0.023405, 109.342101',
+        vk: 'EPSG:4326',
       },
       {
         t: 'Accuracy',
         b: 'The ±metres figure the handset reported at the time, kept as-is. A bad fix still looks bad.',
+        v: '± 4 m',
+        vk: 'GNSS',
       },
-      { t: 'Capture time', b: 'When the shutter was pressed, not when the data was sent.' },
+      { t: 'Capture time', b: 'When the shutter was pressed, not when the data was sent.', v: '07/09 14:22', vk: 'local' },
       {
         t: 'Sync time',
         b: 'When the point reached the server. The gap between the two is the record of your offline work.',
+        v: '07/09 19:41',
+        vk: '+5 h 19 m',
       },
-      { t: 'Form values', b: 'The values of the fields you defined yourself for that project.' },
+      { t: 'Form values', b: 'The values of the fields you defined yourself for that project.', v: '3 fields', vk: 'yours', },
       {
         t: 'Photo',
         b: 'One photo per point, in a private bucket, served through short-lived signed links.',
+        v: '1 file',
+        vk: '60 s link',
       },
     ],
     formKick: 'Forms',
@@ -295,10 +311,19 @@ export default async function ProductPage() {
           <span className="mk-kick">{c.recordKick}</span>
           <h2>{c.recordTitle}</h2>
         </div>
+        {/* The record, shown as a specimen rather than described. Each box carries the VALUE the
+            column actually holds for one real point, in the mono face the product itself uses, with
+            the unit beside it. "Six things, every time" is a claim; a row of real values is the
+            evidence for it, and it is the same row the figures elsewhere on the site draw
+            (-0.023405, 109.342101 is Sintang, where the product is built and first surveyed). */}
         <div className="mk-recs">
           {c.record.map((r) => (
             <div className="mk-rec" data-spotlight key={r.t}>
               <div className="mk-rec-t">{r.t}</div>
+              <div className="mk-rec-v">
+                <span className="mk-rec-num">{r.v}</span>
+                <span className="mk-rec-unit">{r.vk}</span>
+              </div>
               <div className="mk-rec-b">{r.b}</div>
             </div>
           ))}
