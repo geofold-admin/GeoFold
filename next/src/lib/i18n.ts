@@ -141,7 +141,7 @@ export const chrome: Record<Locale, {
       rights: 'Seluruh hak cipta dilindungi.',
     },
     seal: {
-      heading: 'Legalitas',
+      heading: 'Badan terdaftar',
       entity: 'GEOFOLD',
       scale: 'Usaha Mikro',
       nib: 'NIB',
@@ -192,7 +192,7 @@ export const chrome: Record<Locale, {
       rights: 'All rights reserved.',
     },
     seal: {
-      heading: 'Legal',
+      heading: 'Registered entity',
       entity: 'GEOFOLD',
       scale: 'Micro Enterprise',
       nib: 'NIB',
