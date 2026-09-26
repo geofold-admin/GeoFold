@@ -285,7 +285,13 @@ textarea.mk-input { min-height: 0; resize: vertical; }
 
 @media (max-width: 900px) {
   .mk-nav { flex-wrap: wrap; gap: 16px; }
-  .mk-nav-links { order: 3; flex-basis: 100%; gap: 18px; overflow-x: auto; }
+  /* The links WRAP rather than scroll.
+     They used to be `overflow-x: auto`, which hid the last two items ("About", "Contact") off
+     the right edge with nothing on screen to say they were there — no fade, no chevron, no
+     scrollbar on a phone. Measured at 360px: 467px of links in a 360px box, so two links were
+     unreachable unless the visitor happened to swipe a row that does not look swipeable.
+     Wrapping costs one extra line of header and hides nothing, which is the right trade. */
+  .mk-nav-links { order: 3; flex-basis: 100%; flex-wrap: wrap; gap: 10px 18px; }
 }
 
 @media (max-width: 680px) {

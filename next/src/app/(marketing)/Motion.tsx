@@ -43,6 +43,8 @@ export function Motion() {
       let spotCleanup: (() => void) | undefined
       /* Same for the tilt listeners. */
       let tiltCleanup: (() => void) | undefined
+      /* Same for the click-spark canvas. */
+      let sparkCleanup: (() => void) | undefined
 
       /* ---------- 1. hero headline: per-character reveal ---------- */
       const splits: SplitText[] = []
@@ -354,6 +356,103 @@ export function Motion() {
         tiltCleanup = () => { for (const off of tilts) off() }
       }
 
+      /* ---------- 15. the click mark ----------
+         A short spray of survey ticks where the visitor clicks, then gone. Adapted from React
+         Bits' ClickSpark: the original wraps its children in a canvas that sizes itself to the
+         parent, which means a canvas per clickable thing. This is ONE fixed, full-viewport
+         canvas for the whole site, and the burst is drawn in screen space.
+
+         The mark is the same ranging-rod tick the rest of the site uses, not a generic star, and
+         it fires ONLY on a real activation — a click that lands on a link or a button, which is
+         the moment worth marking. A click on empty page is not a moment.
+
+         It draws to a canvas that is removed from hit-testing and from the accessibility tree, it
+         stops as soon as the sparks die, and it is skipped entirely on touch and under
+         reduced-motion (a click spark on a phone would fire on every scroll-stop tap). */
+      const finePointer = window.matchMedia('(pointer: fine)').matches
+      if (finePointer) {
+        const canvas = document.createElement('canvas')
+        canvas.className = 'pg-spark'
+        canvas.setAttribute('aria-hidden', 'true')
+        document.body.appendChild(canvas)
+        const ctx = canvas.getContext('2d')
+
+        if (ctx) {
+          const dpr = Math.min(window.devicePixelRatio || 1, 2)
+          const size = () => {
+            canvas.width = Math.round(window.innerWidth * dpr)
+            canvas.height = Math.round(window.innerHeight * dpr)
+            canvas.style.width = `${window.innerWidth}px`
+            canvas.style.height = `${window.innerHeight}px`
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+          }
+          size()
+
+          const SPARKS = 7
+          const LIFE = 460
+          const REACH = 26
+          let sparks: Array<{ x: number; y: number; a: number; born: number }> = []
+          let raf = 0
+
+          const paint = (now: number) => {
+            ctx.clearRect(0, 0, window.innerWidth, window.innerHeight)
+            const alive: typeof sparks = []
+            for (const s of sparks) {
+              const t = (now - s.born) / LIFE
+              if (t >= 1) continue
+              alive.push(s)
+              const ease = 1 - Math.pow(1 - t, 3)
+              const dist = ease * REACH
+              const alpha = 1 - t
+              const len = 7 * (1 - t * 0.55)
+              const x = s.x + Math.cos(s.a) * dist
+              const y = s.y + Math.sin(s.a) * dist
+              ctx.save()
+              ctx.translate(x, y)
+              ctx.rotate(s.a + Math.PI / 2)
+              // The site's marker orange, drawn as a short rod with a lit head.
+              ctx.strokeStyle = `rgba(243, 93, 25, ${alpha.toFixed(3)})`
+              ctx.lineWidth = 1.6
+              ctx.beginPath()
+              ctx.moveTo(0, -len / 2)
+              ctx.lineTo(0, len / 2)
+              ctx.stroke()
+              ctx.restore()
+            }
+            sparks = alive
+            if (sparks.length) {
+              raf = requestAnimationFrame(paint)
+            } else {
+              ctx.clearRect(0, 0, window.innerWidth, window.innerHeight)
+              raf = 0
+            }
+          }
+
+          const onClick = (e: MouseEvent) => {
+            // Only where it means something: an activation on a control.
+            const el = e.target as HTMLElement | null
+            if (!el?.closest?.('a, button, [role="button"], summary, label, input, select')) return
+            const born = performance.now()
+            for (let i = 0; i < SPARKS; i++) {
+              sparks.push({ x: e.clientX, y: e.clientY, a: (i / SPARKS) * Math.PI * 2, born })
+            }
+            if (!raf) raf = requestAnimationFrame(paint)
+          }
+
+          document.addEventListener('click', onClick, { passive: true })
+          window.addEventListener('resize', size)
+
+          sparkCleanup = () => {
+            document.removeEventListener('click', onClick)
+            window.removeEventListener('resize', size)
+            if (raf) cancelAnimationFrame(raf)
+            canvas.remove()
+          }
+        } else {
+          canvas.remove()
+        }
+      }
+
       /* Fonts change line breaking, which changes every ScrollTrigger start position measured
          before they landed. autoSplit handles the splits; this handles everything else. */
       document.fonts?.ready.then(() => ScrollTrigger.refresh())
@@ -364,6 +463,7 @@ export function Motion() {
         if (nav) nav.classList.remove('is-stuck')
         spotCleanup?.()
         tiltCleanup?.()
+        sparkCleanup?.()
       }
     })
 

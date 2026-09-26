@@ -6,13 +6,21 @@
  * redrawn lookalike: the outlines were traced off the source so the curves and the joins are the
  * client's own.
  *
- * WHY THERE ARE TWO FILES, AND WHY THIS SWITCHES BY THEME. Measured on the source: the grid lines
- * inside the G are not white ink at all, they are holes — those pixels are exactly the background
- * colour, and there is not one pure-white pixel in the file. The mark is a cut-out, so it inherits
- * whatever it sits on. On white that works with the brand blue; on the near-black dark theme the
- * blue falls to about 1.4:1 and the G effectively vanishes. The `-dark` file is the same geometry
- * with the blue repainted to a pale sky tint, which restores the contrast. Orange is untouched in
- * both — it reads strongly on either ground, and it is the accent that carries the brand.
+ * THE COLOURS ARE FROZEN. Blue #0246b1, orange #fa5f1f, in every theme. The mark is the mark; it
+ * does not get recoloured to suit a background.
+ *
+ * WHY THAT IS NOT TRIVIAL. Measured on the source: the grid lines inside the G are not white ink
+ * at all, they are holes — those pixels are exactly the background colour, and there is not one
+ * pure-white pixel in the file. The mark is a cut-out, so it inherits whatever sits behind it. On
+ * the light ground the brand blue measures 7.99:1 and everything is fine; on the dark theme's
+ * ground it falls to 2.14:1 and the G effectively disappears.
+ *
+ * An earlier attempt solved that by repainting the blue to a pale tint. That was wrong — it fixed
+ * the contrast by destroying the brand — and the client rejected it. The correct fix is the one
+ * every brand guideline already prescribes: give the mark its clear space. On a dark ground the
+ * mark sits on a #F8FAFC plate. Because the globe lines are holes, they then show that same
+ * #F8FAFC, so the logo reads EXACTLY as it does on the light theme. Nothing about the artwork
+ * changes; only what is behind it.
  *
  * WHY BOTH IMAGES ARE IN THE DOM. Swapping `src` from JavaScript means the wrong variant paints
  * for a frame, and reading the theme in an effect means the server and client disagree on the
@@ -34,15 +42,27 @@ export function Logo({
   size?: number
   /**
    * `auto` follows the site theme (the default, and almost always what you want).
-   * `light` pins the blue-on-light artwork; `dark` pins the pale artwork. Pin only on a surface
-   * whose background does NOT follow the theme, e.g. a permanently navy band.
+   * `light` pins the bare mark, for grounds that are already light. `dark` pins the plated mark,
+   * for grounds that are already dark — e.g. a permanently navy band, where `auto` would be wrong
+   * because the band does not follow the theme.
    */
   variant?: 'auto' | 'light' | 'dark'
   className?: string
   alt?: string
 }) {
-  // viewBox is 578x429, so width follows height at that ratio.
-  const width = Math.round((size * 578) / 429)
+  // The bare mark's viewBox is 578x429; the plated one is 638x489.
+  //
+  // `size` means THE ARTWORK's height, not the file's. The plated file is taller than the artwork
+  // inside it (it has the plate's padding above and below), so rendering it at `size` would draw
+  // the mark about 12% smaller — and the logo would visibly shrink the moment the theme flipped.
+  // Scaling the plated render height by the file ratio keeps the mark itself the same size in
+  // both themes, which is what "the same logo" has to mean.
+  const PLATE_RATIO = 489 / 429
+  const geom = (src: string) =>
+    src.includes('plate')
+      ? { w: 638, h: 489, render: Math.round(size * PLATE_RATIO) }
+      : { w: 578, h: 429, render: size }
+
   const base = `gf-logo${className ? ` ${className}` : ''}`
 
   /*
@@ -57,31 +77,34 @@ export function Logo({
    * `loading` is explicit because the header mark is above the fold and must not be deferred,
    * while the footer copy can be.
    */
-  const mark = (src: string, which: 'light' | 'dark', accessible: boolean, eager: boolean) => (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={src}
-      alt={accessible ? alt : ''}
-      aria-hidden={accessible ? undefined : true}
-      width={width}
-      height={size}
-      className={`${base} gf-logo-${which}`}
-      style={{ height: size, width: 'auto' }}
-      loading={eager ? 'eager' : 'lazy'}
-      decoding="async"
-    />
-  )
+  const mark = (src: string, which: 'light' | 'dark', accessible: boolean, eager: boolean) => {
+    const g = geom(src)
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt={accessible ? alt : ''}
+        aria-hidden={accessible ? undefined : true}
+        width={g.w}
+        height={g.h}
+        className={`${base} gf-logo-${which}`}
+        style={{ height: g.render, width: 'auto' }}
+        loading={eager ? 'eager' : 'lazy'}
+        decoding="async"
+      />
+    )
+  }
 
   // A pinned variant renders one file and never flips — no dead weight in the DOM.
   if (variant === 'light') return mark('/geofold-mark.svg', 'light', true, true)
-  if (variant === 'dark') return mark('/geofold-mark-dark.svg', 'dark', true, true)
+  if (variant === 'dark') return mark('/geofold-mark-plate.svg', 'dark', true, true)
 
   // `auto`: both in the DOM, CSS reveals one. Only the visible one is announced, so a screen
   // reader says "GeoFold" once rather than twice.
   return (
     <span className="gf-logo-swap">
       {mark('/geofold-mark.svg', 'light', true, true)}
-      {mark('/geofold-mark-dark.svg', 'dark', false, false)}
+      {mark('/geofold-mark-plate.svg', 'dark', false, false)}
     </span>
   )
 }

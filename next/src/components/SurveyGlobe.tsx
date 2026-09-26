@@ -57,8 +57,8 @@ export function SurveyGlobe({ className }: { className?: string }) {
 
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)')
     const canHover = window.matchMedia('(hover: hover) and (pointer: fine)')
-    const accent = getComputedStyle(canvas).getPropertyValue('--globe-accent').trim() || '#f07a26'
-    const line = getComputedStyle(canvas).getPropertyValue('--globe-line').trim() || '#112a46'
+    const accent = getComputedStyle(canvas).getPropertyValue('--globe-accent').trim() || '#F35D19'
+    const line = getComputedStyle(canvas).getPropertyValue('--globe-line').trim() || '#9DB4D4'
 
     let w = 0
     let h = 0

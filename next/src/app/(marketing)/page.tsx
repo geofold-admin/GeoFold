@@ -5,6 +5,7 @@ import { FigAerial, FigCapture, FigExport, FigMap, FigOffline } from './Figures'
 import { Motion } from './Motion'
 import { SurveyField } from '@/components/SurveyField'
 import { SurveyGlobe } from '@/components/SurveyGlobe'
+import { MagnetField } from '@/components/MagnetField'
 import type { Locale } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'
 import { PREMIUM_DAYS, PREMIUM_PRICE_LABEL, PREMIUM_STORAGE_LABEL } from '@/lib/pricing'
@@ -479,6 +480,11 @@ export default async function HomePage() {
 
       {/* ================= the argument ================= */}
       <section className="pg-sec pg-sec-dark">
+        {/* A field of ranging-rod ticks that swing toward the pointer, like needles finding
+            north. Adapted from React Bits' MagnetLines — see MagnetField for what changed and
+            why. It is decoration with a fact attached: every rod is the same survey mark the
+            product drops on a map. */}
+        <MagnetField />
         <div className="pg-wrap">
           <div className="pg-head">
             <div className="pg-head-top">

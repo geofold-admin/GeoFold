@@ -76,9 +76,9 @@ export function SurveyField({ className }: { className?: string }) {
     const readTheme = () => {
       const cs = getComputedStyle(canvas)
       return {
-        line: cs.getPropertyValue('--mk-line').trim() || '#e7e7ea',
-        accent: cs.getPropertyValue('--mk-green').trim() || '#1b4dff',
-        ink: cs.getPropertyValue('--mk-ink').trim() || '#0b0b0c',
+        line: cs.getPropertyValue('--mk-line').trim() || '#DCE3EC',
+        accent: cs.getPropertyValue('--mk-green').trim() || '#014AB5',
+        ink: cs.getPropertyValue('--mk-ink').trim() || '#334155',
       }
     }
 

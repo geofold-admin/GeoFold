@@ -34,17 +34,18 @@
 .gf-ck {
   /* Falls back to the light palette's literal values when the modal is rendered outside a
      `.mk` subtree (the signed-in app can open it too), so it is never unstyled. */
-  --mk-bg: var(--mk-bg, #ffffff);
-  --mk-raise: var(--mk-raise, #f6f6f7);
-  --mk-panel: var(--mk-panel, #ffffff);
-  --mk-line: var(--mk-line, #e7e7ea);
-  --mk-ink: var(--mk-ink, #0b0b0c);
-  --mk-prose: var(--mk-prose, #52525b);
-  --mk-muted: var(--mk-muted, #71717a);
-  --mk-faint: var(--mk-faint, #71717a);
-  --mk-green: var(--mk-green, #1b4dff);
-  --mk-green-2: var(--mk-green-2, #1339cc);
-  --mk-on-green: var(--mk-on-green, #ffffff);
+  --mk-bg: var(--mk-bg, #F8FAFC);
+  --mk-raise: var(--mk-raise, #EEF2F7);
+  --mk-panel: var(--mk-panel, #FFFFFF);
+  --mk-line: var(--mk-line, #DCE3EC);
+  --mk-control-line: var(--mk-control-line, #7A8CA6);
+  --mk-ink: var(--mk-ink, #334155);
+  --mk-prose: var(--mk-prose, #52647D);
+  --mk-muted: var(--mk-muted, #475569);
+  --mk-faint: var(--mk-faint, #475569);
+  --mk-green: var(--mk-green, #014AB5);
+  --mk-green-2: var(--mk-green-2, #013A8F);
+  --mk-on-green: var(--mk-on-green, #F8FAFC);
 
   width: 100%; max-width: 460px; max-height: calc(100vh - 32px);
   /* 100dvh tracks the shrinking/growing URL bar on mobile; the vh line above is the fallback for
