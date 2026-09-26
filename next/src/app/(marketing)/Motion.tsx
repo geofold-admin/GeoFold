@@ -102,7 +102,7 @@ export function Motion() {
                 duration: 0.75,
                 ease: EASE,
                 stagger: 0.08,
-                scrollTrigger: { trigger: el, start: 'top 88%', once: true },
+                scrollTrigger: { trigger: el, start: 'top 88%', end: 'bottom top', toggleActions: 'play none none none' },
               })
             },
           }),
@@ -117,7 +117,7 @@ export function Motion() {
           duration: 0.7,
           ease: EASE_SOFT,
           delay: Number(el.dataset.animDelay ?? 0),
-          scrollTrigger: { trigger: el, start: 'top 90%', once: true },
+          scrollTrigger: { trigger: el, start: 'top 90%', end: 'bottom top', toggleActions: 'play none none none' },
           onComplete: () => el.classList.add('anim-done'),
         })
       })
@@ -132,7 +132,7 @@ export function Motion() {
           /* `grid: 'auto'` lets GSAP infer rows and columns from the CSS grid, so a 2x2 of
              cards ripples diagonally rather than firing as one flat list. */
           stagger: { each: 0.07, from: 'start', grid: 'auto' },
-          scrollTrigger: { trigger: el, start: 'top 88%', once: true },
+          scrollTrigger: { trigger: el, start: 'top 88%', end: 'bottom top', toggleActions: 'play none none none' },
         })
       })
 
@@ -141,19 +141,39 @@ export function Motion() {
         const copy = el.querySelector('.pg-row-copy')
         const art = el.querySelector('.pg-row-art')
         gsap
-          .timeline({ scrollTrigger: { trigger: el, start: 'top 82%', once: true } })
+          .timeline({ scrollTrigger: { trigger: el, start: 'top 82%', end: 'bottom top', toggleActions: 'play none none none' } })
           .from(copy, { y: 30, opacity: 0, duration: 0.7, ease: EASE })
           .from(art, { y: 40, opacity: 0, duration: 0.8, ease: EASE }, '<0.08')
       })
 
       /* ---------- 6. parallax, on decorative layers only ----------
          Never on body copy or on a control: it hurts reading and it moves click targets away
-         from where the pointer expects them. */
+         from where the pointer expects them.
+
+         THIS WAS A CRASH. It was written with `scrub: 0.6` and nothing else: no `start`, no `end`.
+         A scrubbed trigger with no start/end is supposed to default to the element's own travel,
+         and it does, but the element here is `el.parentElement ?? el` and for the hero figure that
+         parent is a grid cell whose box is not yet laid out on the first scroll tick after
+         hydration. GSAP then resolves the trigger's end position against a target it cannot
+         measure, reads `.end` off the resulting undefined, and throws
+         `Cannot read properties of undefined (reading 'end')`.
+
+         The throw lands inside GSAP's own scroll handler, so React's error boundary catches it and
+         replaces the ENTIRE PAGE with "THIS PAGE COULDN'T LOAD". Measured: the body went from 4414
+         characters of content to 70 characters of error page, on every page that has a parallax
+         element, at every width, and it reproduced on the commit BEFORE this work as well, so it
+         was pre-existing and had simply never been caught.
+
+         The fix states the range explicitly instead of relying on the default. `start: 'top bottom'`
+         and `end: 'bottom top'` is the full travel of the element through the viewport, which is
+         what the default resolves to once layout exists, so the motion is unchanged. Stating it
+         means GSAP never has to infer a box that is not ready. */
       document.querySelectorAll<HTMLElement>('[data-parallax]').forEach((el) => {
+        const trigger = el.parentElement ?? el
         gsap.to(el, {
           yPercent: Number(el.dataset.parallax ?? -8),
           ease: 'none',
-          scrollTrigger: { trigger: el.parentElement ?? el, scrub: 0.6 },
+          scrollTrigger: { trigger, start: 'top bottom', end: 'bottom top', scrub: 0.6 },
         })
       })
 
@@ -217,7 +237,7 @@ export function Motion() {
           v: target,
           duration: 1.3,
           ease: EASE_SOFT,
-          scrollTrigger: { trigger: el, start: 'top 90%', once: true },
+          scrollTrigger: { trigger: el, start: 'top 90%', end: 'bottom top', toggleActions: 'play none none none' },
           onUpdate() {
             el.textContent = `${prefix}${Math.round(proxy.v).toLocaleString(numberLocale)}${suffix}`
           },
@@ -273,12 +293,16 @@ export function Motion() {
         })
       })
 
-      /* ---------- 11. the nav condenses once the page has been scrolled ---------- */
+      /* ---------- 11. the nav condenses once the page has been scrolled ----------
+         `end: 'max'`, not `end: 99999`. A numeric end is not one of the forms GSAP documents for
+         this value, and the string keyword is the one that means "the end of the scroller". The
+         number happened to work for the toggle, but it is the kind of value that turns into a
+         silent no-op the moment the maths around it changes, so it is stated properly. */
       const nav = document.querySelector<HTMLElement>('.mk-nav')
       if (nav) {
         ScrollTrigger.create({
           start: 'top -40',
-          end: 99999,
+          end: 'max',
           onToggle: (self) => nav.classList.toggle('is-stuck', self.isActive),
         })
       }

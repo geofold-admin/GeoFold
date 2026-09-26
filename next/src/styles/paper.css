@@ -196,7 +196,11 @@
   background: rgba(255, 255, 255, .94);
   backdrop-filter: blur(14px) saturate(1.4); -webkit-backdrop-filter: blur(14px) saturate(1.4);
   border-bottom: 1px solid transparent;
-  padding: 20px var(--mk-pad);
+  /* 13px, down from 20px. The bar measured 87px at 1440px, and 40 of those were this padding alone
+     against 46px of content: the chrome was spending more on air than on itself. 13px keeps the
+     controls off the edge and lands the bar at 72px, which is the range a marketing header is
+     normally read at. Nothing here is decoration, so nothing was removed to get there. */
+  padding: 13px var(--mk-pad);
   transition: padding .3s cubic-bezier(.22, .61, .36, 1), border-color .3s ease,
               background-color .3s ease;
 }
@@ -204,7 +208,7 @@
    rule appears, so the page has a sense of having been scrolled without a second sticky element
    to say so. */
 .mk-nav.is-stuck {
-  padding: 12px var(--mk-pad); border-bottom-color: var(--mk-line); background: #ffffff;
+  padding: 9px var(--mk-pad); border-bottom-color: var(--mk-line); background: #ffffff;
 }
 
 .mk-wordmark {
@@ -306,50 +310,66 @@
 
 .mk .mk-footer-main {
   display: flex; justify-content: space-between; align-items: flex-start;
-  gap: 32px; flex-wrap: wrap; padding: 44px var(--mk-pad) 36px;
+  gap: 28px; flex-wrap: wrap; padding: 30px var(--mk-pad) 26px;
 }
 .mk .mk-footer-brand-block { max-width: 34ch; }
-.mk .mk-footer-brand { margin-bottom: 10px; }
+.mk .mk-footer-brand { margin-bottom: 8px; }
 
-.mk .mk-footer-cols { display: flex; gap: clamp(28px, 5vw, 56px); font-size: 13px; flex-wrap: wrap; }
-.mk .mk-footer-col { display: flex; flex-direction: column; gap: 9px; min-width: 92px; }
-.mk .mk-footer-col > span { font-weight: 500; margin-bottom: 3px; }
+.mk .mk-footer-cols { display: flex; gap: clamp(24px, 4vw, 48px); font-size: 13px; flex-wrap: wrap; }
+.mk .mk-footer-col { display: flex; flex-direction: column; gap: 7px; min-width: 84px; }
+.mk .mk-footer-col > span { font-weight: 500; margin-bottom: 1px; }
 
-/* ---- the trust panel ---- */
+/* ---- the trust panel ----
+   Compacted after measurement. This block was 66% of the footer (407 of 615px on desktop, 545 of
+   1032px on a phone), and the footer as a whole was 115% of a phone viewport, so the panel was
+   carrying most of a defect the reader feels on every page. The content is unchanged and every
+   figure is still here, because this is what a payment gateway's verification team reads. What
+   changed is the packing:
+
+     - NIB and KBLI were stacked label-over-value, two rows of two lines. They are two short
+       facts, so they now sit side by side on one line with the label inline: 139px -> 46px.
+     - The padding was 32/40px. It is 22/26px.
+     - "SAYBA ARC" was set at clamp(26px, 3.4vw, 40px), a hero-sized word inside a footer. It is
+       now clamp(19px, 2.2vw, 27px): still the largest thing in the block, no longer the largest
+       thing on the page.
+     - The explanatory notes drop to 11.5px and tighten to 1.5 line-height. They are read by the
+       person checking the registration, not by every visitor, and they stay legible at that size.
+*/
 .mk .mk-footer-legal {
   border-top: 1px solid var(--mk-line);
   background: var(--mk-raise);
-  display: grid; gap: clamp(26px, 4vw, 56px);
-  padding: 32px var(--mk-pad) 40px;
+  display: grid; gap: clamp(20px, 3vw, 48px);
+  padding: 22px var(--mk-pad) 26px;
 }
 
 .mk .mk-seal-heading {
   font-family: var(--font-inter), sans-serif;
-  font-size: 10.5px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase;
-  color: var(--mk-faint); margin: 0 0 12px;
+  font-size: 10px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--mk-faint); margin: 0 0 8px;
 }
 
 .mk .mk-seal-entity {
-  margin: 0 0 16px; font-size: 17px; line-height: 1.2; color: var(--mk-ink);
-  font-family: var(--font-tight), sans-serif; letter-spacing: -.01em;
+  margin: 0 0 10px; font-size: 14px; line-height: 1.3; color: var(--mk-ink);
+  font-family: var(--font-inter), sans-serif; letter-spacing: -.005em;
 }
-.mk .mk-seal-entity strong { font-weight: 500; }
-.mk .mk-seal-scale { color: var(--mk-muted); font-size: 15px; }
+.mk .mk-seal-entity strong { font-weight: 600; }
+.mk .mk-seal-scale { color: var(--mk-muted); font-size: 13px; }
 
-/* The two figures. A definition list, because that is what they are: a label and its value. */
-.mk .mk-seal-rows { margin: 0 0 18px; display: grid; gap: 12px; }
-.mk .mk-seal-rows > div { display: grid; gap: 3px; }
+/* The two figures, side by side. A label and its value are one line each; stacking them cost 93px
+   of height for no gain in legibility. */
+.mk .mk-seal-rows { margin: 0 0 12px; display: flex; flex-wrap: wrap; gap: 6px 28px; }
+.mk .mk-seal-rows > div { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
 .mk .mk-seal-rows dt {
-  font-family: var(--font-inter), sans-serif; font-size: 10.5px; font-weight: 500;
-  letter-spacing: .14em; text-transform: uppercase; color: var(--mk-faint);
+  font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--mk-faint);
 }
 .mk .mk-seal-rows dd {
-  margin: 0; font-family: var(--font-inter), sans-serif; font-size: 15px; font-weight: 500;
+  margin: 0; font-family: var(--font-inter), sans-serif; font-size: 13.5px; font-weight: 500;
   color: var(--mk-ink); font-variant-numeric: tabular-nums; letter-spacing: .01em;
 }
 .mk .mk-seal-kbli-label {
-  display: block; margin-top: 3px; font-size: 12.5px; font-weight: 400;
-  color: var(--mk-muted); letter-spacing: 0; line-height: 1.45; max-width: 46ch;
+  display: block; margin-top: 2px; font-size: 11.5px; font-weight: 400;
+  color: var(--mk-muted); letter-spacing: 0; line-height: 1.45; max-width: 52ch;
 }
 
 /* The badge. A pill with a plate and a line — the same idiom as the nav controls.
@@ -357,28 +377,28 @@
    boundary of something interactive, and this is a link to the OSS checker. --mk-line is a
    decorative hairline at 1.29:1, which is right for a divider and too faint for a control edge. */
 .mk .mk-seal-oss {
-  display: inline-flex; align-items: center; gap: 9px;
-  padding: 7px 14px 7px 8px; border: 1px solid var(--mk-control-line); border-radius: 100px;
-  background: var(--mk-panel); color: var(--mk-prose); font-size: 12.5px; font-weight: 500;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 5px 12px 5px 6px; border: 1px solid var(--mk-control-line); border-radius: 100px;
+  background: var(--mk-panel); color: var(--mk-prose); font-size: 12px; font-weight: 500;
   text-decoration: none; transition: border-color .2s ease, color .2s ease;
 }
 .mk .mk-seal-oss:hover { border-color: var(--mk-ink); color: var(--mk-ink); opacity: 1; }
 .mk .mk-seal-oss-mark {
-  display: inline-grid; place-items: center; width: 30px; height: 22px; border-radius: 100px;
+  display: inline-grid; place-items: center; width: 26px; height: 19px; border-radius: 100px;
   background: var(--mk-ink); color: var(--mk-bg);
-  font-family: var(--font-inter), sans-serif; font-size: 9.5px; font-weight: 600;
+  font-family: var(--font-inter), sans-serif; font-size: 9px; font-weight: 600;
   letter-spacing: .08em;
 }
 
 .mk .mk-seal-note {
-  margin: 14px 0 0; font-size: 12.5px; line-height: 1.6; color: var(--mk-faint); max-width: 52ch;
+  margin: 10px 0 0; font-size: 11.5px; line-height: 1.5; color: var(--mk-faint); max-width: 62ch;
 }
 
 /* ---- the parent ---- */
 .mk .mk-parent-link {
-  display: inline-flex; align-items: baseline; gap: 7px;
+  display: inline-flex; align-items: baseline; gap: 6px;
   font-family: var(--font-tight), sans-serif; font-weight: 500;
-  font-size: clamp(26px, 3.4vw, 40px); letter-spacing: -.03em; line-height: 1;
+  font-size: clamp(19px, 2.2vw, 27px); letter-spacing: -.03em; line-height: 1;
   color: var(--mk-ink); text-decoration: none;
   transition: color .2s ease;
 }
@@ -393,14 +413,32 @@
   .mk .mk-footer-legal {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     align-items: start;
-    gap: 64px;
+    gap: 56px;
   }
-  .mk .mk-parent { padding-left: clamp(0px, 3vw, 40px); border-left: 1px solid var(--mk-line); }
+  .mk .mk-parent { padding-left: clamp(0px, 3vw, 36px); border-left: 1px solid var(--mk-line); }
 }
 
 @media (max-width: 859px) {
-  .mk .mk-footer-cols { gap: 26px 34px; }
-  .mk .mk-footer-main { padding-bottom: 30px; }
+  .mk .mk-footer-cols { gap: 14px 20px; }
+  .mk .mk-footer-main { padding-bottom: 22px; }
+}
+
+/* A phone gets its own packing. At 390px the footer still measured 846px, 94% of the viewport, and
+   the two blocks responsible were the link columns (230px, because five labelled groups wrap onto
+   two rows) and the registration rows (92px, because the KBLI description runs to two lines at
+   that width). Both are made denser rather than shorter: no link is dropped, no figure is removed,
+   and the KBLI description stays in full because it is the line that tells a verifier what the
+   number means. Only the leading, the gaps and the description's size come down. */
+@media (max-width: 620px) {
+  .mk .mk-footer-main { padding: 24px var(--mk-pad) 20px; }
+  .mk .mk-footer-cols { gap: 12px 18px; font-size: 12.5px; }
+  .mk .mk-footer-col { gap: 4px; min-width: 76px; }
+  .mk .mk-footer-col > span { margin-bottom: 0; }
+  .mk .mk-copy { line-height: 1.5; }
+  .mk .mk-footer-legal { padding: 18px var(--mk-pad) 22px; gap: 18px; }
+  .mk .mk-seal-rows { gap: 4px 18px; margin-bottom: 10px; }
+  .mk .mk-seal-kbli-label { font-size: 11px; line-height: 1.4; }
+  .mk .mk-seal-note { margin-top: 8px; }
 }
 
 
@@ -515,6 +553,27 @@
 .mk .pg-wrap { max-width: var(--pg-max); margin: 0 auto; padding-inline: var(--mk-pad); width: 100%; }
 .mk .pg-sec { padding-block: clamp(72px, 11vw, 150px); position: relative; }
 .mk .pg-sec-tint { background: var(--mk-raise); }
+
+/* The contour field layer, behind the how-it-works section.
+   Sized to the section and clipped, so the canvas can be any size internally without the section
+   growing to match. The mask fades it out at the top and bottom edges: a hard-edged canvas against
+   a flat band reads as a pasted-on rectangle, and the point of this layer is that the section
+   appears to have ground under it. z-index 0 with the content lifted above it, so the copy is
+   never behind a canvas even if a stacking context changes. */
+.mk .pg-sec-field {
+  position: absolute; inset: 0; overflow: hidden; z-index: 0;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 18%, #000 82%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 18%, #000 82%, transparent 100%);
+}
+.mk .pg-sec-field > .pg-topo { width: 100%; height: 100%; }
+.mk .pg-sec-tint > .pg-wrap { position: relative; z-index: 1; }
+
+/* The field's ink. --mk-line is the hairline token: it is deliberately faint, which is right for a
+   divider and right here too, because this is ground rather than content. In dark mode --mk-line
+   inverts to a light hairline, so the contours stay visible on the dark band without a second
+   token. --mk-line-field exists as an override point so the field can be tuned without moving the
+   dividers with it. */
+.mk { --mk-line-field: var(--mk-line); }
 /* --mk-deep, NOT --mk-ink. Both are near-black in the light theme, so painting this band with
    the ink token looked identical and shipped that way. In dark they part company: --mk-ink
    inverts to near-white (it is a TEXT colour), so the band turned into a white slab while its

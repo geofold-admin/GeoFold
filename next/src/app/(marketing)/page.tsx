@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { FigAerial, FigCapture, FigExport, FigMap, FigOffline } from './Figures'
 import { SurveyField } from '@/components/SurveyField'
 import { SurveyGlobe } from '@/components/SurveyGlobe'
+import { TopographyField } from '@/components/TopographyField'
 import { MagnetField } from '@/components/MagnetField'
 import type { Locale } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'
@@ -452,8 +453,18 @@ export default async function HomePage() {
 
       {/* ================= how it works, pinned =================
           The left column pins while the three steps scroll past it and light up in turn. Below
-          1000px the pin never engages and this is three ordinary stacked cards. */}
+          1000px the pin never engages and this is three ordinary stacked cards.
+
+          The contour field behind this section comes from ReactBits' free `Topography` background,
+          adapted. It is placed HERE rather than in the hero because the hero already carries
+          SurveyField, and two canvases of equal weight in the same viewport is the thing this
+          project's house rules warn against. This section describes the survey workflow, so terrain
+          contours behind it are the one background that means something: the reader is being told
+          how a piece of ground becomes a record. */}
       <section className="pg-sec pg-sec-tint">
+        <div className="pg-sec-field" aria-hidden="true">
+          <TopographyField />
+        </div>
         <div className="pg-wrap">
           <div className="pg-scene" data-scene>
             <div className="pg-scene-fixed" data-scene-fixed>
