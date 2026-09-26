@@ -249,7 +249,7 @@ const copy: Record<Locale, Copy> = {
       {
         kicker: 'Drone',
         title: 'Aerial photos join the same queue',
-        body: 'The DJI build photographs from the aircraft with the aircraft coordinates, then files the results into the same project as a walked survey.',
+        body: 'The DJI drone build captures from the aircraft, with the aircraft\'s own coordinates, then files the results into the same project as a walked survey.',
       },
     ],
     stepsMicro: 'How it works',
