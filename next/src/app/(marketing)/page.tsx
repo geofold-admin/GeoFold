@@ -2,12 +2,8 @@ import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { FigAerial, FigCapture, FigExport, FigHero, FigMap, FigOffline } from './Figures'
-import { SurveyField } from '@/components/SurveyField'
 import { SurveyGlobe } from '@/components/SurveyGlobe'
-import { TopographyField } from '@/components/TopographyField'
-import ShapeGridField from '@/components/ShapeGridField'
 import SpecularEdge from '@/components/SpecularEdge'
-import { MagnetField } from '@/components/MagnetField'
 import type { Locale } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'
 import { pageMetadata } from '@/lib/seo'
@@ -383,15 +379,13 @@ export default async function HomePage() {
           system and mounting it per page would tear it down and rebuild it on every navigation. */}
 
       {/* ================= hero =================
-          THE SURVEY FIELD. A canvas graticule with waypoints that lean away from the cursor and
-          spring back: the one piece of pointer-reactive motion on the site, and the reason the
-          hero reads as a map rather than as a headline on a white page. It is `aria-hidden`
-          decoration sitting behind the copy, it never eats a click, and it draws nothing at all
-          when the visitor prefers reduced motion. See SurveyField.tsx for the full argument. */}
+          THE GROUND IS GLOBAL NOW. The hero used to carry its own survey graticule, the
+          how-it-works section a contour field, the argument band a magnet field and the closing
+          section a shape grid — four effects, each sized to its own section, so crossing a section
+          boundary changed the background. The brief asked for ONE background behind everything,
+          so all four were removed and replaced by SiteGround, which is mounted once in the
+          (marketing) layout and fixed to the viewport. See SiteGround.tsx. */}
       <section className="pg-sec pg-hero">
-        <div className="pg-hero-field" aria-hidden="true">
-          <SurveyField />
-        </div>
         <div className="pg-wrap pg-hero-inner">
           <div className="pg-hero-grid">
             <div>
@@ -510,16 +504,9 @@ export default async function HomePage() {
           The left column pins while the three steps scroll past it and light up in turn. Below
           1000px the pin never engages and this is three ordinary stacked cards.
 
-          The contour field behind this section comes from ReactBits' free `Topography` background,
-          adapted. It is placed HERE rather than in the hero because the hero already carries
-          SurveyField, and two canvases of equal weight in the same viewport is the thing this
-          project's house rules warn against. This section describes the survey workflow, so terrain
-          contours behind it are the one background that means something: the reader is being told
-          how a piece of ground becomes a record. */}
+          NO FIELD OF ITS OWN. This section used to carry the contour canvas; the contours are the
+          whole site's ground now (SiteGround), so there is nothing to mount here. */}
       <section className="pg-sec pg-sec-tint">
-        <div className="pg-sec-field" aria-hidden="true">
-          <TopographyField />
-        </div>
         <div className="pg-wrap">
           <div className="pg-scene" data-scene>
             <div className="pg-scene-fixed" data-scene-fixed>
@@ -552,11 +539,6 @@ export default async function HomePage() {
 
       {/* ================= the argument ================= */}
       <section className="pg-sec pg-sec-dark">
-        {/* A field of ranging-rod ticks that swing toward the pointer, like needles finding
-            north. Adapted from React Bits' MagnetLines: see MagnetField for what changed and
-            why. It is decoration with a fact attached: every rod is the same survey mark the
-            product drops on a map. */}
-        <MagnetField />
         <div className="pg-wrap">
           <div className="pg-head">
             <div className="pg-head-top">
@@ -658,11 +640,6 @@ export default async function HomePage() {
       {/* ================= closer ================= */}
       <hr className="pg-rule" />
       <section className="pg-sec sg-host">
-        {/* The closing section carries the moving graticule. It is the calmest section on the page
-            (a heading, two lines and a pair of buttons), so it is the one place a moving background
-            can be read without competing with anything: a coordinate grid behind a closing
-            statement reads as the map the reader is about to go and fill in. */}
-        <ShapeGridField />
         <div className="pg-wrap pg-close">
           <h2 className="pg-d2" data-anim="lines">
             {c.close.title}

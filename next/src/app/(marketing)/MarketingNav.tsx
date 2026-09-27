@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useId, useRef, useState } from 'react'
 import { chrome, type Locale } from '@/lib/i18n'
-import { LangToggle, ThemeToggle } from './NavControls'
+import { LangToggle } from './NavControls'
 import NavPill from '@/components/NavPill'
 import { LogoLockup } from '@/components/Logo'
 
@@ -117,7 +117,6 @@ export function MarketingNav({ locale }: { locale: Locale }) {
 
       <div className="mk-nav-tools">
         <LangToggle locale={locale} label={c.a11y.language} />
-        <ThemeToggle label={c.a11y.theme} />
         <Link href="/login" className="mk-portal">
           {c.nav.portal} ↗
         </Link>

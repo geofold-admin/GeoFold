@@ -48,6 +48,7 @@ interface ExistingRow {
 type Reservation =
   | { kind: 'existing'; row: ExistingRow }
   | { kind: 'in_progress' }
+  | { kind: 'pending_invoice'; row: ExistingRow }
   | { kind: 'new'; orderId: string }
 
 /** The stored instructions for a reused order, read back out of RawPayload. */
@@ -89,6 +90,17 @@ export async function POST(req: Request) {
     )
   const { method, channel } = requested
 
+  /*
+   * SUPERSEDE, and it is opt-in rather than the default.
+   *
+   * The invoice page can switch payment method on an invoice the buyer already holds — that is a
+   * deliberate replacement of their own order, and it sets this flag. Everywhere else (the pricing
+   * page's checkout) a second request while an unpaid invoice exists must NOT quietly replace it:
+   * the buyer is sent back to the invoice they already have, so there is one order to pay and one
+   * order to reconcile. See the `invoice_pending` response below.
+   */
+  const supersede = (body as { supersede?: unknown } | null)?.supersede === true
+
   await ensureProfile(me.id)
 
   const amount = PREMIUM_PRICE_IDR
@@ -124,6 +136,18 @@ export async function POST(req: Request) {
       /* Still inside the window where the gateway call may be in flight: do not race it. */
       if (existing.IsFreshReservation && existing.Method === method) return { kind: 'in_progress' }
 
+      /* AN UNPAID INVOICE IS NOT SILENTLY REPLACED.
+         This is the buyer who already holds a live order and has come back through the pricing
+         page's checkout rather than through their own invoice. Two things could happen here, and
+         only one of them is honest: issue a second payable order (two invoices for one purchase,
+         and a support question when both are paid), or send the buyer to the order they already
+         have. `supersede` is the invoice page's deliberate "change my payment method" — the one
+         caller that means to replace the order. Everyone else is redirected.
+
+         The reuse window is the gateway's own expiry, so this only fires for an order that is
+         still payable; an older row falls through to the supersede path below and is denied. */
+      if (!supersede) return { kind: 'pending_invoice', row: existing }
+
       /* Anything else — a stale reservation, or the buyer switched channel — is superseded.
          Marking it denied releases the unique order id and stops a forgotten invoice from being
          paid later against a period the buyer no longer expects. */
@@ -146,6 +170,20 @@ export async function POST(req: Request) {
     return NextResponse.json(
       { error: 'checkout_in_progress', message: 'Pembayaran sedang disiapkan. Tunggu sebentar, lalu coba lagi.' },
       { status: 409, headers: { 'Cache-Control': 'no-store', 'Retry-After': '3' } },
+    )
+
+  /* THE REDIRECT. The buyer already has a live invoice; the client sends them to it rather than
+     creating a second one. 409 rather than 200 because nothing new was created, and the order id
+     is included so the redirect can address that exact order. */
+  if (reservation.kind === 'pending_invoice')
+    return NextResponse.json(
+      {
+        error: 'invoice_pending',
+        message: 'Anda masih punya tagihan yang belum dibayar. Selesaikan tagihan itu dulu.',
+        orderId: reservation.row.ProviderOrderId,
+        invoiceUrl: `/invoice?order=${encodeURIComponent(reservation.row.ProviderOrderId)}`,
+      },
+      { status: 409, headers: { 'Cache-Control': 'no-store' } },
     )
 
   if (reservation.kind === 'existing') {

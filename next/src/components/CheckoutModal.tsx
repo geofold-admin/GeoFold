@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/AuthContext'
-import { api } from '@/lib/api-client'
+import { api, ApiError } from '@/lib/api-client'
 import type { Locale } from '@/lib/i18n'
 import { Check, X, Copy, Loader2, Sparkles, ShieldCheck, RefreshCw, AlertCircle } from 'lucide-react'
 import { useModalA11y } from '@/lib/useModalA11y'
@@ -354,6 +354,23 @@ export function CheckoutModal({
       setInstructions(res)
       setPayState('awaiting')
     } catch (err: unknown) {
+      /*
+       * THE UNPAID INVOICE REDIRECT.
+       *
+       * The buyer already has a live invoice and pressed "Upgrade" again. The server refuses to
+       * create a second one and answers 409 with the order it found; the honest response is to
+       * send them to that order rather than to print an error about a payment they cannot see.
+       * It is a full navigation, not a client-side push, because this component is mounted over
+       * the marketing site and the invoice is its own page with its own data loading.
+       *
+       * The order id comes from the response body, so the invoice page opens on that exact order
+       * even if it is no longer the newest one by the time the browser gets there.
+       */
+      if (err instanceof ApiError && err.code === 'invoice_pending') {
+        const orderId = typeof err.body?.orderId === 'string' ? err.body.orderId : null
+        window.location.href = orderId ? `/invoice?order=${encodeURIComponent(orderId)}` : '/invoice'
+        return
+      }
       setPayState('error')
       setErrorMessage(
         err instanceof Error ? err.message : locale === 'id' ? 'Gagal menyiapkan pembayaran.' : 'Could not start the payment.',
@@ -652,7 +669,7 @@ export function CheckoutModal({
                 {instructions.expiresAt && (
                   <div>
                     <dt>{c.expires}</dt>
-                    <dd>{instructions.expiresAt}</dd>
+                    <dd>{formatDateTime(instructions.expiresAt, locale)}</dd>
                   </div>
                 )}
               </dl>
@@ -730,4 +747,17 @@ export function CheckoutModal({
 /** "35000" → "Rp 35.000". Indonesian grouping; rupiah has no subunit in practice. */
 function formatIdr(amount: number): string {
   return `Rp ${new Intl.NumberFormat('id-ID').format(Math.round(amount))}`
+}
+
+/**
+ * A date the buyer can read.
+ *
+ * The gateway answers with ISO strings, and the summary used to print one straight out — "Valid
+ * until 2026-09-28T04:05:32.919Z" — on the screen where a buyer decides whether they still have
+ * time to pay. Same treatment as the invoice page, in the page's own locale.
+ */
+function formatDateTime(iso: string, locale: string): string {
+  return new Date(iso).toLocaleString(locale === 'id' ? 'id-ID' : 'en-GB', {
+    day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
+  })
 }

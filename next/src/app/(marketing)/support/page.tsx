@@ -181,7 +181,7 @@ export default async function SupportPage() {
         </div>
       </div>
 
-      <div className="mk-section tight" style={{ borderTop: '1px solid var(--mk-line)' }}>
+      <div className="mk-section tight">
         <div className="mk-inner">
           <h2 className="mk-centered-h2">{c.stillStuck}</h2>
           <div className="mk-meta-grid">

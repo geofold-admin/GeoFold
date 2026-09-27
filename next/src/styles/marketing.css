@@ -1,48 +1,64 @@
 /* Geofold marketing site — the base skin.
 
-   THE TOKENS HERE ARE THE CURRENT PALETTE, and that matters more than it looks. This block used to
-   hold the palette this project replaced (a forest green and a cream), on the reasoning that
-   paper.css overrides all of them for the marketing pages anyway. That was true for the pages that
-   import paper.css and false for the three that do not: /login, /onboarding and /reset import this
-   file ONLY, so they were rendering in the old design. Measured before the fix: #1f3a2e on the
-   sign-in button, #f6f4ee as the page ground.
+   ONE THEME, ONE PALETTE. 2026-09-27.
 
-   Keeping the current values here makes paper.css's override a no-op with identical values rather
-   than a rescue, so no page can be left behind by importing one stylesheet instead of two.
+   The site no longer has a light and a dark variant. It has a corporate palette, applied
+   everywhere, and the theme toggle is gone with it (see NavControls.tsx for why the control was
+   removed rather than hidden). The `data-theme` attribute, the pre-paint script in the root
+   layout, and every `@media (prefers-color-scheme: dark)` block have been deleted: there is one
+   design, and it does not change because of an OS setting.
 
-   The palette itself: a monochromatic base whose neutrals all share the brand blue's hue, plus a
-   near-complementary orange used only as a marker. See paper.css for the measured contrast of
-   every pair. */
+   THE PALETTE (client-supplied, "Kelas Korporat Profesional"):
+
+     #FFFFFF  pure white         the page ground — luxury through empty space
+     #0A192F  midnight corporate the hero and the footer; the two weighted blocks
+     #F1F5F9  silver lining      inset surfaces: figures, chips, the marquee
+     #1E293B  authority ink      every heading (H1, H2, H3) and card title
+     #64748B  reading ink        body copy, ledes, long-form prose
+     #014AB5  GeoFold blue       icons, links, small rules under headings — 80% of the accent
+     #F35D19  conversion orange  THE ONE BUTTON, and map markers. Nothing else. Ever.
+
+   THE ORANGE RULE, and it is the whole point of the palette. A corporate site looks expensive
+   because the accent is rationed: one warm object on a field of white and navy is a focal point,
+   and forty of them are decoration. So orange appears on exactly one control per page — the
+   primary call to action — and on the survey markers the product itself draws. Everything else
+   that wants attention takes the blue.
+
+   MEASURED, NOT GUESSED. Every pair below was run through the contrast checker:
+     #1E293B on #FFFFFF  14.63:1     #64748B on #FFFFFF   4.76:1  (AA body, exactly)
+     #014AB5 on #FFFFFF   7.93:1     #FFFFFF on #014AB5   7.93:1
+     #0A192F on #FFFFFF  17.60:1     #FFFFFF on #0A192F  17.60:1
+     #0A192F on #F35D19   5.36:1  ← the orange button's label is NAVY, not white.
+   White on #F35D19 is 3.29:1 and FAILS AA, which is why the CTA's ink token exists at all. */
 
 .mk {
   /* The subtree declares its own text colour. Without this, an element that sets no colour of
-     its own inherits the PORTAL's --ink from globals.css, which is not in this palette:
-     measured #1d1f20 in light and #e8e8ea in dark on /login, which imports this file only. */
+     its own inherits the PORTAL's --ink from globals.css, which is not in this palette. */
   color: var(--mk-ink);
-  --mk-bg: #F8FAFC;
-  --mk-ink: #334155;
-  --mk-muted: #475569;
-  --mk-prose: #52647D;
-  --mk-faint: #475569;
+  --mk-bg: #FFFFFF;
+  --mk-ink: #1E293B;
+  --mk-muted: #64748B;
+  --mk-prose: #64748B;
+  --mk-faint: #64748B;
   --mk-green: #014AB5;
   --mk-green-2: #013A8F;
   --mk-green-line: #BFD3F0;
-  --mk-on-green: #F8FAFC;
+  --mk-on-green: #FFFFFF;
   --mk-on-green-dim: #D6E3F8;
-  --mk-line: #DCE3EC;
-  --mk-input-line: #C8D3E0;
-  --mk-control-line: #7A8CA6;
+  --mk-line: #E2E8F0;
+  --mk-input-line: #CBD5E1;
+  --mk-control-line: #94A3B8;
   --mk-field-bg: #FFFFFF;
   --mk-field-ink: #1E293B;
   --mk-field-hint: #64748B;
-  --mk-sand: #EEF2F7;
+  --mk-sand: #F1F5F9;
   --mk-sand-ink: #014AB5;
   --mk-panel: #FFFFFF;
-  --mk-raise: #EEF2F7;
+  --mk-raise: #F1F5F9;
   --mk-amber: #C2410C;
   --mk-marker: #F35D19;
-  --mk-deep: #0F172A;
-  --mk-deep-ink: #F8FAFC;
+  --mk-deep: #0A192F;
+  --mk-deep-ink: #FFFFFF;
   --mk-deep-prose: #C3CEDC;
   --mk-deep-accent: #7FA8E8;
 
@@ -62,9 +78,7 @@
      simply had two different left edges and every section announced it.
 
      The value is fluid rather than a step so there is no width at which it is momentarily wrong,
-     and it lands on exactly 80px at 1440px — the gutter the content already used, so this is a
-     restoration and not a redesign. The two media-query overrides stay: they now agree with it
-     instead of being the only thing holding the layout together. */
+     and it lands on exactly 80px at 1440px — the gutter the content already used. */
   --mk-pad: clamp(20px, 5.5vw, 80px);
 }
 
@@ -234,10 +248,9 @@
    */
   --faq-edge: 0;
   --faq-angle: 45deg;
-  /* The glow takes the brand blue, and in dark mode the lightened accent: #014AB5 is 2.25:1 on the
-     dark ground and would be invisible there, which is the same reason the accent lightens
-     everywhere else. A glow is not read, so it is not bound by the text contrast rules, but an
-     invisible glow is still a defect. */
+  /* The glow takes the brand blue. It used to lighten to #7FA8E8 on the dark ground, which is no
+     longer a thing that exists: there is one ground now, so there is one glow. A glow is not read,
+     so it is not bound by the text contrast rules, but an invisible glow would still be a defect. */
   --faq-glow: #014AB5;
   position: relative;
   border-bottom: 1px solid var(--mk-line);
@@ -246,7 +259,6 @@
      pushing the list around. */
   isolation: isolate;
 }
-html[data-theme='dark'] .mk-faq-item { --faq-glow: #7FA8E8; }
 
 .mk-faq-item::after {
   content: '';
@@ -548,3 +560,209 @@ textarea.mk-input { min-height: 0; resize: vertical; }
   .mk-row { grid-template-columns: 1fr; gap: 4px; }
   .mk-lang { flex-wrap: wrap; }
 }
+
+/* =====================================================================================
+   THE INVOICE PAGE — /invoice
+   =====================================================================================
+   The page a buyer is sent to when they hold an unpaid order, and the page they come back to
+   while it is still open. It is a marketing-subtree page (it inherits .mk), but it is a
+   transactional one: the reader is here to move money, not to be sold to, so it is one narrow
+   column, one card, and nothing that competes with the code they have to copy.
+
+   THE ORANGE RULE APPLIES HERE TOO, and this page is where it is easiest to get wrong: a payment
+   page has five things that all want to be the loudest (the QR, the account number, the copy
+   button, "check status", "change method"). Exactly one of them is orange — the primary action —
+   and everything else is the blue or a plain control. The QR itself is the exception by nature:
+   it is black on white because a scanner needs it that way, which is also why it sits on its own
+   white plate rather than on the page's silver. */
+
+.mk-inv-shell {
+  min-height: 70vh;
+  padding: 48px var(--mk-gutter) 72px;
+  /* ONE COLUMN, CENTRED. The measure is the card's own width, so the page reads as a document
+     rather than as a layout: this is the one page on the site where the reader's eye should never
+     have to travel sideways. */
+  display: flex;
+  justify-content: center;
+}
+.mk-inv-body { width: 100%; max-width: 560px; display: grid; gap: 16px; align-content: start; }
+
+.mk-inv-head { text-align: center; margin-bottom: 8px; }
+.mk-inv-head h1 {
+  font-family: var(--font-tight), sans-serif; font-weight: 300;
+  font-size: clamp(28px, 4vw, 40px); letter-spacing: -.03em; line-height: 1.08;
+  color: var(--mk-ink); margin: 14px 0 12px;
+}
+.mk-inv-head .mk-lede { margin: 0 auto; max-width: 46ch; }
+
+.mk-inv-loading {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  font-size: 14px; color: var(--mk-muted); margin: 64px 0;
+}
+
+/* ---- the card ---- */
+.mk-inv-card {
+  background: var(--mk-panel);
+  border: 1px solid var(--mk-line);
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: var(--mk-shadow);
+  display: grid;
+  gap: 18px;
+}
+.mk-inv-card-title {
+  font-family: var(--font-tight), sans-serif; font-weight: 500; font-size: 17px;
+  letter-spacing: -.01em; color: var(--mk-ink); margin: 0;
+}
+.mk-inv-card-body { font-size: 14px; line-height: 1.6; color: var(--mk-muted); margin: 0; }
+.mk-inv-full { width: 100%; text-align: center; justify-content: center; }
+
+/* ---- status ---- */
+.mk-inv-status-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+}
+.mk-inv-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 600; letter-spacing: .02em;
+  padding: 6px 12px; border-radius: 100px;
+  /* The waiting state is the blue, not the orange: it is a status, and the orange belongs to the
+     one control the buyer is meant to press. */
+  background: color-mix(in srgb, var(--mk-green) 10%, transparent);
+  color: var(--mk-green);
+}
+.mk-inv-pill.is-dead {
+  background: color-mix(in srgb, var(--mk-muted) 12%, transparent);
+  color: var(--mk-muted);
+}
+.mk-inv-ref { font-size: 12px; color: var(--mk-faint); }
+.mk-inv-ref code {
+  font-family: var(--font-inter), sans-serif; font-variant-numeric: tabular-nums;
+  color: var(--mk-ink); font-size: 12px;
+}
+
+/* ---- the payment instruction ---- */
+.mk-inv-pay { display: grid; gap: 12px; }
+.mk-inv-pay-title {
+  font-family: var(--font-tight), sans-serif; font-weight: 500; font-size: 16px;
+  color: var(--mk-ink); margin: 0;
+}
+.mk-inv-pay-body { font-size: 14px; line-height: 1.6; color: var(--mk-muted); margin: 0; }
+.mk-inv-qr {
+  display: grid; place-items: center; padding: 16px;
+  /* The scanner needs black-on-white with a quiet zone, so the plate is white and the border is
+     the only thing separating it from the card behind it. */
+  background: #FFFFFF; border: 1px solid var(--mk-line); border-radius: 10px;
+  justify-self: center;
+}
+.mk-inv-qr img { display: block; width: 240px; height: 240px; max-width: 100%; }
+
+.mk-inv-value {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: var(--mk-raise); border: 1px solid var(--mk-line); border-radius: 10px;
+  padding: 14px 16px; flex-wrap: wrap;
+}
+.mk-inv-value code {
+  font-family: var(--font-inter), sans-serif; font-variant-numeric: tabular-nums;
+  font-size: 18px; font-weight: 500; letter-spacing: .02em; color: var(--mk-ink);
+  word-break: break-all;
+}
+.mk-inv-value button {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 36px; padding: 8px 14px;
+  border: 1px solid var(--mk-control-line); border-radius: 8px;
+  background: var(--mk-panel); color: var(--mk-ink);
+  font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer;
+  transition: background-color .15s ease, border-color .15s ease;
+}
+.mk-inv-value button:hover { background: var(--mk-raise); border-color: var(--mk-green); color: var(--mk-green); }
+
+/* ---- the sums ---- */
+.mk-inv-sums { display: grid; gap: 10px; margin: 0; padding-top: 16px; border-top: 1px solid var(--mk-line); }
+.mk-inv-sums > div { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+.mk-inv-sums dt { font-size: 13px; color: var(--mk-muted); }
+.mk-inv-sums dd {
+  margin: 0; font-size: 14px; color: var(--mk-ink);
+  font-variant-numeric: tabular-nums; text-align: right; word-break: break-all;
+}
+.mk-inv-sums dd code {
+  font-family: var(--font-inter), sans-serif; font-size: 13px; color: var(--mk-ink);
+}
+.mk-inv-sums .total dt { font-weight: 600; color: var(--mk-ink); }
+.mk-inv-sums .total dd {
+  font-family: var(--font-tight), sans-serif; font-weight: 500; font-size: 20px;
+  letter-spacing: -.01em; color: var(--mk-ink);
+}
+
+/* ---- waiting ---- */
+.mk-inv-waiting {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: color-mix(in srgb, var(--mk-green) 7%, transparent);
+  border-radius: 10px; padding: 12px 14px; color: var(--mk-green);
+}
+.mk-inv-waiting strong { display: block; font-size: 13px; font-weight: 600; }
+.mk-inv-waiting span { display: block; font-size: 13px; line-height: 1.5; color: var(--mk-muted); margin-top: 2px; }
+.mk-inv-spin { animation: mk-inv-spin 1s linear infinite; flex: none; }
+@keyframes mk-inv-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .mk-inv-spin { animation: none; } }
+
+.mk-inv-ghost {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  min-height: 42px; padding: 10px 16px;
+  border: 1px solid var(--mk-control-line); border-radius: 8px;
+  background: transparent; color: var(--mk-ink);
+  font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer;
+  transition: background-color .15s ease, border-color .15s ease;
+}
+.mk-inv-ghost:hover:not(:disabled) { background: var(--mk-raise); border-color: var(--mk-green); color: var(--mk-green); }
+.mk-inv-ghost:disabled { opacity: .6; cursor: default; }
+
+/* ---- channel picker ---- */
+.mk-inv-channels { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.mk-inv-channel {
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  min-height: 44px; padding: 10px 8px;
+  border: 1px solid var(--mk-control-line); border-radius: 8px;
+  background: var(--mk-panel); color: var(--mk-ink);
+  font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+}
+.mk-inv-channel:hover:not(:disabled) { background: var(--mk-raise); border-color: var(--mk-green); color: var(--mk-green); }
+/* The channel the buyer is already paying through: filled, so the list says which one is live
+   rather than leaving them to work it out from the card above. */
+.mk-inv-channel:disabled {
+  background: var(--mk-ink); border-color: var(--mk-ink); color: var(--mk-bg); opacity: 1; cursor: default;
+}
+.mk-inv-channel:disabled:not(:has(svg)) { opacity: .5; }
+@media (max-width: 420px) { .mk-inv-channels { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ---- settled ---- */
+.mk-inv-card--paid { justify-items: center; text-align: center; }
+.mk-inv-tick {
+  width: 56px; height: 56px; border-radius: 100px; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--mk-green) 12%, transparent); color: var(--mk-green);
+}
+.mk-inv-paid-body { font-size: 15px; line-height: 1.6; color: var(--mk-muted); margin: 0; max-width: 42ch; }
+.mk-inv-card--paid .mk-inv-sums { width: 100%; text-align: left; }
+
+/* ---- foot ---- */
+.mk-inv-secured {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  font-size: 12px; color: var(--mk-faint); margin: 4px 0 0;
+}
+.mk-inv-back { display: flex; justify-content: center; margin: 0; }
+.mk-inv-back a {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; font-weight: 500; color: var(--mk-muted);
+}
+.mk-inv-back a:hover { color: var(--mk-green); }
+
+/* The error line inside a card: the same treatment the rest of the site uses, with the icon the
+   invoice page passes in. */
+.mk-inv-card .mk-error {
+  display: flex; align-items: flex-start; gap: 8px; margin: 0;
+}
+
+@media (min-width: 560px) {
+  .mk-inv-card { padding: 28px; }
+}
+

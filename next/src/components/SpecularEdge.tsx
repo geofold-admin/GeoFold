@@ -288,13 +288,13 @@ export default function SpecularEdge({
     }
     document.addEventListener('visibilitychange', onVis)
 
-    const mo = new MutationObserver(readColors)
-    mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
+    /* Colours are read once at mount. This used to be a MutationObserver on `<html data-theme>`,
+       so a theme switch repainted the specular highlight; the site has one theme now and nothing
+       writes that attribute, so the observer had nothing left to observe. */
 
     return () => {
       stop()
       io.disconnect()
-      mo.disconnect()
       ro.disconnect()
       document.removeEventListener('visibilitychange', onVis)
       window.removeEventListener('pointermove', onPointerMove)

@@ -156,6 +156,25 @@ function GoPremium({ offer, onGranted }: { offer: SubscriptionMe['offer']; onGra
     setMsg(null)
     setBusy('pay')
     try {
+      /*
+       * AN UNPAID INVOICE COMES FIRST.
+       *
+       * If this account already has a live invoice, the buyer is sent to it rather than through
+       * the gateway again: the invoice page is where the QR or the virtual-account number lives,
+       * where the status updates itself, and where the payment method can be changed. Starting a
+       * second checkout here would leave two payable orders for one purchase.
+       *
+       * The check is a read, so it cannot fail the purchase: if it errors, the checkout below runs
+       * exactly as it did before.
+       */
+      const invoice = await api<{ invoice: { orderId: string; active: boolean } | null }>(
+        '/api/payments/invoice',
+      ).catch(() => null)
+      if (invoice?.invoice?.active) {
+        window.location.href = `/invoice?order=${encodeURIComponent(invoice.invoice.orderId)}`
+        return
+      }
+
       const r = await api<{ redirectUrl: string }>('/api/payments/checkout', { method: 'POST' })
       // Off to the gateway's hosted page, which lists every channel enabled on the merchant
       // account. Which gateway that is (iPaymu or Midtrans) is the server's choice, not ours.

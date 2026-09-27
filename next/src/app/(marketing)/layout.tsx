@@ -10,6 +10,9 @@ import '@/styles/home.css'
 // still on disk and still self-consistent: swapping this one line back restores the previous
 // design in full, minus the landing page, whose markup was rebuilt around `pg-` components.
 import '@/styles/paper.css'
+// The corporate layer: one contour ground, cards instead of bands, the new palette's CTA rule.
+// Loaded last so it wins against the skins above it. See the file header.
+import '@/styles/corporate.css'
 // The in-page checkout. Loaded here as well as in the app chrome because the pricing page is
 // reachable signed-out, and the modal opens on top of the marketing site.
 import '@/styles/checkout.css'
@@ -18,6 +21,7 @@ import { chrome } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'
 import { organizationJsonLd } from '@/lib/seo'
 import { LogoLockup } from '@/components/Logo'
+import { SiteGround } from '@/components/SiteGround'
 import { MarketingNav } from './MarketingNav'
 import { Motion } from './Motion'
 
@@ -89,6 +93,12 @@ export default async function MarketingLayout({ children }: { children: ReactNod
         <span />
       </div>
       <MarketingNav locale={locale} />
+      {/* THE ONE GROUND. A single contour field, fixed to the viewport, behind every page in this
+          subtree — the same background at every scroll position and on every page. It replaces
+          four per-section effects (the hero's graticule, the how-it-works contours, the argument
+          band's magnet lines, the closing grid) so that sections are no longer coloured bands but
+          cards sitting on one continuous ground. See SiteGround.tsx. */}
+      <SiteGround />
       {/* The motion system, mounted once for the whole marketing site. It was inside the landing
           page, which meant every effect it owns existed on `/` and nowhere else: the other ten
           pages had a progress bar that never filled and a nav that never condensed. See the

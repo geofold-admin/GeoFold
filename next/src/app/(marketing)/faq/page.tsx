@@ -644,7 +644,7 @@ export default async function FaqPage() {
         <BilingualDoc locale={locale} id={<Groups groups={GROUPS_ID} />} en={<Groups groups={GROUPS_EN} />} />
       </div>
 
-      <div className="mk-section tight" style={{ borderTop: '1px solid var(--mk-line)' }}>
+      <div className="mk-section tight">
         <div className="mk-inner">
           <h2 className="mk-centered-h2">{c.stuck}</h2>
           <div className="mk-meta-grid">

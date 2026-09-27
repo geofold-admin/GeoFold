@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -33,9 +33,24 @@ export default function LoginPage() {
   const [notice, setNotice] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
+  /* WHERE THE VISITOR GOES AFTER SIGNING IN.
+     `/home` unless the URL asks for somewhere else, which is what `?next=` is for: the invoice
+     page sends a signed-out buyer here with the invoice it was trying to open, so signing in
+     lands them back on that invoice rather than on the dashboard they did not ask for.
+     The value is validated before use — it must be a same-site path starting with a single `/`,
+     so a crafted link cannot turn the sign-in page into an open redirect (`//evil.example` is a
+     protocol-relative URL and would leave the site, and `/\evil.example` is treated the same way
+     by several browsers). Anything that fails the check falls back to `/home`. */
+  const nextPath = useMemo(() => {
+    if (typeof window === 'undefined') return '/home'
+    const raw = new URLSearchParams(window.location.search).get('next')
+    if (!raw || !raw.startsWith('/') || raw.startsWith('//') || raw.startsWith('/\\')) return '/home'
+    return raw
+  }, [])
+
   useEffect(() => {
-    if (!loading && session) router.replace('/home')
-  }, [loading, session, router])
+    if (!loading && session) router.replace(nextPath)
+  }, [loading, session, router, nextPath])
 
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get('error') === 'link_expired') {

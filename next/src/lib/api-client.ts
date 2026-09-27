@@ -5,11 +5,21 @@ import { DEMO_MODE, demoResponse } from './demo'
 export class ApiError extends Error {
   readonly status: number
   readonly code?: string
-  constructor(status: number, message: string, code?: string) {
+  /**
+   * The parsed error body, when the server sent one.
+   *
+   * WHY THIS EXISTS. Some refusals carry data the caller must act on rather than merely display:
+   * `invoice_pending` (409 from the checkout routes) includes the order id of the unpaid invoice
+   * the buyer already holds, so the checkout can send them to it instead of showing a message
+   * about a problem they cannot see. Flattening that into `message` would lose it.
+   */
+  readonly body?: Record<string, unknown>
+  constructor(status: number, message: string, code?: string, body?: Record<string, unknown>) {
     super(message)
     this.name = 'ApiError'
     this.status = status
     this.code = code
+    this.body = body
   }
   get isQuota() {
     return this.status === 403 && this.code === 'quota_exceeded'
@@ -40,15 +50,17 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
 
   if (!res.ok) {
     let code: string | undefined
+    let body: Record<string, unknown> | undefined
     let message = `Request failed (${res.status}).`
     try {
-      const body = await res.json()
-      code = body.error
-      message = body.message ?? (Array.isArray(body.errors) ? body.errors.join(', ') : message)
+      const parsed = await res.json()
+      body = parsed
+      code = parsed.error
+      message = parsed.message ?? (Array.isArray(parsed.errors) ? parsed.errors.join(', ') : message)
     } catch {
       // non-JSON body
     }
-    throw new ApiError(res.status, message, code)
+    throw new ApiError(res.status, message, code, body)
   }
 
   if (res.status === 204) return undefined as T

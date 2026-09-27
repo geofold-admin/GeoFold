@@ -7,7 +7,6 @@ import { useSync } from '@/lib/SyncContext'
 import { useAuth } from '@/lib/AuthContext'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import { DEMO_MODE } from '@/lib/demo'
-import { ThemeToggle } from './ThemeToggle'
 import { navItems } from './navItems'
 
 // Rendered on mobile only (CSS hides on desktop): a sticky top bar + a fixed bottom tab bar.
@@ -31,7 +30,6 @@ export function MobileNav() {
         </div>
         <div className="actions">
           <Link href="/subscription" aria-label="Subscription" className={`theme-toggle${pathname.startsWith('/subscription') ? ' active' : ''}`} style={{ display: 'grid', placeItems: 'center' }}><CreditCard size={16} /></Link>
-          <ThemeToggle />
           <button className="ghost" onClick={signOut} aria-label="Sign out" style={{ padding: '7px 10px' }}><LogOut size={16} /></button>
         </div>
       </header>

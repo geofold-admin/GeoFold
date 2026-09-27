@@ -1,40 +1,22 @@
 'use client'
 
-import { Moon, Sun } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useTransition } from 'react'
 import { LOCALE_COOKIE, LOCALE_COOKIE_MAX_AGE, type Locale } from '@/lib/i18n'
 
 /**
- * The two nav controls: language and theme.
+ * The nav's one control: language.
  *
- * WHY NOT REUSE components/ThemeToggle. That one holds the current theme in React state seeded
- * to 'light' and corrects it in an effect, so a dark-mode visitor is served the wrong icon until
- * hydration finishes — on the app's own chrome that is behind a login and nobody sees it, but
- * this button is in the marketing header on a cold first paint. The version here renders BOTH
- * icons and lets CSS pick, keyed off the same `data-theme` attribute the pre-paint script in the
- * root layout has already written. No state, no effect, correct in the first frame.
+ * THE THEME BUTTON IS GONE, and it was removed rather than hidden. The site now has a single
+ * theme — the corporate palette in paper.css — so a control that switched between two of them
+ * would be switching between a design and a design that no longer exists. Removing it here also
+ * removes the pre-paint script in the root layout, the `data-theme` attribute, and the ~90 lines
+ * of dark-mode overrides across four stylesheets: one design, one place to change it.
+ *
+ * See NavControls' history for why the marketing header had its own toggle rather than reusing
+ * components/ThemeToggle: a state-based icon is wrong in the first frame on a cold paint. That
+ * reasoning still applies to any future stateful control added here.
  */
-export function ThemeToggle({ label }: { label: string }) {
-  const toggle = () => {
-    const root = document.documentElement
-    const next = root.dataset.theme === 'dark' ? 'light' : 'dark'
-    root.dataset.theme = next
-    try {
-      localStorage.setItem('geofold-theme', next)
-    } catch {
-      /* Private mode, or site data blocked. The theme still applies for this page view; it just
-         will not be remembered, which is a better outcome than the button throwing. */
-    }
-  }
-
-  return (
-    <button type="button" className="mk-theme-btn" onClick={toggle} aria-label={label} title={label}>
-      <Sun size={15} strokeWidth={1.75} className="mk-icon-sun" aria-hidden="true" />
-      <Moon size={15} strokeWidth={1.75} className="mk-icon-moon" aria-hidden="true" />
-    </button>
-  )
-}
 
 /**
  * Language: a two-state segmented control.

@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { headers } from 'next/headers'
 import { Archivo, Barlow, Barlow_Condensed, Inter, Inter_Tight, Space_Mono } from 'next/font/google'
 import './globals.css'
 import { Providers } from './providers'
@@ -89,24 +88,18 @@ export const metadata: Metadata = {
   formatDetection: { telephone: false },
 }
 
-// Set the initial theme before paint to avoid a flash: honour a saved choice, else the OS setting.
-const themeScript = `(function(){try{var t=localStorage.getItem('geofold-theme');if(!t){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}document.documentElement.dataset.theme=t}catch(e){}})()`
-
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  // Matches the 'nonce-…' in the CSP the proxy set for this request.
-  const nonce = (await headers()).get('x-nonce') ?? undefined
-
   return (
     <html
       lang="en"
       className={`${archivo.variable} ${barlow.variable} ${barlowCondensed.variable} ${spaceMono.variable} ${interTight.variable} ${inter.variable}`}
       suppressHydrationWarning
     >
-      <head>
-        {/* suppressHydrationWarning: browsers blank out the nonce attribute in the DOM once
-            the CSP has been applied, so the client always sees "" where the server sent a value. */}
-        <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: themeScript }} />
-      </head>
+      {/* NO THEME SCRIPT, and no `data-theme` attribute. The site ships one theme now, so there is
+          nothing to decide before paint: the palette in paper.css IS the design, and the ~90 lines
+          of dark-mode overrides that used to answer to this attribute are gone with it. A visitor
+          whose OS is set to dark gets the same site as everyone else, deliberately — this is a
+          corporate identity, not a preference. */}
       <body>
         <Providers>{children}</Providers>
       </body>

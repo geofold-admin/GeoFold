@@ -7,7 +7,6 @@ import { useSync } from '@/lib/SyncContext'
 import { useAuth } from '@/lib/AuthContext'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import { DEMO_MODE } from '@/lib/demo'
-import { ThemeToggle } from './ThemeToggle'
 import { navItems } from './navItems'
 
 export function Sidebar() {
@@ -39,7 +38,6 @@ export function Sidebar() {
         <button className="ghost" style={{ flex: 1, justifyContent: 'center' }} onClick={signOut}>
           <LogOut size={15} style={{ verticalAlign: -3, marginRight: 6 }} /> Sign out
         </button>
-        <ThemeToggle />
       </div>
     </aside>
   )
