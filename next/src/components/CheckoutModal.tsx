@@ -355,21 +355,37 @@ export function CheckoutModal({
       setPayState('awaiting')
     } catch (err: unknown) {
       /*
-       * THE UNPAID INVOICE REDIRECT.
+       * THE OUTSTANDING INVOICE, RESUMED IN THE MODAL.
        *
-       * The buyer already has a live invoice and pressed "Upgrade" again. The server refuses to
-       * create a second one and answers 409 with the order it found; the honest response is to
-       * send them to that order rather than to print an error about a payment they cannot see.
-       * It is a full navigation, not a client-side push, because this component is mounted over
-       * the marketing site and the invoice is its own page with its own data loading.
+       * The buyer already has a live order and pressed "Upgrade" again. The server refuses to
+       * create a second one and answers 409 — but it now includes that order's own instructions,
+       * because the standalone invoice page this used to redirect to is gone. Payment happens in
+       * this popup, on the page the buyer is already on: no navigation, no second tab, and the
+       * order they are about to pay is the one they already had.
        *
-       * The order id comes from the response body, so the invoice page opens on that exact order
-       * even if it is no longer the newest one by the time the browser gets there.
+       * `resumed` is what distinguishes this from a plain refusal. Without it the same 409 can
+       * mean "the invoice exists but its code could not be recovered", and that case still falls
+       * through to the error screen with its retry.
        */
       if (err instanceof ApiError && err.code === 'invoice_pending') {
-        const orderId = typeof err.body?.orderId === 'string' ? err.body.orderId : null
-        window.location.href = orderId ? `/invoice?order=${encodeURIComponent(orderId)}` : '/invoice'
-        return
+        const body = err.body as (Partial<Instructions> & { resumed?: unknown }) | undefined
+        if (body?.resumed === true && typeof body.orderId === 'string' && body.method) {
+          setInstructions({
+            orderId: body.orderId,
+            method: body.method,
+            channel: body.channel ?? chosen.channel,
+            label: body.label ?? chosen.label,
+            paymentNo: body.paymentNo ?? null,
+            qrUrl: body.qrUrl ?? null,
+            totalIdr: body.totalIdr ?? body.amountIdr ?? 0,
+            feeIdr: body.feeIdr ?? 0,
+            expiresAt: body.expiresAt ?? null,
+            amountIdr: body.amountIdr ?? 0,
+            grantsDays: body.grantsDays ?? 30,
+          })
+          setPayState('awaiting')
+          return
+        }
       }
       setPayState('error')
       setErrorMessage(

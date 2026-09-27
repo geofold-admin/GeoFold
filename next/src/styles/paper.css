@@ -1,49 +1,54 @@
 /* =====================================================================================
-   GeoFold marketing — "Corporate". 2026-09-27.
+   GeoFold marketing — "Midnight". 2026-09-27.
 
    Replaces the Paper skin, which replaced the Topographic skin in overhaul.css (which replaced a
    near-black one before it). overhaul.css is no longer imported; it is left on disk so an older
    design is one line in (marketing)/layout.tsx away from coming back.
 
-   THE BRIEF, in the client's words: look like a multinational, B2B, top-tier consultancy. The
-   reference class is an EPC contractor or a global surveyor, and the way those sites read as
-   expensive is not decoration. It is restraint: mostly white space, one authoritative dark blue,
-   and an accent used so sparingly that wherever it lands the eye goes.
+   THE BRIEF, in the client's words: look like a multinational, B2B, top-tier consultancy, and
+   make the theme DARK-DOMINANT using the supplied palette. The reference class is an EPC
+   contractor or a global surveyor. What makes those sites read as expensive is not decoration,
+   it is restraint: one deep ground, one accent used so sparingly that wherever it lands the eye
+   goes, and type that is quiet enough to read for a long time.
 
-   THREE THINGS FOLLOW FROM THAT, and they are the whole of this file:
+   FOUR THINGS FOLLOW FROM THAT, and they are the whole of this file:
 
-   1. ONE THEME. The light/dark pair is gone, along with the toggle, the pre-paint script and
-      every dark-mode override. A corporate identity is not a preference.
-   2. ONE GROUND. Every section sits on the same white, and the moving contour field is behind
-      all of it — see `.mk-ground` at the bottom of this file. Sections are no longer tinted
+   1. ONE THEME, AND IT IS DARK. The light/dark pair is gone, along with the toggle, the
+      pre-paint script and every dark-mode override. A corporate identity is not a preference.
+      The ground is the client's Midnight Corporate #0A192F, everywhere, at every scroll position.
+   2. ONE GROUND. Every section sits on that same midnight, and the moving contour field runs
+      behind all of it — see `.mk-ground` at the bottom of this file. Sections are not tinted
       bands stacked on top of each other; they are cards ON that one ground.
    3. CARDS CARRY THE CONTENT. Anything that would have been a full-width band of text is a card
       with its own surface, border and shadow, so it reads as an object placed on the ground
       rather than as a region of it. That is what lets one moving background run underneath
       without the text ever fighting it.
+   4. THE HEADER AND THE FOOTER ARE THE PAGE, NOT CARDS. They are the two edges of the sheet: the
+      header is a full-width bar that sticks to the top, the footer is a full-width band that
+      closes the page. Everything between them is a card. This is the one place the design
+      deliberately stops floating, because chrome that floats reads as content.
 
-   THE PALETTE (client-supplied). Measured, not guessed:
+   THE PALETTE (client-supplied, taken dark). Measured, not guessed:
 
-     #1E293B on #FFFFFF  14.63:1   headings, card titles        (authority ink)
-     #64748B on #FFFFFF   4.76:1   body copy, long-form prose    (reading ink)
-     #014AB5 on #FFFFFF   7.93:1   links, icons, rules           (GeoFold blue)
-     #FFFFFF on #014AB5   7.93:1   the blue button's label
-     #0A192F on #FFFFFF  17.60:1   the hero and footer blocks    (midnight corporate)
-     #FFFFFF on #0A192F  17.60:1   type on those blocks
+     #FFFFFF on #0F2440  15.59:1   headings, card titles        (authority ink)
+     #C3CEDC on #0F2440   9.79:1   body copy, long-form prose    (reading ink)
+     #7FA8E8 on #0F2440   6.44:1   links, icons, rules           (GeoFold blue as INK)
+     #1E5FBF behind #FFF  6.10:1   the blue button's label       (GeoFold blue as FILL)
+     #0A192F on #FFFFFF  17.60:1   ink on a light chip
      #0A192F on #F35D19   5.36:1   the ORANGE BUTTON'S LABEL — navy, not white
-     #64748B on #F1F5F9   4.34:1   body on the inset silver surface
+     #F35D19 on #0F2440   4.75:1   the orange as ink, where it must be read
 
    THE ORANGE RULE. #F35D19 is the client's conversion colour and it is rationed to one control
    per page plus the product's own survey markers. White on it measures 3.29:1 and fails AA, so
-   its label takes midnight navy at 5.36:1. The readable orange for text (a link, a figure) is
-   the darkened #C2410C at 4.95:1, and it is used only where the orange must also be read.
+   its label takes midnight navy at 5.36:1. The lighter #FB923C (6.89:1) is the readable orange
+   for small type.
 
-   BODY ON SILVER is the one pairing that does not clear 4.5:1 at the client's own grey, so any
-   surface that carries body copy takes white; silver is for figures, chips and empty space.
+   THE BLUE SPLITS BY ROLE. #014AB5, the client's own blue, measures 2.13:1 on the midnight
+   panel — unusable as type here. So the blue appears as INK at #7FA8E8 and as FILL at #1E5FBF,
+   which is the same hue family read two ways rather than two different colours.
 
    COMPLIANCE PAGES. /terms, /refund-policy, /faq and /contact carry the prose a payment gateway
-   reads word by word, on white at 4.76:1, which is past the 4.5:1 floor. That constraint is why
-   --mk-prose is its own token rather than reusing --mk-faint.
+   reads word by word, at 9.79:1, which is past the 4.5:1 floor with room to spare.
    ===================================================================================== */
 
 .mk {
@@ -58,24 +63,53 @@
      text that no rule here sets, a value that is not on this scale. */
   font-size: 16px;
 
-  /* ---- GeoFold corporate palette ----
-     One set of values, one theme. See the file header for the measured contrast of every pair. */
-  --mk-bg: #FFFFFF;
-  --mk-raise: #F1F5F9;
-  --mk-panel: #FFFFFF;
-  --mk-line: #E2E8F0;
-  --mk-input-line: #CBD5E1;
-  /* Form fields get their own ink and ground. A field is not page text: it needs a ground of its
-     own wherever it sits, including on the midnight blocks, so it can never end up as light type
-     on a light plate. */
-  --mk-field-bg: #FFFFFF;
-  --mk-field-ink: #1E293B;   /* 14.63:1 on the field ground */
-  --mk-field-hint: #64748B;  /*  4.76:1 — a hint, legible, never mistakable for a value */
+  /* ---- GeoFold corporate palette — DARK EDITION, 2026-09-27 ----
+     The client asked for the palette to go dark-dominant: the whole site now sits on Midnight
+     Corporate, and every value below was measured against the surface it is actually used on.
 
-  /* THE PHONE MOCKUP. A picture of the app rather than a surface of the site: the device frame is
-     near-black and the screen ground near-white, because that is what the product looks like.
-     Everything drawn ON the screen is a real palette colour. */
-  --mk-phone-frame: #0A192F;
+     THE SURFACE LADDER, and the separation between its steps is deliberate rather than guessed:
+
+       ground   #0A192F   the page. The client's midnight, everywhere, at every scroll position.
+       panel    #0F2440   a card. 1.16:1 against the ground — enough to read as lifted, not enough
+                          to become a second colour. The hairline and the shadow do the rest.
+       raise    #16305A   a panel INSIDE a card (figures, chips, plan cards, inputs).
+       line     #23406B   hairline. 1.50:1 on a panel: visible as structure, never as a stripe.
+       control  #4A73AD   the edge of a control. 3.23:1 on a panel, which is the 3:1 WCAG 1.4.11
+                          asks for, so a button's boundary is not a decoration the eye has to guess.
+
+     THE INK, measured on the panel:
+
+       #FFFFFF on #0F2440  15.59:1   headings, card titles, names
+       #C3CEDC on #0F2440   9.79:1   body copy, ledes, FAQ answers, long-form prose
+       #9DB0CC on #0F2440   7.07:1   micro-labels — body-text contrast, never less
+       #7FA8E8 on #0F2440   6.44:1   the brand blue as INK: icons, links, the rule under a heading
+       #F35D19 on #0F2440   4.75:1   the orange as ink, where it has to be read
+       #FB923C on #0F2440   6.89:1   the readable orange: a link or a figure that must be legible
+
+     THE BLUE IS TWO VALUES, and this is the one place the palette needs a pair. #014AB5 is the
+     client's brand blue and it measures 2.13:1 on the panel — unusable as type on this ground.
+     So the blue splits by ROLE: `--mk-green` is the blue as INK (the pale #7FA8E8, 6.44:1) and
+     `--mk-blue-fill` is the blue as FILL (the deep #1E5FBF, 6.10:1 behind a white label). Every
+     rule that already read `--mk-green` for a link, an icon or a hairline keeps working unchanged;
+     only buttons take the fill token.
+
+     THE ORANGE RULE IS UNCHANGED and it still holds on dark: #F35D19 appears on ONE control per
+     screen, and its label is midnight navy at 5.36:1 — white on it measures 3.29:1 and fails AA. */
+  --mk-bg: #0A192F;
+  --mk-raise: #16305A;
+  --mk-panel: #0F2440;
+  --mk-line: #23406B;
+  --mk-input-line: #4A73AD;
+  /* Form fields. On a dark ground a field is a well, not a plate: it takes the panel's own colour
+     and a control-strength border, so it is found by its edge rather than by being lighter. */
+  --mk-field-bg: #0F2440;
+  --mk-field-ink: #FFFFFF;   /* 15.59:1 on the field ground */
+  --mk-field-hint: #93A5BF;  /*  6.22:1 — a hint, legible, never mistakable for a value */
+
+  /* THE PHONE MOCKUP. A picture of the app rather than a surface of the site, so the screen stays
+     light in both themes: that IS what the product looks like, and inverting it would be showing
+     the reader a screenshot of a different app. Only the device frame follows the theme. */
+  --mk-phone-frame: #050B16;
   --mk-phone-notch: #1E293B;
   --mk-phone-ink: #1E293B;
   --mk-phone-muted: #64748B;
@@ -94,30 +128,37 @@
   --mk-phone-air-3: #2E6FC4;
 
   /* The contour field's line colour, and the graticule behind the hero. Deliberately faint: this
-     is ground, never content. The field runs behind every section now (see .mk-ground), so this
-     value sets the tone of the whole page — measured against the white ground at 1.2:1. */
-  --mk-grid-line: rgba(1, 74, 181, .10);
-  --mk-line-field: #D8E2F0;
+     is ground, never content. On the dark ground the line is a lighter blue rather than a grey,
+     and it sits at 1.55:1 against the page — texture, never something the eye has to resolve. */
+  --mk-grid-line: rgba(127, 168, 232, .10);
+  --mk-line-field: #1E3457;
   /* The specular highlight on the hero CTA, and the static edge stroke beneath it. */
-  --spec-line: #7FA8E8;
-  --spec-base: #014AB5;
+  --spec-line: #A9C6F2;
+  --spec-base: #F35D19;
   /* The boundary of an INTERACTIVE control. WCAG 1.4.11 wants 3:1 for the visual information that
      identifies a control, and --mk-line is a decorative hairline — correct for a divider, too
-     faint for the edge of a button someone is meant to press. */
-  --mk-control-line: #94A3B8;
+     faint for the edge of a button someone is meant to press. #4A73AD measures 3.23:1 on the
+     panel, which is the floor this project holds itself to. */
+  --mk-control-line: #4A73AD;
 
-  --mk-ink: #1E293B;    /* 14.63:1 — authority ink: headings, card titles, names */
-  --mk-prose: #64748B;  /*  4.76:1 — long-form: terms, refund policy, FAQ answers */
-  --mk-muted: #64748B;  /*  4.76:1 — lede, card body */
-  --mk-faint: #64748B;  /*  4.76:1 — micro-labels get body-text contrast, never less */
+  --mk-ink: #FFFFFF;    /* 15.59:1 — authority ink: headings, card titles, names */
+  --mk-prose: #C3CEDC;  /*  9.79:1 — long-form: terms, refund policy, FAQ answers */
+  --mk-muted: #9DB0CC;  /*  7.07:1 — lede, card body */
+  --mk-faint: #9DB0CC;  /*  7.07:1 — micro-labels get body-text contrast, never less */
 
-  /* The accent token is still called --mk-green; renaming it touches forty rules across three
-     files for no visual result. It holds GeoFold blue. */
-  --mk-green: #014AB5;      /* 7.93:1 as text, and as a fill behind --mk-on-green */
-  --mk-green-2: #013A8F;    /* 10.02:1 — hover, darkens */
-  --mk-green-line: #BFD3F0;
-  --mk-on-green: #FFFFFF;   /* 7.93:1 on the accent fill */
-  --mk-on-green-dim: #D6E3F8;
+  /* THE BLUE, SPLIT BY ROLE. `--mk-green` keeps its name (renaming it touches forty rules across
+     three files for no visual result) and holds the blue AS INK: the pale #7FA8E8 at 6.44:1 on the
+     panel. A rule that uses it for a link, an icon, a tick or a hairline is therefore correct on
+     this ground without being touched. A button needs the blue as a FILL instead, and that is
+     --mk-blue-fill: the deep #1E5FBF, 6.10:1 behind a white label. */
+  --mk-green: #7FA8E8;
+  --mk-green-2: #A9C6F2;    /* hover, LIGHTER: a dark ink on a dark ground darkens into the page */
+  --mk-green-line: #2E4E80; /* the pale blue as a HAIRLINE — a line, not type */
+  --mk-on-green: #0A192F;   /* 7.27:1 on the ink blue, 5.36:1 on the fill below */
+  --mk-on-green-dim: #C3CEDC;
+  --mk-blue-fill: #1E5FBF;  /* the blue as a FILL: 6.10:1 behind white */
+  --mk-blue-fill-2: #2A72D8;
+  --mk-on-blue-fill: #FFFFFF;
 
   /* ---- THE CONVERSION ORANGE, AND ITS ONE RULE ----
      #F35D19 is the client's accent, and it is the single most valuable colour in this palette
@@ -126,29 +167,31 @@
      inversion is also what makes the button read as expensive: a navy label on orange is a
      deliberate pairing, while white on orange is the default every template ships.
 
-     --mk-amber is the readable form for TEXT (a link, a figure that must be legible): #C2410C at
-     4.95:1 on white. Raw #F35D19 is for fills, rules, pins and dots — never for type. */
+     On the dark ground the orange ALSO works as ink: #F35D19 measures 4.75:1 on the panel, so it
+     can carry a link or a figure directly, and --mk-amber is its lighter, safer form at 6.89:1 for
+     the smallest type. */
   --mk-marker: #F35D19;
   --mk-on-marker: #0A192F;  /* 5.36:1 on the orange fill — the CTA's label */
-  --mk-amber: #C2410C;      /* 4.95:1 — orange that has to be read */
+  --mk-amber: #FB923C;      /* 6.89:1 — orange that has to be read at small sizes */
 
-  /* The midnight corporate block: the hero's ground and the footer. The site's two weighted
-     surfaces, and the only places this colour appears at scale. */
-  --mk-deep: #0A192F;
-  --mk-deep-line: #1B2A44;
-  --mk-deep-ink: #FFFFFF;    /* 17.60:1 on the block */
-  --mk-deep-prose: #C3CEDC;  /* 11.05:1 on the block */
-  --mk-deep-accent: #7FA8E8; /*  7.27:1 on the block — the blue is far too dark to read there */
+  /* The deep block. On the dark theme this is no longer a contrast against the page — it is the
+     page. It survives as the FOOTER's own, deeper ground and as the ink on light chips, so the
+     two tokens still have jobs; they simply stopped meaning "the dark band on a light site". */
+  --mk-deep: #070F1F;
+  --mk-deep-line: #1B2F52;
+  --mk-deep-ink: #FFFFFF;    /* 19.30:1 on the deep block */
+  --mk-deep-prose: #C3CEDC;  /* 12.11:1 on the deep block */
+  --mk-deep-accent: #7FA8E8; /*  7.97:1 on the deep block */
 
-  --mk-sand: #F1F5F9;
-  --mk-sand-ink: #014AB5;
+  --mk-sand: #16305A;
+  --mk-sand-ink: #A9C6F2;
 
   /* Elevation. The cards sit ON the ground rather than being outlined within it: a shallow
      two-part shadow — a tight contact shadow plus a wide soft one — which is what makes a card
-     read as lifted. The ground behind them is moving, so the shadow is also what separates the
-     card's own surface from the field passing underneath it. */
-  --mk-shadow: 0 1px 2px rgba(10, 25, 47, .05), 0 10px 28px -14px rgba(10, 25, 47, .14);
-  --mk-shadow-lg: 0 2px 4px rgba(10, 25, 47, .05), 0 20px 48px -20px rgba(10, 25, 47, .20);
+     read as lifted. On the dark ground the shadow has to be near-black and deeper than it was on
+     white: a shadow mixed from the page colour itself would disappear into the page. */
+  --mk-shadow: 0 1px 2px rgba(0, 0, 0, .28), 0 10px 28px -14px rgba(0, 0, 0, .55);
+  --mk-shadow-lg: 0 2px 4px rgba(0, 0, 0, .32), 0 20px 48px -20px rgba(0, 0, 0, .68);
 
   /* ---- the new faces ---- */
   --font-sans: var(--font-inter);
@@ -318,7 +361,10 @@
    alone and the blur is decoration on top of an already-solid surface. */
 .mk-nav {
   position: sticky; top: 0; z-index: 50;
-  background: rgba(255, 255, 255, .94);
+  /* The bar's ground is the page's own midnight at 93%, so the contour field stays faintly
+     visible behind the chrome and the bar reads as part of the sheet rather than as a plate
+     laid on top of it. */
+  background: rgba(10, 25, 47, .93);
   backdrop-filter: blur(14px) saturate(1.4); -webkit-backdrop-filter: blur(14px) saturate(1.4);
   border-bottom: 1px solid transparent;
   /* 13px, down from 20px. The bar measured 87px at 1440px, and 40 of those were this padding alone
@@ -337,7 +383,7 @@
    rule appears, so the page has a sense of having been scrolled without a second sticky element
    to say so. */
 .mk-nav.is-stuck {
-  padding: 9px var(--mk-gutter); border-bottom-color: var(--mk-line); background: #ffffff;
+  padding: 9px var(--mk-gutter); border-bottom-color: var(--mk-line); background: var(--mk-bg);
 }
 
 .mk-wordmark {
@@ -440,7 +486,7 @@
   padding: 8px 15px; font-size: 14px; font-weight: 500; letter-spacing: -.005em;
   transition: border-color .2s ease, background-color .2s ease;
 }
-.mk-portal:hover { background: var(--mk-ink); border-color: var(--mk-ink); color: #fff; opacity: 1; }
+.mk-portal:hover { background: var(--mk-ink); border-color: var(--mk-ink); color: var(--mk-bg); opacity: 1; }
 
 /* ---- footer ---- */
 .mk-footer { background: var(--mk-bg); border-top: 1px solid var(--mk-line); color: var(--mk-muted); }
@@ -733,9 +779,9 @@
 
 .mk-price-card.feat { background: var(--mk-ink); border-color: var(--mk-ink); }
 .mk-price-card.feat .mk-price-name { color: var(--mk-deep-accent); }
-.mk-price-card.feat .mk-price-num, .mk-price-card.feat .mk-price-num small { color: #F8FAFC; }
+.mk-price-card.feat .mk-price-num, .mk-price-card.feat .mk-price-num small { color: var(--mk-on-blue-fill); }
 .mk-price-card.feat p { color: var(--mk-deep-prose); }
-.mk .mk-price-card.feat .mk-btn-primary { background: #fff; color: var(--mk-ink); border-color: #fff; }
+.mk .mk-price-card.feat .mk-btn-primary { background: var(--mk-on-blue-fill); color: var(--mk-blue-fill); border-color: var(--mk-on-blue-fill); }
 .mk .mk-price-card.feat .mk-btn-primary:hover { background: var(--mk-deep-prose); border-color: var(--mk-deep-prose); }
 
 /* ---------- iPaymu sandbox verification ---------- */
@@ -1327,7 +1373,7 @@
 }
 /* The active step is marked by the scrub, not by hover: it is a readout of scroll position. */
 .mk .pg-step.is-active { border-color: var(--mk-ink); }
-.mk .pg-step.is-active .pg-step-n { background: var(--mk-ink); border-color: var(--mk-ink); color: #fff; }
+.mk .pg-step.is-active .pg-step-n { background: var(--mk-ink); border-color: var(--mk-ink); color: var(--mk-bg); }
 
 /* ---------- pull quote band ---------- */
 .mk .pg-quote { max-width: 20ch; }
@@ -1390,7 +1436,7 @@
    as a decision, rather than as a side effect of a text colour flipping. */
 .mk .pg-price-card.feat { background: var(--mk-deep); border-color: var(--mk-deep); }
 .mk .pg-price-card.feat .pg-micro { color: var(--mk-deep-accent); }
-.mk .pg-price-card.feat .pg-price-fig, .mk .pg-price-card.feat h3 { color: #F8FAFC; }
+.mk .pg-price-card.feat .pg-price-fig, .mk .pg-price-card.feat h3 { color: var(--mk-on-blue-fill); }
 .mk .pg-price-card.feat p { color: var(--mk-deep-prose); }
 /* The list has to invert with the card, and it did not at first.
    The premium card is the INVERTED one: in light mode it is the dark band, in dark mode it is the

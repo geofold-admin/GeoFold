@@ -14,7 +14,7 @@
 .mk-h-eyebrow {
   display: inline-block; font-family: var(--font-sans), sans-serif; font-size: 11px;
   font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--mk-green);
-  background: var(--mk-sand); padding: 6px 11px; border-radius: 100px; margin-bottom: 18px;
+  background: var(--mk-raise); padding: 6px 11px; border-radius: 100px; margin-bottom: 18px;
 }
 .mk-h-title {
   font-family: var(--font-sans), sans-serif; font-weight: 700; font-size: 38px; line-height: 1.08;
@@ -24,7 +24,7 @@
 .mk-h-lede { font-size: 16px; line-height: 1.6; color: var(--mk-muted); margin: 0 0 24px; max-width: 46ch; }
 .mk-h-cta { display: flex; flex-wrap: wrap; gap: 10px; }
 .mk-btn-ghost { border: 1px solid transparent; color: var(--mk-green); }
-.mk-btn-ghost:hover { background: var(--mk-sand); }
+.mk-btn-ghost:hover { background: var(--mk-raise); }
 
 /* Four facts side by side even on the narrowest phone — they read as a spec strip. */
 .mk-facts {
@@ -53,7 +53,7 @@
   letter-spacing: -.015em; margin: 8px 0 0; color: var(--mk-ink);
 }
 .mk-sec-head p { margin: 8px 0 0; font-size: 14px; color: var(--mk-muted); max-width: 64ch; }
-.mk-sec-dark .mk-sec-head h2 { color: #f4f8f4; }
+.mk-sec-dark .mk-sec-head h2 { color: var(--mk-ink); }
 .mk-kick {
   font-family: var(--font-sans), sans-serif; font-size: 11px; font-weight: 600;
   letter-spacing: .1em; text-transform: uppercase; color: var(--mk-green);
@@ -154,7 +154,7 @@
 
 /* ---------- capability card ---------- */
 .mk-cap {
-  background: #fff; border: 1px solid var(--mk-line); border-radius: 14px; padding: 18px;
+  background: var(--mk-panel); border: 1px solid var(--mk-line); border-radius: 14px; padding: 18px;
   height: 100%; display: flex; flex-direction: column; gap: 16px;
 }
 .mk-cap-kick {
@@ -193,7 +193,7 @@
   display: flex; align-items: center; justify-content: space-between; padding: 11px 9px 6px;
   font-size: 7.5px; color: var(--mk-phone-muted); font-weight: 600;
 }
-.mk-scr-dot { width: 5px; height: 5px; border-radius: 100px; background: var(--mk-green); }
+.mk-scr-dot { width: 5px; height: 5px; border-radius: 100px; background: var(--mk-phone-accent); }
 .mk-scr-view {
   flex: 1; margin: 0 7px; border-radius: 7px; position: relative; overflow: hidden;
   /* The map panel, drawn in the brand blue rather than the old palette's forest greens. A
@@ -217,7 +217,7 @@
 .mk-scr-chips span {
   font-size: 6.5px; padding: 2.5px 6px; border-radius: 100px; border: .5px solid var(--mk-phone-line); color: var(--mk-phone-faint);
 }
-.mk-scr-chips span.on { background: var(--mk-green); border-color: var(--mk-green); color: #fff; }
+.mk-scr-chips span.on { background: var(--mk-phone-accent); border-color: var(--mk-phone-accent); color: #FFFFFF; }
 .mk-scr-row {
   display: flex; align-items: center; gap: 6px; padding: 5px 9px; border-top: .5px solid var(--mk-phone-line);
 }
@@ -274,7 +274,7 @@
 .mk-steps2 li { display: flex; gap: 14px; align-items: flex-start; }
 .mk-steps2-n {
   font-family: var(--font-mono), monospace; font-size: 12px; font-weight: 700; color: var(--mk-green);
-  background: var(--mk-sand); border-radius: 7px; padding: 7px 9px; flex: none;
+  background: var(--mk-raise); border-radius: 7px; padding: 7px 9px; flex: none;
 }
 .mk-steps2 h3 {
   font-family: var(--font-sans), sans-serif; font-size: 16px; margin: 2px 0 5px; color: var(--mk-ink);
@@ -287,14 +287,14 @@
    2560px screen the block stayed pinned to the left edge at x=80 while the sections above it had
    moved to x=640. The cap has to grow with the gutter so the TEXT is 62ch at every width. */
 .mk-why { padding: 0 var(--mk-gutter); max-width: calc(62ch + 2 * var(--mk-gutter)); }
-.mk-why p { font-size: 16px; line-height: 1.7; color: var(--mk-deep-prose); margin: 0 0 14px; }
-.mk-why strong { color: #fff; font-weight: 600; }
+.mk-why p { font-size: 16px; line-height: 1.7; color: var(--mk-prose); margin: 0 0 14px; }
+.mk-why strong { color: var(--mk-ink); font-weight: 600; }
 
 /* ---------- audience tags ---------- */
 .mk-tags { list-style: none; margin: 0; padding: 0 var(--mk-gutter); display: flex; flex-wrap: wrap; gap: 8px; }
 .mk-tags li {
   font-size: 14px; padding: 8px 13px; border-radius: 100px; border: 1px solid var(--mk-line);
-  color: var(--mk-prose); background: #fff;
+  color: var(--mk-prose); background: var(--mk-raise);
 }
 
 /* ---------- pricing teaser ---------- */
@@ -303,23 +303,23 @@
    belonging to a narrower page than their own heading. See the token block in paper.css. */
 .mk-price { padding: 0 var(--mk-gutter); display: grid; gap: 12px; }
 .mk-price-card {
-  background: #fff; border: 1px solid var(--mk-line); border-radius: 14px; padding: 20px;
+  background: var(--mk-panel); border: 1px solid var(--mk-line); border-radius: 14px; padding: 20px;
   display: flex; flex-direction: column;
 }
-.mk-price-card.feat { background: var(--mk-green); border-color: var(--mk-green); }
+.mk-price-card.feat { background: var(--mk-blue-fill); border-color: var(--mk-blue-fill); }
 .mk-price-name {
   font-family: var(--font-sans), sans-serif; font-size: 11px; font-weight: 600;
   letter-spacing: .1em; text-transform: uppercase; color: var(--mk-muted);
 }
-.mk-price-card.feat .mk-price-name { color: var(--mk-green-line); }
+.mk-price-card.feat .mk-price-name { color: var(--mk-on-green-dim); }
 .mk-price-num {
   font-family: var(--font-sans), sans-serif; font-weight: 700; font-size: 30px; letter-spacing: -.02em;
   margin: 6px 0 8px; color: var(--mk-ink);
 }
-.mk-price-card.feat .mk-price-num { color: #fff; }
+.mk-price-card.feat .mk-price-num { color: var(--mk-on-blue-fill); }
 .mk-price-num small { font-size: 14px; font-weight: 500; opacity: .7; margin-left: 4px; }
 .mk-price-card p { font-size: 14px; line-height: 1.6; color: var(--mk-muted); margin: 0 0 16px; }
-.mk-price-card.feat p { color: var(--mk-deep-prose); }
+.mk-price-card.feat p { color: var(--mk-on-green-dim); }
 .mk-price-card .mk-btn { width: 100%; justify-content: center; margin-top: auto; }
 .mk-price-note {
   /* THE NOTE HAS TO CENTRE UNDER THE CARDS, NOT UNDER THE PAGE. This is `text-align: center` on a
@@ -392,7 +392,7 @@
 .mk .mk-btn-ghost { color: var(--mk-green); }
 
 /* On the dark price card a green-filled button disappears into the card. Invert it. */
-.mk .mk-price-card.feat .mk-btn-primary { background: var(--mk-bg); color: var(--mk-green); }
+.mk .mk-price-card.feat .mk-btn-primary { background: var(--mk-on-blue-fill); color: var(--mk-blue-fill); }
 
 /* ---------- product: what one record carries ---------- */
 /* ONE INSET, NOT TWO. This carried `padding: 0 var(--mk-pad)` AND `margin: 0 var(--mk-pad)`, so the
@@ -401,7 +401,7 @@
    alone is the inset, and the padding goes: the cards now begin on the heading's left edge. */
 .mk-recs { display: grid; gap: 1px; background: var(--mk-line);
   border: 1px solid var(--mk-line); border-radius: 12px; overflow: hidden; margin: 0 var(--mk-gutter); }
-.mk-rec { background: #fff; padding: 16px 18px; }
+.mk-rec { background: var(--mk-panel); padding: 16px 18px; }
 .mk-rec-t { font-family: var(--font-sans), sans-serif; font-weight: 600; font-size: 14px;
   color: var(--mk-ink); margin-bottom: 4px; }
 .mk-rec-b { font-size: 14px; line-height: 1.6; color: var(--mk-muted); }
@@ -451,14 +451,12 @@
   border-bottom: 1.5px solid var(--mk-green);
   transform: rotate(-45deg);
 }
-.mk-plist.on-dark li { color: var(--mk-deep-prose); }
+.mk-plist.on-dark li { color: var(--mk-on-green-dim); }
 .mk-plist.on-dark li::before {
-  /* The tick is drawn with borders now, so it takes the colour on the BORDERS. The old
-     `color:` declaration would have been silently ignored and the tick would have kept the
-     light-theme blue on the inverted card, which is the kind of thing that reads as a
-     rendering glitch rather than a colour choice. */
-  border-left-color: var(--mk-deep-accent);
-  border-bottom-color: var(--mk-deep-accent);
+  /* The tick is drawn with borders now, so it takes the colour on the BORDERS. On the featured
+     plan card, which is filled with the blue FILL, the tick is white. */
+  border-left-color: var(--mk-on-blue-fill);
+  border-bottom-color: var(--mk-on-blue-fill);
 }
 
 /* ---------- shared Q&A block ---------- */

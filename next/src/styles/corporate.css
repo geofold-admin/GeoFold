@@ -1,64 +1,58 @@
 /* =====================================================================================
-   THE CORPORATE LAYER — 2026-09-27.
+   THE MIDNIGHT LAYER — 2026-09-27.
 
-   Loaded last. Three things happen here, and they are the whole brief:
+   Loaded last. This file is the whole visual system of the marketing site, in four parts.
+   Read them in order; each assumes the one before it.
 
-   1. ONE GROUND. A single contour field, fixed to the viewport, behind every page of the
-      marketing site. It replaces four per-section effects (the hero's survey graticule, the
-      how-it-works contours, the argument band's magnet lines, the closing shape grid) and it
-      replaces the section backgrounds: `pg-sec-tint` / `mk-sec-tint` (silver) and `pg-sec-dark` /
-      `mk-sec-dark` (midnight) no longer paint anything. There are no coloured bands left, so
-      crossing a section boundary no longer changes the background.
+   1. ONE GROUND, AND IT IS DARK. A single contour field, fixed to the viewport, behind every
+      page. It replaces the four per-section effects the site used to carry (the hero's
+      graticule, the how-it-works contours, the argument band's magnet lines, the closing shape
+      grid) and it replaces the section backgrounds: `pg-sec-tint` / `mk-sec-tint` and
+      `pg-sec-dark` / `mk-sec-dark` no longer paint a band of their own. Crossing a section
+      boundary does not change the background, because there are no boundaries to cross.
 
-   2. SECTIONS BECOME CARDS. Because the ground moves, content cannot sit directly on it: a
-      contour line running behind a paragraph is a legibility problem, not a texture. Every block
-      of content therefore sits on a card — an opaque panel with a hairline and a shadow — and the
-      ground shows only in the gaps between cards and in the page margins. That is the whole
-      visual system now: one moving ground, opaque cards on top of it.
+      THE GROUND IS THE CLIENT'S MIDNIGHT. #0A192F is the palette's "Wibawa Perusahaan" and the
+      brief asks for a dark-dominant site, so the whole page sits on it — not a light page with
+      dark blocks on it, which is what the previous pass built.
 
-   3. THE CARD IS DRAWN BY A PSEUDO-ELEMENT, AND THE INSET IS MEASURED IN `vw`.
+   2. CONTENT IS A CARD. The ground moves, so content cannot sit directly on it: a contour line
+      running behind a paragraph is a legibility problem, not a texture. Every block of content
+      sits on an opaque panel — a hairline, a radius and a shadow — and the ground shows in the
+      gaps between panels and in the page margins. That is the whole system: one moving ground,
+      opaque cards on top of it.
 
-      This is the one technical decision worth reading before editing anything below, because both
-      halves of it are load-bearing.
+      A card is drawn by an absolutely positioned pseudo-element rather than by a negative
+      margin, and the inset is measured in `vw`. Both halves of that are load-bearing; the full
+      argument is in the comment on the card recipe below.
 
-      WHY A PSEUDO-ELEMENT. A card has to be WIDER than its content: the content sits on the
-      page's left edge (so it lines up with the nav) and the card's edge sits one padding further
-      out. The obvious way to do that is `margin-inline: calc(-1 * var(--card-pad))` on the content
-      element. That cannot work here, because `--mk-gutter` is defined as
-      `max(0px, (100% - shell) / 2) + pad`: its value depends on the width of whatever element
-      resolves it. Put that negative margin on the element itself and the element's width now
-      depends on its own margin, which depends on `--mk-gutter`, which depends on the element's
-      width. CSS drops the declaration as a cycle and the card silently disappears.
+   3. CHROME IS NOT A CARD. The header and the footer are the two edges of the sheet: the header
+      is a full-bleed bar pinned to the top of the viewport, the footer is a full-bleed band that
+      closes the page. They do not float, they do not take a radius, and they do not sit inside
+      the card system — because chrome that floats reads as content, and the first thing a reader
+      should understand is where the page starts and where it ends. Everything BETWEEN them is a
+      card. This is the one place the design deliberately stops floating.
 
-      An absolutely positioned pseudo-element is out of flow, so it cannot influence its parent's
-      width, so there is no cycle. `inset` then does the job the negative margin was meant to do.
-      `isolation: isolate` on each host is what keeps `z-index: -1` from escaping into the page's
-      stacking context — without it the pseudo would sit behind EVERY section's content rather
-      than just its own, and a later card would paint over an earlier section's text.
+   4. THE ACCENT IS RATIONED. #F35D19 appears on ONE control per screen — the action the reader
+      is meant to take — and on the product's own survey markers, and nowhere else. Everything
+      else that wants attention takes the brand blue.
 
-      WHY `vw` AND NOT `%`. `inset` is resolved against the pseudo-element's containing block,
-      which is the host's PADDING box. For a full-bleed section that is the viewport width, and a
-      `--mk-gutter` computed inside the pseudo is correct. But `.mk-section`, `.mk-hero` and
-      `.mk-h` carry `padding-inline: var(--mk-gutter)` themselves, so their padding box is the
-      viewport MINUS two gutters — and `100%` inside the pseudo would then measure that narrower
-      box. At 2560px that put the card's edge at x=440 where it belonged at x=600. `--card-inset`
-      is therefore built from `100vw`, which measures the viewport no matter which element resolves
-      it, and matches `--mk-shell` (which is also viewport-only, since `--mk-pad` is a clamp of
-      `vw`). The two are computed from the same ruler at every width.
+      THE LABEL IS NAVY, NOT WHITE. White on #F35D19 measures 3.29:1 and fails AA; midnight navy
+      on the same orange measures 5.36:1 and passes. It also looks better: a navy label on orange
+      is a deliberate pairing, while white on orange is what every template ships.
 
-   THE PALETTE IS THE CLIENT'S, VERBATIM. See the token block in paper.css for the contrast
-   measurements behind every value. The rule that matters most here: #F35D19 appears on the
-   primary call to action and nowhere else, and its label is midnight navy rather than white,
-   because white on that orange measures 3.29:1 and fails AA while navy measures 5.29:1.
+   THE BLUE IS TWO VALUES. #014AB5, the client's own blue, measures 2.13:1 on the midnight panel
+   — unusable as type on this ground. So it appears as INK at #7FA8E8 (6.44:1) and as FILL at
+   #1E5FBF (6.10:1 behind white). Every measurement behind these values is in the token block in
+   paper.css.
    ===================================================================================== */
 
 /* -------------------------------------------------------------------------------------
    1. THE GROUND
    ------------------------------------------------------------------------------------- */
 
-/* The layer itself. `fixed` rather than `absolute` is what makes it literally the same background
-   at every scroll position; `z-index: -1` inside the `.mk` stacking context puts it behind every
-   card but in front of the page's own background colour. */
+/* The layer itself. `fixed` rather than `absolute` is what makes it literally the same
+   background at every scroll position; `z-index: -1` inside the `.mk` stacking context puts it
+   behind every card but in front of the page's own background colour. */
 .mk-ground {
   position: fixed;
   inset: 0;
@@ -71,43 +65,49 @@
      this subtree" rather than "behind the document, possibly behind its own background". */
   isolation: isolate;
 
+  /* Native UI follows the theme: scrollbars, the caret, autofill and the default focus ring all
+     come from the platform, and without this they stay light on a dark page. Scoped to `.mk`
+     rather than `:root` because the signed-in portal is a separate, deliberately light design
+     system that shares the same document. */
+  color-scheme: dark;
+
   /* The padding between a card's edge and its content, and the gap between two cards. Both are
      viewport-derived and percentage-free, so they are safe to use in a `calc()` that another
      element's geometry depends on.
 
-     THE RADIUS FOLLOWS THE VIEWPORT. The reference this system was drawn from uses noticeably
-     rounder cards than the 18px this started at — measured on a 1920px screenshot, the corners
-     read at roughly 24px. A fixed value cannot do that at every width: 24px on a 390px phone is a
-     bubble, and 14px on a 2560px monitor is a paper cut. So it scales, with floors at both ends. */
+     THE RADIUS FOLLOWS THE VIEWPORT. A fixed value cannot work at every width: 24px on a 390px
+     phone is a bubble, and 14px on a 2560px monitor is a paper cut. So it scales, with floors at
+     both ends. */
   --card-pad: clamp(16px, 3vw, 40px);
   --card-gap: clamp(14px, 2vw, 26px);
   --card-radius: clamp(14px, 1.2vw, 22px);
 
-  /* WHERE THE CONTENT COLUMN STARTS, measured from the viewport edge — the same number `--mk-gutter`
-     resolves to, but built from `100vw` so it means the same thing in ANY element. That matters for
-     the nav: the nav is itself inset by `--card-inset`, so a `%`-based gutter resolved inside it
-     would measure the nav's width and the logo would drift off the page's left edge. */
+  /* WHERE THE CONTENT COLUMN STARTS, measured from the viewport edge — the same number
+     `--mk-gutter` resolves to, but built from `100vw` so it means the same thing in ANY element.
+     That matters for the chrome: the nav is full-bleed and pads with `--mk-gutter`, while a card
+     is inset and pads with `--card-edge-pad`, and the two have to land on the same line. */
   --content-edge: calc(max(0px, (100vw - var(--mk-shell)) / 2) + var(--mk-pad));
 
-  /* How far in from the viewport edge a card's edge sits. At 1440px this is 80 + 80 - 40 = 120px,
-     so the card's edge sits 40px outside the content column's edge — one card-padding, which is
-     exactly the relationship the design calls for.
+  /* How far in from the viewport edge a card's edge sits. At 1440px this is 120px, so the card's
+     edge sits 40px outside the content column's edge — one card-padding, which is exactly the
+     relationship the design calls for.
 
-     THE 10px FLOOR IS FOR PHONES. On a 390px screen the arithmetic above works out to about 5px,
-     which leaves the contour ground as two hairline slivers down the sides of the page — present in
+     THE 10px FLOOR IS FOR PHONES. On a 390px screen the arithmetic works out to about 5px, which
+     leaves the contour ground as two hairline slivers down the sides of the page — present in
      the DOM, invisible to the reader. The floor guarantees the ground keeps a visible margin at
      every width, which is the whole point of having one.
 
-     AND WHEN THE FLOOR IS ACTIVE the padding inside a card has to shrink to match, or the content
-     stops lining up with the headings below it: at 390px the floor puts the card's edge at 10px
-     while the content column still starts at 21px, so the card's own padding is 11px, not the 16px
-     `--card-pad` would give it. `--card-edge-pad` is that difference, and it is what any card whose
-     CONTENT must sit on the page's left edge uses. */
-  --card-inset: max(
-    10px,
-    calc(var(--content-edge) - var(--card-pad))
-  );
+     AND WHEN THE FLOOR IS ACTIVE the padding inside a card has to shrink to match, or the
+     content stops lining up with the headings below it. `--card-edge-pad` is that difference,
+     and it is what any card whose CONTENT must sit on the page's left edge uses. */
+  --card-inset: max(10px, calc(var(--content-edge) - var(--card-pad)));
   --card-edge-pad: calc(var(--content-edge) - var(--card-inset));
+
+  /* THE TOP-EDGE HIGHLIGHT. One inset hairline in white at 4.5% along the top of every card. On a
+     dark ground a card's upper edge catches the light in a way its lower edge does not, and that
+     single pixel of difference is most of what separates a considered dark interface from a flat
+     one. It is applied alongside the shared shadow token so no rule has to remember it. */
+  --card-lip: inset 0 1px 0 rgba(255, 255, 255, .045);
 }
 
 /* -------------------------------------------------------------------------------------
@@ -117,15 +117,38 @@
    `position: relative` (so the pseudo is positioned against it) and `isolation: isolate` (so the
    pseudo's `z-index: -1` cannot escape), plus the shared surface.
 
-   THE HOST IS THE SECTION ITSELF, not its children. Several sections have more than one child (a
-   heading block and a grid, a heading and a body), and carding each child separately would draw
-   three cards where the reader sees one section. The section is the unit the design thinks in, so
-   the section draws the card and its own padding-block is the card's padding. */
+   WHY A PSEUDO-ELEMENT. A card has to be WIDER than its content: the content sits on the page's
+   left edge (so it lines up with the nav) and the card's edge sits one padding further out. The
+   obvious way to do that is `margin-inline: calc(-1 * var(--card-pad))` on the content element.
+   That cannot work here, because `--mk-gutter` is defined as
+   `max(0px, (100% - shell) / 2) + pad`: its value depends on the width of whatever element
+   resolves it. Put that negative margin on the element itself and the element's width now
+   depends on its own margin, which depends on `--mk-gutter`, which depends on the element's
+   width. CSS drops the declaration as a cycle and the card silently disappears.
+
+   An absolutely positioned pseudo-element is out of flow, so it cannot influence its parent's
+   width, so there is no cycle. `inset` then does the job the negative margin was meant to do.
+   `isolation: isolate` on each host is what keeps `z-index: -1` from escaping into the page's
+   stacking context — without it the pseudo would sit behind EVERY section's content rather than
+   just its own, and a later card would paint over an earlier section's text.
+
+   WHY `vw` AND NOT `%`. `inset` is resolved against the pseudo-element's containing block,
+   which is the host's PADDING box. For a full-bleed section that is the viewport width, and a
+   `--mk-gutter` computed inside the pseudo is correct. But `.mk-section`, `.mk-hero` and
+   `.mk-h` carry `padding-inline: var(--mk-gutter)` themselves, so their padding box is the
+   viewport MINUS two gutters — and `100%` inside the pseudo would then measure that narrower
+   box. At 2560px that put the card's edge at x=440 where it belonged at x=600. `--card-inset`
+   is therefore built from `100vw`, which measures the viewport no matter which element resolves
+   it, and matches `--mk-shell` (which is also viewport-only, since `--mk-pad` is a clamp of
+   `vw`). The two are computed from the same ruler at every width.
+
+   NOTE WHAT IS NOT IN THIS LIST: `.mk-nav` and `.mk-footer`. Those two are the page's chrome and
+   they are full-bleed — see section 5. */
 .mk .pg-sec,
 .mk .mk-hero,
 .mk .mk-h,
 .mk .mk-close,
-.mk .mk-footer,
+.mk .pg-close,
 .mk .mk-sec,
 .mk .mk-section {
   position: relative;
@@ -136,7 +159,7 @@
 .mk .mk-hero::before,
 .mk .mk-h::before,
 .mk .mk-close::before,
-.mk .mk-footer::before,
+.mk .pg-close::before,
 .mk .mk-sec::before,
 .mk .mk-section::before {
   content: '';
@@ -145,7 +168,7 @@
   background: var(--mk-panel);
   border: 1px solid var(--mk-line);
   border-radius: var(--card-radius);
-  box-shadow: var(--mk-shadow);
+  box-shadow: var(--mk-shadow), var(--card-lip);
   pointer-events: none;
   z-index: -1;
   /* `display` is set EXPLICITLY, and it has to be. paper.css still carries
@@ -162,11 +185,7 @@
 /* THE VERTICAL RHYTHM. A card's own padding is the space between its edge and its content; the
    gap between two cards is `--card-gap`, which is also the only place the ground is visible
    between them. The old section rhythm is therefore split: most of it becomes padding inside the
-   card, and a fixed slice becomes the gap outside it.
-
-   `--mk-rhythm` is `clamp(56px, 6.5vw, 96px)`, so the card's padding lands at 31-53px and the
-   gaps at 14-26px. That is deliberate: the reader should read the page as cards with tight, even
-   gaps, not as a sequence of separate documents. */
+   card, and a fixed slice becomes the gap outside it. */
 .mk .pg-sec,
 .mk .mk-sec,
 .mk .mk-section {
@@ -176,7 +195,7 @@
 .mk .mk-hero,
 .mk .mk-h,
 .mk .mk-close,
-.mk .mk-footer {
+.mk .pg-close {
   margin-block: var(--card-gap);
 }
 /* The hosts that used to lean on their own padding-block or on a section's. Each gets a floor, so
@@ -186,39 +205,43 @@
 .mk .mk-hero.pad-b-sm { padding-bottom: 44px; }
 .mk .mk-h { padding-block: 48px 40px; }
 .mk .mk-close { padding-block: 48px 52px; }
-.mk .mk-footer { padding-block: 44px 48px; }
 /* The audience band is not a `.pg-sec`, so it takes its own margin. */
 .mk .pg-marquee { margin-block: var(--card-gap); }
 
 /* -------------------------------------------------------------------------------------
-   3. THE SECTIONS THAT USED TO BE COLOURED BANDS
+   3. THE WEIGHTED CARDS
    -------------------------------------------------------------------------------------
-   Nothing here paints a background any more. The class names survive because the markup and a
-   dozen rules still key off them — `.pg-sec-dark h2` sets a heading colour, `.pg-sec-tint
-   .pg-cell-art` sets a figure's ground — it is only the band that is gone. */
-.mk .pg-sec-tint,
-.mk .pg-sec-dark,
-.mk .mk-sec-tint,
-.mk .mk-sec-dark { background: none; }
+   Two cards carry more than the rest: the hero, which is the page's first statement, and the
+   argument band, which is its one emphatic paragraph. On a light page those were simply the
+   darkest surfaces; on a dark page "darker" is not available as a contrast, so they go DEEPER
+   than the ground instead — the client's palette keeps #0A192F for exactly this role ("latar
+   Banner utama saat web baru dibuka").
 
-/* THE MIDNIGHT CARDS. The client's palette asks for two weighted surfaces: a strong first
-   impression at the top of the page and a block of stability at the bottom, both in Midnight
-   Corporate. The hero and the footer are those two. The argument band joins them because it is the
-   page's one emphatic statement — and because a single dark card in the middle of the page is what
-   gives the light cards around it their weight. */
-.mk .pg-hero::before,
+   THE HERO ALSO CARRIES A GLOW, and it is the only gradient on the site. One soft radial of the
+   brand blue in its top-left corner does two things at once: it says "this is the front page"
+   without a single extra element, and it lifts the headline off the ground so the largest type
+   on the site is also the highest-contrast type on it. Measured, the deepest point of the
+   gradient is #081627 and white on it is 18.6:1. */
+.mk .pg-hero::before {
+  background:
+    radial-gradient(120% 90% at 10% 0%, rgba(30, 95, 191, .30), transparent 58%),
+    linear-gradient(178deg, #0C1F3C 0%, #081627 100%);
+  border-color: #1B2F52;
+  box-shadow: var(--mk-shadow-lg), var(--card-lip);
+}
+/* The argument band gets the deeper ground WITHOUT the glow: it is a statement, not an opening,
+   and two glowing cards on one page would make the first one ordinary. */
 .mk .pg-sec-dark::before,
-.mk .mk-sec-dark::before,
-.mk .mk-footer::before {
-  background: var(--mk-deep);
-  border-color: var(--mk-deep-line);
-  box-shadow: var(--mk-shadow-lg);
+.mk .mk-sec-dark::before {
+  background: linear-gradient(180deg, #0B1B33 0%, #081627 100%);
+  border-color: #1B2F52;
+  box-shadow: var(--mk-shadow-lg), var(--card-lip);
 }
 
-/* THE INK ON THE MIDNIGHT CARDS. Set per element rather than by re-pointing `--mk-ink` on the
+/* THE INK ON THE WEIGHTED CARDS. Set per element rather than by re-pointing `--mk-ink` on the
    host, and that is deliberate: re-pointing the token would also flip the outline button inside
-   the hero, which is a white plate with dark ink and would have become white on white. Naming the
-   elements is more verbose and cannot do that. */
+   the hero, which is a light plate with dark ink and would have become light on light. Naming
+   the elements is more verbose and cannot do that. */
 .mk .pg-hero .pg-d1 { color: var(--mk-deep-ink); }
 .mk .pg-hero .pg-lede { color: var(--mk-deep-prose); }
 .mk .pg-hero .pg-micro { color: var(--mk-deep-accent); }
@@ -226,10 +249,9 @@
 .mk .pg-hero .pg-stat dt { color: var(--mk-deep-accent); }
 .mk .pg-hero .pg-stat dd { color: var(--mk-deep-ink); }
 .mk .pg-hero .pg-stat dd small { color: var(--mk-deep-prose); }
-/* The figure's ground and ink. `--mk-raise` (silver) on midnight reads as a sheet of paper on a
-   desk, which is the wrong note for a drawing on a dark card, and the drawing itself is stroked in
-   `currentColor` at 28% — dark ink on a dark plate. Both are re-pointed. */
-.mk .pg-hero .pg-row-art { background: #0F2440; border-color: var(--mk-deep-line); }
+/* The figure's ground and ink. A translucent tint rather than a second colour, so the panel reads
+   as a window cut into the hero's own gradient instead of a plate laid on top of it. */
+.mk .pg-hero .pg-row-art { background: rgba(127, 168, 232, .07); border-color: var(--mk-line); }
 .mk .pg-hero .pg-fig { color: var(--mk-deep-ink); }
 .mk .pg-hero .pg-fig-line { opacity: .42; }
 .mk .pg-hero .pg-fig-accent { stroke: var(--mk-deep-accent); }
@@ -244,10 +266,10 @@
 /* -------------------------------------------------------------------------------------
    4. THE AUDIENCE BAND
    -------------------------------------------------------------------------------------
-   It was a full-bleed strip with a raised ground and two hairlines. It is a card now, like
-   everything else, so its own ground and both rules go. The label's inset has to become the
-   CARD's padding, because the card's edge is one card-padding further out than the label used to
-   start. */
+   A full-bleed strip with a raised ground and two hairlines, in the skin before this one. It is
+   a card now, like everything between the chrome, so its own ground and both rules go. The
+   label's inset has to become the CARD's padding, because the card's edge is one card-padding
+   further out than the label used to start. */
 .mk .pg-marquee {
   background: none;
   border: 0;
@@ -262,74 +284,86 @@
   background: var(--mk-panel);
   border: 1px solid var(--mk-line);
   border-radius: var(--card-radius);
-  box-shadow: var(--mk-shadow);
+  box-shadow: var(--mk-shadow), var(--card-lip);
   pointer-events: none;
   z-index: -1;
 }
 .mk .pg-marquee-label { background: none; padding-inline: var(--card-pad); }
 
 /* -------------------------------------------------------------------------------------
-   5. THE PRIMARY CALL TO ACTION IS ORANGE
+   5. THE CHROME — A FULL-BLEED BAR AND A FULL-BLEED BAND
    -------------------------------------------------------------------------------------
-   The client's rule, and it is a good one: #F35D19 appears on ONE control per screen — the action
-   the reader is meant to take — and nowhere else. Everything else is the brand blue, a plain
-   outline, or a ghost.
+   THE HEADER DOES NOT FLOAT. It was a floating rounded card for one revision, and it read as a
+   widget hovering over the page rather than as the top of it. A header is chrome: it spans the
+   viewport, it sticks to the very top, and it is separated from the content by one hairline and
+   nothing else. The card system begins below it.
 
-   THE LABEL IS NAVY, NOT WHITE. White on #F35D19 measures 3.29:1 and fails AA; midnight navy on
-   the same orange measures 5.29:1 and passes. It also happens to look better: a navy label on
-   orange is a deliberate pairing, while white on orange is what every template ships.
-
-   The hover goes LIGHTER rather than darker. A darkened orange drops the navy label back under
-   4.5:1 (measured 4.43:1 at #E0510F), and "lighter on hover" also reads as the control heating up,
-   which is the right signal for the one button that matters.
-
-   THE THIRD AND FOURTH SELECTORS are not redundant. The featured pricing card has its own rule in
-   home.css — `.mk-price-card.feat .mk-btn-primary`, a three-class selector — that fills the button
-   with the page ground and colours the label with the accent: a white button on the blue card.
-   That outranks a plain `.mk-btn-primary`, so without them the site's most important control would
-   have stayed white. They are listed so the orange wins on the one card where it matters most. */
-.mk .pg-btn-primary,
-.mk .mk-btn-primary,
-.mk .mk-price-card.feat .mk-btn-primary,
-.mk .pg-price-card.feat .pg-btn-primary {
-  background: var(--mk-marker);
-  border-color: var(--mk-marker);
-  color: var(--mk-on-marker);
+   THE GLASS IS KEPT. A 93% midnight bar over a moving contour ground lets the field read as
+   continuous behind the chrome, so scrolling past the top of the page does not look like the
+   background being switched off. `.is-stuck` (added by Motion.tsx past ~40px) shrinks the padding
+   and makes the bar fully opaque, which is when the hairline appears: at the very top of the page
+   the bar has no visible edge, and once it is pinned over content it does. */
+.mk .mk-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  margin: 0;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
+  background: rgba(10, 25, 47, .93);
+  box-shadow: none;
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  backdrop-filter: blur(14px) saturate(1.4);
+  /* `--mk-gutter`: the bar is full-bleed, so its padding IS the content's centring offset, and
+     the logo lands on the same x as every heading below it at every width. */
+  padding: 13px var(--mk-gutter);
+  transition: padding .3s cubic-bezier(.22, .61, .36, 1), border-color .3s ease,
+              background-color .3s ease;
 }
-.mk .pg-btn-primary:hover,
-.mk .mk-btn-primary:hover,
-.mk .mk-price-card.feat .mk-btn-primary:hover,
-.mk .pg-price-card.feat .pg-btn-primary:hover {
-  background: #FF7030;
-  border-color: #FF7030;
-  color: var(--mk-on-marker);
+.mk .mk-nav.is-stuck {
+  padding: 9px var(--mk-gutter);
+  background: var(--mk-bg);
+  border-bottom-color: var(--mk-line);
 }
-/* The specular edge is a WebGL highlight whose two colours come from custom properties. On an
-   orange control the blue they held no longer belongs to the button it is drawn on. */
-.mk .pg-hero .pg-btn-primary { --spec-line: #FFD2B8; --spec-base: #F35D19; }
-
-/* THE CONTACT FORM'S SUBMIT. `.mk-send` is the send button on /contact and nothing else, and the
-   client's brief names "Hubungi Kami" as one of the two controls the orange belongs on. It was
-   filled with the brand blue — a competent button, but the page's single action wearing the same
-   colour as every link beside it. */
-.mk .mk-send {
-  background: var(--mk-marker);
-  border-color: var(--mk-marker);
-  color: var(--mk-on-marker);
+/* A browser without backdrop-filter gets the opaque surface, which is what it already had. */
+@supports not (backdrop-filter: blur(10px)) {
+  .mk .mk-nav { background: var(--mk-bg); }
 }
-.mk .mk-send:hover:not(:disabled) { background: #FF7030; border-color: #FF7030; }
-.mk .mk-send:disabled { opacity: .6; cursor: default; }
-/* The `.mk-submit` on /login, /onboarding and /reset is deliberately NOT orange. Those three pages
-   are the portal, not the pitch: a person who has already decided to sign in is not being
-   converted, and the orange is worth more where a reader is still deciding. They keep the blue. */
 
-/* -------------------------------------------------------------------------------------
-   6. THE FOOTER
-   -------------------------------------------------------------------------------------
-   The client's palette closes the page with a midnight block. This footer was a light band with a
-   top hairline; a light surface at the very bottom of a page whose top is midnight is the one
-   thing that makes a site read as unfinished, so the two now match. */
-.mk .mk-footer { border-top: 0; color: var(--mk-deep-prose); }
+/* THE PHONE MENU hangs off the bar's own bottom edge, full-bleed, with one hairline separating
+   it from the bar and one at its own end. It is part of the chrome, so it does not take a card's
+   radius either — a rounded sheet hanging off a square bar is the kind of detail that reads as a
+   mistake even when nobody can name it. */
+@media (max-width: 900px) {
+  .mk .mk-menu-panel {
+    left: 0;
+    right: 0;
+    margin-top: 0;
+    height: calc(100vh - 100%);
+    height: calc(100dvh - 100%);
+    border: 0;
+    border-top: 1px solid var(--mk-line);
+    border-bottom: 1px solid var(--mk-line);
+    border-radius: 0;
+    box-shadow: var(--mk-shadow-lg);
+    background: var(--mk-bg);
+    padding: 0 var(--mk-gutter);
+  }
+}
+
+/* THE FOOTER DOES NOT FLOAT EITHER, and this one is stronger than a preference. A footer is the
+   page's closing edge: the reader scrolls to the end and the page should end, not stop at a
+   panel with the background still visible underneath it. It is a full-bleed band in the palette's
+   deepest value, one step below the ground, so the page visibly closes.
+
+   ITS INK IS THE SAME LADDER THE CARDS USE, which is why this block is short: the tokens
+   `--mk-deep-*` were written for a dark block and the footer is still a dark block. */
+.mk .mk-footer {
+  background: var(--mk-deep);
+  border-top: 1px solid var(--mk-deep-line);
+  color: var(--mk-deep-prose);
+}
 .mk .mk-footer h2,
 .mk .mk-footer .mk-seal-heading,
 .mk .mk-footer .mk-seal-entity strong { color: var(--mk-deep-ink); }
@@ -345,20 +379,17 @@
 .mk .mk-footer .mk-seal-rows dd { color: var(--mk-deep-ink); }
 .mk .mk-footer .mk-seal-kbli-label { color: var(--mk-deep-prose); }
 .mk .mk-footer .mk-parent-link { color: var(--mk-deep-ink); }
-.mk .mk-footer .mk-seal-oss { color: var(--mk-deep-prose); }
-/* The OSS plate: a light chip with dark type, so it reads on the midnight ground. */
-.mk .mk-footer .mk-seal-oss-mark { background: var(--mk-deep-ink); color: var(--mk-deep); }
-/* THE OSS CHIP ITSELF. It carries `background: var(--mk-panel)` from paper.css — a white pill, which
-   is right on the light ground it was written for and wrong on the midnight footer: the pill stayed
-   white while this file gave its label the footer's light ink, so "Registered through OSS" measured
-   1.59:1 against its own plate. Measured rather than assumed; the fix is to let the pill take the
-   footer's ground and keep the light label. */
+/* THE OSS CHIP ITSELF. It carries `background: var(--mk-panel)` from paper.css — a panel pill,
+   which is right on a card and wrong on the footer's deeper ground: the pill and its label would
+   sit at 1.05:1, an invisible chip. It takes the footer's own ground and keeps the light label. */
 .mk .mk-footer .mk-seal-oss {
   background: transparent;
   border-color: var(--mk-deep-line);
   color: var(--mk-deep-prose);
 }
 .mk .mk-footer .mk-seal-oss:hover { border-color: var(--mk-deep-ink); color: var(--mk-deep-ink); }
+/* The OSS plate: a light chip with dark type, so it reads on the deep ground. */
+.mk .mk-footer .mk-seal-oss-mark { background: var(--mk-deep-ink); color: var(--mk-deep); }
 .mk .mk-footer .mk-footer-bar { border-top-color: var(--mk-deep-line); }
 .mk .mk-footer .mk-footer-bar a { color: var(--mk-deep-prose); }
 .mk .mk-footer .mk-footer-bar a:hover { color: var(--mk-deep-ink); }
@@ -366,119 +397,205 @@
 .mk .mk-footer .mk-footer-addr { color: var(--mk-deep-prose); }
 
 /* THE FOOTER'S OWN LOCKUP, and this is the one place the mark's "always on a light ground" rule
-   cannot be honoured — the footer is midnight by the client's own palette.
+   cannot be honoured — the footer is the deepest surface on the site by the client's own palette.
 
-   The mark is a CUT-OUT: the grid lines inside the G are holes showing the background, and the blue
-   measures 2.11:1 against midnight, so on this card the G effectively disappears while the orange F
-   survives at 5.63:1 — half a logo. Plating it on a light rectangle was rejected for the header
-   when a dark band lived there ("a stray white box in a dark header"), but the footer is a
+   The mark is a CUT-OUT: the grid lines inside the G are holes showing the background, and the
+   blue measures 1.6:1 against the deep ground, so on this band the G effectively disappears while
+   the orange F survives — half a logo. Plating it on a light rectangle was rejected for the
+   header when a dark band lived there ("a stray white box in a dark header"), but the footer is a
    different case: it is the page's closing block, the plate reads as a printed mark on a dark
-   sheet, and it is the only treatment that keeps both halves of the supplied artwork intact.
-
-   The wordmark beside it is live text at 700 weight, which is the part that must simply change
-   colour: #1E293B on #0A192F measures 1.20:1, so it takes the footer's own light ink. */
+   sheet, and it is the only treatment that keeps both halves of the supplied artwork intact. */
 .mk .mk-footer .gf-lockup { background: var(--mk-deep-ink); border-radius: 6px; padding: 6px 10px; }
 .mk .mk-footer .gf-lockup-word { color: var(--mk-deep); }
 
-/* THE NAV IS A CARD TOO — 2026-09-27.
+/* -------------------------------------------------------------------------------------
+   6. THE CONTROLS
+   -------------------------------------------------------------------------------------
+   THE PRIMARY CALL TO ACTION IS ORANGE. The client's rule, and it is a good one: #F35D19 appears
+   on ONE control per screen — the action the reader is meant to take — and nowhere else.
 
-   It used to be a full-bleed sticky bar with a hairline along its bottom edge, and that was the
-   last band left on the site. Every other block became a card; the nav stayed a strip, so the very
-   first thing a reader saw was the one element that did NOT match the system behind it — a bar
-   welded to the viewport edges, with the ground visible on neither side of it.
+   THE HOVER GOES LIGHTER rather than darker. On a dark ground a darkened orange drops toward the
+   page and stops reading as a control; the lighter #FF7030 is also 5.0:1 against the navy label,
+   so it keeps passing AA while reading as the control heating up.
 
-   It is now a floating card like everything else: inset by `--card-inset`, rounded, on the same
-   shadow, with the contour ground visible above it, beside it and behind its own translucency.
-   `--card-inset` and not `--mk-gutter`: the nav's content has to stay on the page's left edge (it
-   lines up with every heading below it), so the card's edge sits one card-padding further out —
-   exactly the relationship the sections use.
-
-   STICKY STILL, with a top offset rather than `top: 0`. A card flush against the viewport's top
-   edge is a card with its margin missing, so it pins `--card-gap` below the top and keeps that
-   margin at every scroll position. The shadow does the rest: a floating bar reads as floating
-   while it is pinned, which a full-bleed strip could never do.
-
-   THE GLASS IS KEPT and it matters more now, not less. A translucent card is what lets the contour
-   show through the nav itself, so the ground reads as continuous behind the chrome rather than
-   being interrupted by it. `.is-stuck` still tightens the bar on scroll — the padding shrinks and
-   the surface goes opaque so the links stay readable over whatever is passing underneath. */
-.mk .mk-nav {
-  position: sticky;
-  top: var(--card-gap);
-  z-index: 50;
-  margin: var(--card-gap) var(--card-inset) 0;
-  border: 1px solid var(--mk-line);
-  border-radius: var(--card-radius);
-  background: color-mix(in srgb, var(--mk-panel) 88%, transparent);
-  box-shadow: var(--mk-shadow);
-  -webkit-backdrop-filter: blur(14px) saturate(1.4);
-  backdrop-filter: blur(14px) saturate(1.4);
-  /* `--card-edge-pad`, not `--card-pad`, and the difference is the whole alignment story: the
-     nav's CONTENT has to sit on the page's left edge, the same x as every heading below it, so its
-     padding is whatever is left between the card's edge and that line. At 1440px both are 40px and
-     nothing shows; on a phone, where the 10px floor pushes the card's edge in further than the
-     content column moves, this is what keeps the logo aligned instead of 5px off. */
-  padding: 13px var(--card-edge-pad);
-  transition: padding .3s cubic-bezier(.22, .61, .36, 1), border-color .3s ease,
-              background-color .3s ease, box-shadow .3s ease;
+   THE THIRD AND FOURTH SELECTORS are not redundant. The featured pricing card has its own rule in
+   home.css — `.mk-price-card.feat .mk-btn-primary`, a three-class selector — that fills the button
+   with the page ground and colours the label with the accent: a white button on the blue card.
+   That outranks a plain `.mk-btn-primary`, so without them the site's most important control would
+   have stayed white. They are listed so the orange wins on the one card where it matters most. */
+.mk .pg-btn.pg-btn-primary,
+.mk .mk-btn.mk-btn-primary,
+.mk .mk-price-card.feat .mk-btn.mk-btn-primary,
+.mk .pg-price-card.feat .pg-btn.pg-btn-primary {
+  background: var(--mk-marker);
+  border-color: var(--mk-marker);
+  color: var(--mk-on-marker);
 }
-.mk .mk-nav.is-stuck {
-  padding: 9px var(--card-edge-pad);
-  background: var(--mk-panel);
-  border-color: var(--mk-line);
-  box-shadow: var(--mk-shadow-lg);
+.mk .pg-btn.pg-btn-primary:hover,
+.mk .mk-btn.mk-btn-primary:hover,
+.mk .mk-price-card.feat .mk-btn.mk-btn-primary:hover,
+.mk .pg-price-card.feat .pg-btn.pg-btn-primary:hover {
+  background: #FF7030;
+  border-color: #FF7030;
+  color: var(--mk-on-marker);
 }
-/* A browser without backdrop-filter gets the opaque surface, which is what it already had. */
-@supports not (backdrop-filter: blur(10px)) {
-  .mk .mk-nav { background: var(--mk-panel); }
+/* WHY THE FEATURED CARD'S CTA IS ORANGE AND NOT THE WHITE PLATE paper.css ASKS FOR.
+ *
+ * paper.css carries `.mk .mk-price-card.feat .mk-btn-primary { background: var(--mk-on-blue-fill) }`
+ * — a white plate on the blue card — at (0,4,0). corporate.css has always carried the same
+ * selector at the same specificity, and on the deployed site corporate.css happened to come LAST
+ * in the bundle, so orange won and /pricing shipped with an orange "Get Premium".
+ *
+ * Adding `corporate.css` to the login, onboarding and reset layouts (section 9) changed the CSS
+ * dependency graph, and Next re-emitted the route chunk with paper.css AFTER corporate.css. Equal
+ * specificity means the later rule wins, so /pricing silently flipped to a white CTA while `/`
+ * (whose card is `.pg-price-card`, a class paper.css never names) kept its orange. One page
+ * changed, the other did not, and nothing in either file was edited to cause it.
+ *
+ * THE FIX IS TO STOP DEPENDING ON BUNDLE ORDER. `.mk-btn.mk-btn-primary` repeats the class to
+ * reach (0,5,0), one step above paper.css's (0,4,0) rule, so orange wins whichever side of the
+ * bundle it lands on. The site's rule is "one orange control per screen", and on the pricing
+ * screen that control is the premium card's — not the close banner's, and not the free card's. */
+/* The specular edge is a WebGL highlight whose two colours come from custom properties. On an
+   orange control the blue they held no longer belongs to the button it is drawn on. */
+.mk .pg-hero .pg-btn-primary { --spec-line: #FFD2B8; --spec-base: #F35D19; }
+
+/* THE BLUE BUTTONS. Everything that is not the page's one conversion control keeps the brand
+   blue, and on this ground the blue has to be the FILL token: #014AB5 measures 2.13:1 against
+   midnight, which is a button nobody would see. */
+.mk .mk-submit,
+.mk .mk-btn:not(.mk-btn-primary):not(.mk-btn-ghost):not(.mk-btn-outline) {
+  background: var(--mk-blue-fill);
+  border-color: var(--mk-blue-fill);
+  color: var(--mk-on-blue-fill);
+}
+.mk .mk-submit:hover:not(:disabled),
+.mk .mk-btn:not(.mk-btn-primary):not(.mk-btn-ghost):not(.mk-btn-outline):hover {
+  background: var(--mk-blue-fill-2);
+  border-color: var(--mk-blue-fill-2);
 }
 
-/* THE PHONE MENU IS A CARD TOO. It was a full-bleed sheet hanging off the bar's bottom edge, which
-   on a page made of floating cards read as the one panel that had escaped the system. It now
-   carries the same surface, radius and shadow as everything else, and sits `--card-gap` under the
-   bar with the ground visible between them. Its content uses `--card-edge-pad` for the same reason
-   the bar does: the links have to land on the page's left edge, not on the card's. */
-@media (max-width: 900px) {
-  .mk .mk-menu-panel {
-    left: 0;
-    right: 0;
-    margin-top: var(--card-gap);
-    /* The panel starts one gap lower than it used to, so its height has to give that gap back or
-       the last link ends up under the browser chrome. */
-    height: calc(100vh - 100% - var(--card-gap));
-    height: calc(100dvh - 100% - var(--card-gap));
-    border: 1px solid var(--mk-line);
-    border-radius: var(--card-radius);
-    box-shadow: var(--mk-shadow-lg);
-    background: var(--mk-panel);
-    padding: 0 var(--card-edge-pad);
-  }
+/* THE CONTACT FORM'S SUBMIT. `.mk-send` is the send button on /contact and nothing else, and the
+   client's brief names "Hubungi Kami" as one of the two controls the orange belongs on. */
+.mk .mk-send {
+  background: var(--mk-marker);
+  border-color: var(--mk-marker);
+  color: var(--mk-on-marker);
 }
+.mk .mk-send:hover:not(:disabled) { background: #FF7030; border-color: #FF7030; }
+.mk .mk-send:disabled { opacity: .6; cursor: default; }
+
+/* THE OUTLINE BUTTON. A transparent plate with a control-strength border, which is the only
+   secondary treatment that reads at 3:1 on a dark ground without competing with the CTA. */
+.mk .mk-btn-outline {
+  border-color: var(--mk-control-line);
+  color: var(--mk-ink);
+  background: transparent;
+}
+.mk .mk-btn-outline:hover { border-color: var(--mk-ink); background: rgba(255, 255, 255, .04); }
+.mk .mk-btn-ghost { color: var(--mk-green); border-color: transparent; background: transparent; }
+.mk .mk-btn-ghost:hover { background: var(--mk-raise); }
+
+/* THE PLAN CARD'S OWN CONTROL. `.mk-plan-cta` is an outline pill on the plan cards, and on the
+   featured card it sits on the blue fill, where the site's dark outline would be a dark border on
+   a dark plate. */
+.mk .mk-plan-cta { border-color: var(--mk-control-line); color: var(--mk-ink); }
+.mk .mk-plan-cta.solid { background: var(--mk-raise); color: var(--mk-ink); border-color: var(--mk-raise); }
+.mk .mk-plan.featured .mk-plan-cta { border-color: rgba(255, 255, 255, .55); color: var(--mk-on-blue-fill); }
+
+/* -------------------------------------------------------------------------------------
+   7. THE PANELS INSIDE CARDS
+   -------------------------------------------------------------------------------------
+   Several sections hold their own bordered panels — the specimen cells on /product, the
+   principle cards on /about, the two plan cards on /pricing, the meta boxes on /faq. They take the
+   raised step of the surface ladder, so a panel inside a card reads as a panel rather than as a
+   second card drawn on the first. */
+.mk .mk-rec { background: var(--mk-raise); }
+.mk .mk-price-card { background: var(--mk-raise); }
+.mk .mk-tags li { background: var(--mk-raise); }
+.mk .mk-steps2-n { background: var(--mk-raise); }
+.mk .mk-callout { background: var(--mk-raise); }
+.mk .mk-meta { background: var(--mk-raise); }
+.mk .mk-plan { background: var(--mk-raise); }
+.mk .mk-aside { background: var(--mk-raise); }
+.mk .mk-chip { border-color: var(--mk-control-line); color: var(--mk-ink); }
+.mk .mk-slot { background: var(--mk-raise); color: var(--mk-muted); }
+.mk .mk-slot.on-paper { background: var(--mk-raise); color: var(--mk-faint); }
+
+/* THE FEATURED PLAN. Filled with the blue FILL, so everything on it takes the light ink rather
+   than the panel's ladder. Re-pointing the tokens on the card rather than writing colour rules
+   for each descendant means every existing rule inside keeps working — `.mk-rec-b`,
+   `.mk-price-card p`, `.mk-plan-list` all read `--mk-muted` and none of them has to know.
+
+   THE LIGHT STEP IS WHITE, NOT `--mk-on-green-dim`. The dim step (#C3CEDC) measures 3.83:1 on
+   this card's fill (#1E5FBF) and fails AA at body size — measured, not assumed. White measures
+   6.10:1 on the same fill, and it is already what the card's own button uses, so the ink and the
+   control agree. `--mk-faint` keeps the dim step, because it is only ever used for uppercase
+   micro-labels where the 3:1 large-text floor applies. */
+.mk .mk-price-card.feat,
+.mk .mk-plan.featured {
+  --mk-muted: #FFFFFF;
+  --mk-prose: #FFFFFF;
+  --mk-faint: var(--mk-on-green-dim);
+}
+.mk .mk-price-card.feat { background: var(--mk-blue-fill); border-color: var(--mk-blue-fill); }
+.mk .mk-plan.featured { background: var(--mk-blue-fill); border-color: var(--mk-blue-fill); }
+.mk .mk-price-card.feat .mk-price-name { color: #FFFFFF; }
+
+/* AND THE TWO RULES IN home.css THAT OUTRANK THE TOKEN RE-POINT. `.mk-price-card.feat p` is a
+   two-class-plus-type selector (0-2-1) and `.mk-price-card.feat .mk-price-name` is (0-3-0); both
+   beat the `--mk-muted` re-point above, which only supplies a VALUE and does not win a specificity
+   contest. Measured after the re-point: the blurb and the feature list were still #C3CEDC at
+   3.83:1. Naming the two selectors here is what actually changes the rendered pixels. */
+.mk .mk-price-card.feat p,
+.mk .mk-price-card.feat .mk-price-name,
+.mk .mk-price-card.feat .mk-plan-list li,
+.mk .mk-price-card.feat .mk-rec-b { color: #FFFFFF; }
+.mk .mk-price-card.feat .mk-plan-list li::before { color: #FFFFFF; }
+.mk .mk-price-card.feat .mk-plist li,
+.mk .mk-price-card.feat .mk-plist.on-dark li { color: #FFFFFF; }
+
+/* THE GROUPS OF PANELS. `.mk-recs` is a 1px grid of hairlines with a border and a radius of its
+   own — a table pretending to be a set of cards. On a card it is a second card drawn inside the
+   first, which is one frame too many. The panels inside keep their own surface and the frame
+   goes. */
+.mk .mk-recs {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  gap: var(--card-gap);
+  overflow: visible;
+}
+
+/* The `/about` story block sets its prose colour by hand against the old tinted band. */
+.mk .mk-sec:not(.mk-sec-dark) .mk-why p { color: var(--mk-prose); }
+.mk .mk-sec:not(.mk-sec-dark) .mk-why strong { color: var(--mk-ink); }
+
+/* The pricing note under the cards sat on the page ground with a gutter inset; it is on the card
+   now, so the inset would double up. */
+.mk .mk-price-note { padding-inline: 0; }
+
+/* The landing page's closing section is preceded by an `<hr class="pg-rule">`. A rule is how this
+   design separated two things on a shared ground; there is no shared ground any more, and the two
+   cards already separate themselves. The element stays in the markup — it is a legitimate document
+   break — and stops being drawn. */
+.mk .pg-rule { display: none; }
+
+/* The section field layers. Their components are gone from every page (see SiteGround), but the
+   classes are still declared in paper.css and home.css. Neutralised here so a stray reference
+   cannot reintroduce a second canvas behind the ground. */
+.mk .pg-sec-field,
+.mk .mk-sec-field { display: none; }
 
 /* -------------------------------------------------------------------------------------
    8. LOOSE ENDS
-   ------------------------------------------------------------------------------------- */
-
-/* THE BANDS THAT WERE STILL PAINTING — 2026-09-27.
-
-   The card recipe in section 2 draws a card behind each host, and until this pass the hosts were
-   still carrying their OWN band paint from the skins before this one. That paint is full-bleed:
-   the element is viewport-wide, so its background and borders ran to the viewport edges and showed
-   around the card, which is the one thing this system exists to prevent. Measured on the built
-   site, four sources:
-
-     .mk-footer     background #FFFFFF + border-top     → a white strip behind a midnight card
-     .mk-sec-tint   background + border-block 1px       → a hairline drawn the full width
-     .mk-sec-dark   background + border-block
-     .pg-sec-tint   background
-     .pg-sec-dark   background
-     .mk-closer     border-top
-
-   Every one of them is the same mistake in a different place, so they are answered in one block:
-   the card's own surface is the only thing allowed to paint. The class names stay in the markup
-   and in the rules above, because they still drive ink colours and panel grounds; only the band is
-   removed. */
-.mk .mk-footer,
+   -------------------------------------------------------------------------------------
+   THE BANDS THAT WERE STILL PAINTING. The card recipe in section 2 draws a card behind each
+   host, and the hosts were still carrying their OWN band paint from the skins before this one.
+   That paint is full-bleed: the element is viewport-wide, so its background and borders ran to
+   the viewport edges and showed around the card, which is the one thing this system exists to
+   prevent. Every one of them is the same mistake in a different place, so they are answered in
+   one block: the card's own surface is the only thing allowed to paint. */
 .mk .mk-sec,
 .mk .mk-section,
 .mk .mk-hero,
@@ -498,105 +615,609 @@
   background: none;
   border: 0;
 }
-/* The footer is the one host whose band was ALSO the surface a browser would paint if the card
-   failed, and it is midnight. Its colour moves to the card, which already draws `--mk-deep`. */
-.mk .mk-footer { color: var(--mk-deep-prose); }
-
-/* The landing page's closing section is preceded by an `<hr class="pg-rule">`. A rule is how this
-   design separated two things on a shared ground; there is no shared ground any more, and the two
-   cards already separate themselves. The element stays in the markup — it is a legitimate document
-   break — and stops being drawn. */
-.mk .pg-rule { display: none; }
-
-/* The section field layers. Their components are gone from every page (see SiteGround), but the
-   classes are still declared in paper.css and home.css. Neutralised here so a stray reference
-   cannot reintroduce a second canvas behind the ground. */
-.mk .pg-sec-field,
-.mk .mk-sec-field { display: none; }
-
-/* THE PANELS INSIDE CARDS. Several sections hold their own bordered panels — the specimen cells on
-   /product, the principle cards on /about, the two plan cards on /pricing, the meta boxes on /faq.
-   On the old tinted band a white panel read as raised because the band behind it was silver; on a
-   white card it does not read at all. They take the raised ground instead, which is what the silver
-   was for. */
-.mk .mk-rec { background: var(--mk-raise); }
-.mk .mk-price-card { background: var(--mk-raise); }
-.mk .mk-price-card.feat { background: var(--mk-green); }
-.mk .mk-tags li { background: var(--mk-raise); }
-.mk .mk-steps2-n { background: var(--mk-raise); }
-.mk .mk-callout { background: var(--mk-raise); }
-.mk .mk-meta { background: var(--mk-raise); }
-
-/* THE GROUPS OF PANELS. `.mk-recs` is a 1px grid of silver hairlines with a border and a radius of
-   its own — a table pretending to be a set of cards. On the old band that read as one object; on a
-   card it is a second card drawn inside the first, which is one frame too many. The panels inside
-   keep their own silver and the frame goes. */
-.mk .mk-recs {
-  background: none;
-  border: 0;
-  border-radius: 0;
-  gap: var(--card-gap);
-  overflow: visible;
-}
-
-/* THE INK ON THE SILVER PANELS. This is the one place the client's palette needs a second value,
-   and it is arithmetic rather than taste.
-
-   #64748B — the supplied body colour — measures 4.76:1 on pure white and passes AA comfortably.
-   On #F1F5F9, the silver the same palette supplies for exactly these panels, the same ink measures
-   4.34:1 and fails. So the palette's body colour and the palette's panel colour cannot be used
-   together at body size, and one of them has to move. The panel is the thing that carries the
-   structure, so the INK moves, by the smallest step that clears the floor: #5A6B80 measures 4.98:1
-   on silver and 5.46:1 on white, so it is safe on either.
-
-   Re-pointing the tokens on the panel rather than writing colour rules for each descendant means
-   every existing rule inside keeps working — `.mk-rec-b`, `.mk-price-card p`, `.mk-meta-b` all read
-   `--mk-muted` and none of them has to know this happened. */
-.mk .mk-rec,
-.mk .mk-price-card,
-.mk .mk-tags li,
-.mk .mk-steps2-n,
-.mk .mk-callout,
-.mk .mk-meta {
-  --mk-muted: #5A6B80;
-  --mk-prose: #5A6B80;
-  --mk-faint: #5A6B80;
-}
-/* The featured card is filled with the accent, not the silver, so it takes the light ink its own
-   rules already set — this only stops the block above from darkening its body copy. */
-.mk .mk-price-card.feat {
-  --mk-muted: var(--mk-deep-prose);
-  --mk-prose: var(--mk-deep-prose);
-  --mk-faint: var(--mk-deep-prose);
-}
-
-/* THE PLAN NAME ON THE FEATURED CARD. `.mk-price-card.feat .mk-price-name` reads
-   `--mk-green-line` (#7FA8E8), which is the pale blue that works as a hairline and as an accent on
-   the light ground. On the card's own accent fill it measures 3.27:1 — the label is legible only
-   because it is bold, and it should not have to be. `--mk-on-green-dim` (#D6E3F8) measures 6.12:1
-   on the same fill and is the token that exists for exactly this. */
-.mk .mk-price-card.feat .mk-price-name { color: var(--mk-on-green-dim); }
-
-/* THE COMPARE TABLE'S HEADER ROW. `thead th` takes `--mk-faint` on a `--mk-raise` ground: 4.34:1,
-   just under the 4.5 floor, for 11px type with wide tracking — the smallest text on the page. The
-   same step that fixed the silver panels fixes this, and it is scoped to the header row so the
-   body rows keep the palette's own body colour. */
-.mk .mk-compare thead th { --mk-faint: #5A6B80; }
-/* The premium column's header is the accent on silver, which is 6.79:1 — it stays as it is. */
-
-/* The `/about` story block sets its prose colour by hand against the old tinted band, and its
-   `strong` was white — which on a white card is invisible. Scoped to the light sections only: the
-   midnight cards keep the light ink they need. */
-.mk .mk-sec:not(.mk-sec-dark) .mk-why p { color: var(--mk-prose); }
-.mk .mk-sec:not(.mk-sec-dark) .mk-why strong { color: var(--mk-ink); }
-
-/* The pricing note under the cards sat on the page ground with a gutter inset; it is on the card
-   now, so the inset would double up. */
-.mk .mk-price-note { padding-inline: 0; }
 
 /* -------------------------------------------------------------------------------------
    9. THE PAGES THAT DO NOT GET THE GROUND
    -------------------------------------------------------------------------------------
    /login, /onboarding and /reset share marketing.css but not the (marketing) layout, so they have
-   no SiteGround and no cards: a white card on a white page is invisible. They still take the new
-   palette, which is all they need. */
+   no SiteGround and no card system: a card drawn on the page ground would be invisible against it.
+
+   THEY STILL GET THE DARK GROUND, and this is not cosmetic. They take the DARK token block from
+   marketing.css, so their ink is white — and the document behind them is the portal's light
+   paper. Measured on the built site: the sign-in page's own wordmark was white on #F2F2F3, at
+   1.12:1, and the whole page read as white type on a white sheet. They paint the midnight ground
+   themselves, which is what their tokens already assume.
+
+   THE LOGIN CARD IS THEN A RAISED PLATE on that ground, which is exactly the relationship the
+   marketing pages have between their cards and the ground — the same ladder, one level flatter. */
+.mk-login-shell,
+.mk-auth-shell { background: #0A192F; color: var(--mk-ink); }
+.mk-login-shell .mk-card,
+.mk-auth-shell .mk-card {
+  background: var(--mk-panel);
+  border: 1px solid var(--mk-line);
+  box-shadow: var(--mk-shadow), var(--card-lip);
+}
+
+/* -------------------------------------------------------------------------------------
+   9b. THE 404 — the one page that had no skin
+   -------------------------------------------------------------------------------------
+   The site had no `not-found.tsx`, so a dead URL fell through to Next's built-in 404: two lines
+   of centred text on the framework's own WHITE sheet, with no nav and no way back. On a site whose
+   entire surface is the midnight ground, that was the one white screen a visitor could reach, and
+   the easiest one to reach by accident — stale links, truncated shares and typos all land on it.
+   Measured on the deployed site: `background:#fff` on a URL that does not exist.
+
+   The page draws its own bar rather than mounting MarketingNav: the nav is a client component
+   with a route-marker, a scroll-condense behaviour and a mobile sheet, and a dead end needs none
+   of it. A brand mark and one way back is the whole job. */
+
+.mk-nf { min-height: 100dvh; background: var(--mk-ground); display: flex; flex-direction: column; }
+
+.mk-nf-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 18px var(--mk-gutter); border-bottom: 1px solid var(--mk-line);
+}
+.mk-nf-brand { display: inline-flex; align-items: center; text-decoration: none; }
+
+.mk-nf-main {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  padding: 64px var(--mk-gutter) 96px;
+}
+
+.mk-nf-card {
+  width: 100%; max-width: 640px;
+  background: var(--mk-panel);
+  border: 1px solid var(--mk-line);
+  border-radius: 20px;
+  padding: 48px 44px 40px;
+  box-shadow: var(--mk-shadow), var(--card-lip);
+}
+.mk-nf-code {
+  font-family: var(--font-mono), monospace;
+  font-size: 13px; letter-spacing: .14em;
+  color: var(--mk-marker);
+  margin: 0 0 18px;
+}
+.mk-nf-heading {
+  font-family: var(--font-tight), var(--font-sans), sans-serif;
+  font-weight: 500; font-size: clamp(28px, 4vw, 40px); line-height: 1.1;
+  letter-spacing: -0.02em; color: var(--mk-ink);
+  margin: 0 0 16px;
+}
+.mk-nf-body { font-size: 15px; line-height: 1.65; color: var(--mk-prose); margin: 0 0 28px; }
+
+.mk-nf-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 32px; }
+
+.mk-nf-links {
+  display: flex; flex-wrap: wrap; gap: 8px 22px;
+  padding-top: 22px; border-top: 1px solid var(--mk-line);
+}
+.mk-nf-links a {
+  font-size: 13.5px; color: var(--mk-muted); text-decoration: none;
+  transition: color .18s ease;
+}
+.mk-nf-links a:hover { color: var(--mk-ink); }
+
+@media (max-width: 560px) {
+  .mk-nf-bar { padding: 14px 18px; }
+  .mk-nf-main { padding: 40px 18px 64px; }
+  .mk-nf-card { padding: 32px 24px 28px; border-radius: 16px; }
+  .mk-nf-actions { flex-direction: column; align-items: stretch; }
+}
+
+/* -------------------------------------------------------------------------------------
+   10. THE ACCOUNT CHIP AND THE LEDGER — 2026-09-27
+   -------------------------------------------------------------------------------------
+   The header's signed-in state. This is the pattern the brief asked for: the account in the
+   top-right corner, and the payment history one click away from it, the way a CRM or an
+   enterprise console does it.
+
+   WHY IT IS A CHIP AND NOT A LINK. "Portal" is the right word for a door you have not walked
+   through. Once the reader is inside, the header should say WHO they are signed in as and offer
+   the thing they came back to check — the ledger — rather than a second link to a place they are
+   already in. The chip carries the initial, the local part of the address and a caret; the panel
+   carries the record.
+
+   THE PANEL IS A CARD, and it takes the same surface, radius, hairline and shadow as every other
+   card on the site, because it IS one — it is the one card that happens to be anchored to the
+   chrome. It drops from the chip's own right edge rather than the viewport's, so at 1440px it
+   opens under the corner the reader pressed instead of drifting to the middle of the page. */
+
+.mk-acct { position: relative; display: inline-flex; }
+
+.mk-acct-btn {
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 5px 10px 5px 5px;
+  background: transparent;
+  border: 1px solid var(--mk-line);
+  border-radius: 100px;
+  color: var(--mk-ink);
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color .2s ease, background-color .2s ease;
+}
+.mk-acct-btn:hover { border-color: var(--mk-control-line); background: rgba(127, 168, 232, .07); }
+.mk-acct-btn[aria-expanded='true'] { border-color: var(--mk-control-line); background: rgba(127, 168, 232, .1); }
+
+/* THE AVATAR. A filled circle with the first letter of the address, in the palette's own blue —
+   no photograph, no generated identicon: the account is one email address and the chip should
+   not imply more data than the product has. The letter is navy on the pale blue at 6.4:1. */
+.mk-acct-avatar {
+  width: 26px; height: 26px; flex: none;
+  border-radius: 100px;
+  display: grid; place-items: center;
+  background: var(--mk-green);
+  color: var(--mk-on-green);
+  font-size: 12px; font-weight: 700; line-height: 1;
+  font-family: var(--font-sans), sans-serif;
+}
+.mk-acct-avatar.lg { width: 34px; height: 34px; font-size: 15px; }
+
+.mk-acct-label { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; }
+.mk-acct-name {
+  font-size: 13px; font-weight: 500; color: var(--mk-ink);
+  max-width: 12ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.mk-acct-cap { font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--mk-faint); }
+.mk-acct-caret { color: var(--mk-muted); transition: transform .2s ease; flex: none; }
+.mk-acct-btn[aria-expanded='true'] .mk-acct-caret { transform: rotate(180deg); }
+
+/* THE PANEL. Absolutely positioned under the chip, right-aligned to it. `min()` keeps it inside a
+   phone's viewport: 320px wide on a 390px screen would otherwise run off the left edge, because
+   the chip sits near the right one. */
+.mk-acct-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 60;
+  width: min(320px, calc(100vw - 32px));
+  background: var(--mk-panel);
+  border: 1px solid var(--mk-line);
+  border-radius: var(--card-radius);
+  box-shadow: var(--mk-shadow-lg), var(--card-lip);
+  overflow: hidden;
+}
+
+.mk-acct-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--mk-line);
+  background: rgba(127, 168, 232, .05);
+}
+.mk-acct-id { display: flex; flex-direction: column; min-width: 0; line-height: 1.3; }
+.mk-acct-id strong { font-size: 14px; color: var(--mk-ink); }
+.mk-acct-id span {
+  font-size: 12px; color: var(--mk-muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.mk-acct-sec { padding: 12px 8px 8px; }
+.mk-acct-sec-title {
+  display: flex; align-items: center; gap: 6px;
+  padding: 0 8px 8px;
+  font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--mk-faint);
+}
+.mk-acct-note { font-size: 13px; color: var(--mk-muted); padding: 4px 8px 10px; margin: 0; }
+
+.mk-acct-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.mk-acct-list a {
+  display: block;
+  padding: 9px 8px;
+  border-radius: 9px;
+  transition: background-color .15s ease;
+}
+.mk-acct-list a:hover { background: var(--mk-raise); }
+.mk-acct-row { display: flex; flex-direction: column; gap: 4px; }
+.mk-acct-row-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.mk-acct-row-label { font-size: 13px; font-weight: 500; color: var(--mk-ink); }
+.mk-acct-row-bot { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.mk-acct-row-bot span { font-size: 12px; color: var(--mk-muted); }
+.mk-acct-row-bot strong { font-size: 12px; font-weight: 600; color: var(--mk-prose); }
+
+/* THE STATUS PILL, in the menu and in the ledger. Three states matter and each gets a colour that
+   means something: settled is the blue, pending is the orange (the one place the accent is
+   allowed off a control — it is a state, not an action, and it is the state the reader is looking
+   for), everything else is muted. All three are legible on the panel: measured at 6.4:1, 5.4:1
+   and 7.1:1 against their own translucent fills. */
+.mk-acct-pill,
+.mk-ledger-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px;
+  border-radius: 100px;
+  font-size: 11px; font-weight: 600; letter-spacing: .02em;
+  white-space: nowrap;
+}
+.mk-acct-pill.is-settled,
+.mk-ledger-pill.is-settled { background: rgba(127, 168, 232, .16); color: var(--mk-green); }
+.mk-acct-pill.is-pending,
+.mk-ledger-pill.is-pending { background: rgba(243, 93, 25, .16); color: #FF8F5C; }
+.mk-acct-pill.is-expired,
+.mk-acct-pill.is-denied,
+.mk-acct-pill.is-refunded,
+.mk-ledger-pill.is-expired,
+.mk-ledger-pill.is-denied,
+.mk-ledger-pill.is-refunded { background: rgba(157, 176, 204, .12); color: var(--mk-muted); }
+
+.mk-acct-foot {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--mk-line);
+  background: rgba(0, 0, 0, .12);
+}
+.mk-acct-all,
+.mk-acct-out {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  font-family: inherit; font-size: 13px; font-weight: 500;
+  cursor: pointer;
+  transition: background-color .15s ease, color .15s ease;
+}
+.mk-acct-all { color: var(--mk-green); }
+.mk-acct-all:hover { background: rgba(127, 168, 232, .1); }
+.mk-acct-out { color: var(--mk-muted); }
+.mk-acct-out:hover { background: rgba(157, 176, 204, .1); color: var(--mk-ink); }
+
+/* -------------------------------------------------------------------------------------
+   11. THE LEDGER — /account
+   -------------------------------------------------------------------------------------
+   The page the chip's "view all" opens. It is a marketing-subtree page, so it inherits the ground
+   and the card system: the section is a card like every other, and the table inside it is a table.
+
+   WHY A TABLE. This is the one screen on the site where the reader compares rows rather than reads
+   prose. Same columns, repeated: the status column is the whole point, and a column is what lets
+   the eye run down it. On a phone there is no column to run down, so each row becomes a labelled
+   block and the header row steps out of the way — the standard responsive-table treatment, done
+   with `data-th` so the labels travel with the cells instead of being duplicated in the markup.
+   ------------------------------------------------------------------------------------- */
+
+.mk-acctpage { padding-block: 0; }
+.mk-acctpage-inner { max-width: 1000px; margin: 0 auto; }
+
+.mk-acctpage-head { margin-bottom: 26px; }
+.mk-acctpage-head h1 {
+  font-family: var(--font-sans), sans-serif;
+  font-size: clamp(26px, 3.4vw, 36px); font-weight: 700; line-height: 1.12;
+  letter-spacing: -.02em; color: var(--mk-ink); margin: 10px 0 0;
+}
+.mk-acctpage-head .mk-lede { margin: 12px 0 0; max-width: 62ch; }
+
+.mk-acctpage-stats {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--card-gap);
+  margin-bottom: var(--card-gap);
+}
+.mk-acctpage-stat {
+  background: var(--mk-raise);
+  border: 1px solid var(--mk-line);
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: grid; gap: 6px;
+}
+.mk-acctpage-stat span {
+  font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase;
+  color: var(--mk-faint);
+}
+.mk-acctpage-stat strong {
+  font-family: var(--font-sans), sans-serif;
+  font-size: 19px; font-weight: 700; color: var(--mk-ink);
+  letter-spacing: -.01em;
+}
+
+/* THE UNPAID ORDER. It is the only row on the page with an action attached, so it sits above the
+   ledger and carries the page's one orange control. */
+.mk-acctpage-callout {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  padding: 16px 18px;
+  margin-bottom: var(--card-gap);
+  background: rgba(243, 93, 25, .1);
+  border: 1px solid rgba(243, 93, 25, .32);
+  border-radius: 14px;
+}
+.mk-acctpage-callout > div { display: grid; gap: 4px; }
+.mk-acctpage-callout strong { font-size: 15px; color: var(--mk-ink); }
+.mk-acctpage-callout span { font-size: 13px; color: var(--mk-prose); }
+.mk-acctpage-callout .mk-btn { display: inline-flex; align-items: center; gap: 6px; }
+
+.mk-ledger {
+  border: 1px solid var(--mk-line);
+  border-radius: var(--card-radius);
+  background: var(--mk-panel);
+  overflow: hidden;
+}
+.mk-ledger-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.mk-ledger-table th {
+  text-align: left;
+  padding: 12px 16px;
+  font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase;
+  color: var(--mk-faint);
+  background: var(--mk-raise);
+  border-bottom: 1px solid var(--mk-line);
+  white-space: nowrap;
+}
+.mk-ledger-table td {
+  padding: 13px 16px;
+  border-top: 1px solid var(--mk-line);
+  color: var(--mk-prose);
+  vertical-align: middle;
+}
+.mk-ledger-table tbody tr:first-child td { border-top: 0; }
+.mk-ledger-table tbody tr { transition: background-color .15s ease; }
+.mk-ledger-table tbody tr:hover { background: rgba(127, 168, 232, .05); }
+/* The order id is the one piece of machine data on the page, so it takes the mono face — the same
+   one the product's own export uses. It is also the longest cell, which is why the table is
+   allowed to scroll sideways rather than wrap it. */
+.mk-ledger-table code {
+  font-family: var(--font-mono), monospace;
+  font-size: 12.5px;
+  color: var(--mk-ink);
+  letter-spacing: -.01em;
+}
+.mk-ledger-table .num { text-align: right; }
+.mk-ledger-table td.num strong { font-weight: 600; color: var(--mk-ink); }
+.mk-ledger-fee { display: block; font-size: 11px; color: var(--mk-faint); }
+
+.mk-acctpage-loading,
+.mk-acctpage-empty {
+  display: grid; justify-items: center; gap: 12px;
+  padding: 48px 20px;
+  border: 1px dashed var(--mk-line);
+  border-radius: var(--card-radius);
+  text-align: center;
+}
+.mk-acctpage-loading { grid-auto-flow: column; align-items: center; justify-content: center; }
+.mk-acctpage-loading span,
+.mk-acctpage-empty p { font-size: 14px; color: var(--mk-muted); margin: 0; }
+.mk-acctpage-empty h1 {
+  font-family: var(--font-sans), sans-serif;
+  font-size: 24px; font-weight: 700; color: var(--mk-ink); margin: 0;
+}
+.mk-acctpage-icon {
+  width: 54px; height: 54px; border-radius: 100px;
+  display: grid; place-items: center;
+  background: var(--mk-raise); color: var(--mk-green);
+}
+.mk-acctpage-spin { animation: mk-acctpage-spin 1s linear infinite; color: var(--mk-green); }
+@keyframes mk-acctpage-spin { to { transform: rotate(360deg); } }
+
+.mk-acctpage-cta {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  margin-top: var(--card-gap);
+  padding: 18px;
+  background: var(--mk-raise);
+  border: 1px solid var(--mk-line);
+  border-radius: 14px;
+}
+.mk-acctpage-cta > div { display: grid; gap: 4px; }
+.mk-acctpage-cta strong { font-size: 15px; color: var(--mk-ink); }
+.mk-acctpage-cta span { font-size: 13px; color: var(--mk-muted); }
+.mk-acctpage-cta .mk-btn { display: inline-flex; align-items: center; gap: 6px; }
+
+.mk-acctpage-note {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  margin: 20px 0 0;
+  font-size: 12px; color: var(--mk-faint);
+}
+
+/* THE PHONE. Three stats become a column, and the table's header steps out of the way while each
+   cell grows the label it needs from its own `data-th`. The label is drawn by a pseudo-element
+   rather than printed twice, so the markup stays one table. */
+@media (max-width: 720px) {
+  .mk-acctpage-stats { grid-template-columns: 1fr; }
+  .mk-ledger { border: 0; background: none; }
+  .mk-ledger-table thead { display: none; }
+  .mk-ledger-table,
+  .mk-ledger-table tbody,
+  .mk-ledger-table tr,
+  .mk-ledger-table td { display: block; width: 100%; }
+  .mk-ledger-table tr {
+    background: var(--mk-panel);
+    border: 1px solid var(--mk-line);
+    border-radius: 14px;
+    padding: 6px 2px;
+    margin-bottom: 10px;
+  }
+  .mk-ledger-table td {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 14px;
+    border-top: 0;
+    padding: 7px 14px;
+    text-align: left;
+  }
+  .mk-ledger-table td::before {
+    content: attr(data-th);
+    font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--mk-faint);
+    flex: none;
+  }
+  .mk-ledger-table .num { text-align: right; }
+}
+
+/* -------------------------------------------------------------------------------------
+   12. THE CAROUSEL AND THE AUDIENCE BAND, REBUILT — 2026-09-27
+   -------------------------------------------------------------------------------------
+   THE CAROUSEL SNAPS TO THE CONTENT EDGE. The track used to centre its slides, which put the first
+   slide half a gutter to the right of the heading above it and pushed the last one past the card's
+   own padding — on a page that aligns everything else to one left edge, that was the one place the
+   rule was broken. `scroll-snap-align: start` with `scroll-padding-inline-start` on the track is
+   what fixes it, and `positionsFor` in Carousel.tsx measures the same position the browser snaps
+   to, so the dots and the arrows agree with what the reader sees.
+
+   THE FADE IS ON THE TRACK, NOT ON A WRAPPER. A horizontal scroller with a hard edge reads as a
+   clipped element; the mask is what turns it into "there is more". Putting it on the track itself
+   means a slide can never paint over the falloff, and it means the fade is exactly the width of
+   the track's own padding — the place where a half-word would otherwise sit at full opacity.
+
+   THE ARROWS AND DOTS ARE ONE ROW: arrow, dots + count, arrow. The count is the part that was
+   missing: a row of dots says "there is more" and never says how much. */
+.mk .mk-car { position: relative; }
+.mk .mk-car-track {
+  display: flex; gap: 14px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  /* The snap line IS the content edge. `padding-inline` is what puts the first slide there and
+     what keeps the last one inside the card's padding; `scroll-padding-inline-start` tells the
+     browser to snap to the same line rather than to the track's border box. */
+  padding: 4px var(--mk-gutter) 12px;
+  scroll-padding-inline-start: var(--mk-gutter);
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  -webkit-mask-image: linear-gradient(to right,
+    transparent 0, rgba(0,0,0,.35) 1.5%, #000 5%, #000 95%, rgba(0,0,0,.35) 98.5%, transparent 100%);
+  mask-image: linear-gradient(to right,
+    transparent 0, rgba(0,0,0,.35) 1.5%, #000 5%, #000 95%, rgba(0,0,0,.35) 98.5%, transparent 100%);
+}
+.mk .mk-car-track::-webkit-scrollbar { display: none; }
+.mk .mk-car-track:focus-visible { outline: 2px solid var(--mk-green); outline-offset: 2px; }
+.mk .mk-car-slide { flex: 0 0 84%; scroll-snap-align: start; }
+
+/* The emphasis, where the browser can drive it from scroll position: the centred slide sits at
+   full size and full opacity, its neighbours a little smaller and lifted slightly. Scale and
+   shadow only. No blur, no dimming — these slides are phone screens, and the whole reason the
+   section exists is so a reader can read them. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .mk .mk-car-slide {
+      animation: mk-car-focus linear both;
+      animation-timeline: view(x);
+      animation-range: cover 12% cover 88%;
+    }
+  }
+}
+@keyframes mk-car-focus {
+  from { transform: scale(.955); opacity: .7; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+.mk .mk-car-slide > * { transition: box-shadow .25s ease; }
+
+.mk .mk-car-controls {
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  margin-top: 14px;
+}
+.mk .mk-car-mid { display: flex; align-items: center; gap: 12px; }
+.mk .mk-car-arrow {
+  width: 36px; height: 36px; flex: none;
+  border-radius: 100px;
+  border: 1px solid var(--mk-control-line);
+  background: transparent; color: var(--mk-ink);
+  cursor: pointer; line-height: 0;
+  display: grid; place-items: center;
+  transition: background-color .18s ease, border-color .18s ease, opacity .18s ease;
+}
+.mk .mk-car-arrow:hover:not(:disabled) { background: var(--mk-raise); border-color: var(--mk-ink); }
+.mk .mk-car-arrow:disabled { opacity: .32; cursor: default; }
+.mk .mk-car-dots { display: flex; gap: 7px; align-items: center; }
+.mk .mk-car-dots button {
+  width: 7px; height: 7px; padding: 0; border-radius: 100px; border: 0; cursor: pointer;
+  background: var(--mk-line); transition: width .18s ease, background .18s ease;
+  /* These dots carry no text, so without this their computed colour is the UA default black,
+     which is not in the palette. A control with no label has no text colour. */
+  color: transparent;
+}
+.mk .mk-car-dots button.on { width: 20px; background: var(--mk-green); color: transparent; }
+.mk .mk-car-count {
+  display: inline-flex; align-items: baseline; gap: 3px;
+  font-family: var(--font-mono), monospace;
+  font-size: 12px; color: var(--mk-faint);
+  font-variant-numeric: tabular-nums;
+  min-width: 34px;
+}
+.mk .mk-car-count strong { color: var(--mk-ink); font-weight: 600; }
+
+/* THE PHONE. One slide fills the track, and the arrows grow to a real tap target — a 36px circle
+   is right for a mouse and marginal for a thumb, and this is a component whose entire audience
+   uses it with one. */
+@media (max-width: 700px) {
+  .mk .mk-car-slide { flex: 0 0 88%; }
+  .mk .mk-car-arrow { width: 44px; height: 44px; }
+  .mk .mk-car-controls { gap: 18px; }
+}
+
+/* THE AUDIENCE BAND. It is a card now (section 4), so its own band paint and both hairlines are
+   gone and the label's inset becomes the card's padding. What is left here is the part that was
+   always right: a fixed label the content cannot pass under, and a masked scrolling half. */
+.mk .pg-marquee {
+  overflow: hidden;
+  display: flex;
+  align-items: stretch;
+  user-select: none;
+}
+.mk .pg-marquee-label {
+  flex: none;
+  display: flex; align-items: center;
+  padding: 22px var(--card-pad);
+  border-right: 1px solid var(--mk-line);
+  /* Zeroed: this is a `<p>`, so the UA's `margin: 1em 0` applied — 11px above and below at this
+     rule's own 11px font-size, which showed as the label's own ground being 46px tall inside a
+     68px band with the band's colour above and below it. Measured before: 46px box in a 68px row. */
+  margin: 0;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--mk-faint);
+  white-space: nowrap;
+  pointer-events: none;
+  position: relative;
+  z-index: 2;
+}
+/* The scrolling half. The mask lives here, not on the band, so it fades the row and never the
+   label. The falloff is deliberately wide and multi-stop: a short two-stop fade leaves a half-word
+   sitting at the boundary at near-full opacity, which reads as "chopped off" rather than
+   "continuing". Four stops over 16% of the width does it. */
+.mk .pg-marquee-scroll {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  -webkit-mask-image: linear-gradient(to right,
+    transparent 0, rgba(0,0,0,.12) 5%, rgba(0,0,0,.55) 10%, #000 16%,
+    #000 84%, rgba(0,0,0,.55) 90%, rgba(0,0,0,.12) 95%, transparent 100%);
+  mask-image: linear-gradient(to right,
+    transparent 0, rgba(0,0,0,.12) 5%, rgba(0,0,0,.55) 10%, #000 16%,
+    #000 84%, rgba(0,0,0,.55) 90%, rgba(0,0,0,.12) 95%, transparent 100%);
+}
+.mk .pg-marquee-row { display: flex; gap: 0; flex: none; align-items: center; }
+.mk .pg-marquee-item {
+  font-family: var(--font-tight), sans-serif;
+  font-size: 16px; font-weight: 500; letter-spacing: -.01em;
+  color: var(--mk-ink);
+  white-space: nowrap; display: inline-flex;
+  align-items: center; gap: 38px;
+  padding: 22px 38px 22px 0;
+}
+/* The separator: a survey mark, not a bullet. A ring with a filled centre, drawn in the accent so
+   the band has one deliberate colour in it rather than being uniformly grey. */
+.mk .pg-marquee-item::after {
+  content: '';
+  width: 7px; height: 7px; border-radius: 100px;
+  border: 1px solid var(--mk-green);
+  background: radial-gradient(circle, var(--mk-green) 0 1.5px, transparent 1.6px);
+  flex: none;
+  opacity: .75;
+}
+/* On a phone the label costs a third of the width and the band has nothing to spare, so it goes
+   and the row keeps its full width. */
+@media (max-width: 640px) {
+  .mk .pg-marquee-label { display: none; }
+}
+
+/* -------------------------------------------------------------------------------------
+   13. THE OVERSCROLL GROUND — 2026-09-27
+   -------------------------------------------------------------------------------------
+   The document's own background is the PORTAL's light paper, and on a phone the browser paints it
+   in the bounce area past the top and bottom of the page. On the marketing site that was a pale
+   flash above a midnight header and below a midnight footer — the one place the dark theme broke,
+   and it broke on the device where the bounce is most visible.
+
+   `:has(.mk)` scopes this to the pages that actually render the marketing subtree, so the signed-in
+   portal keeps its own light ground. The literal colour is used rather than the token because
+   `--mk-bg` is defined on `.mk`, which is not an ancestor of `html` — a custom property is not
+   visible to a selector it does not match. */
+html:has(.mk),
+body:has(.mk) { background: #0A192F; }
+
+/* The scrollbar, on the platforms that paint one in the content area. A light scrollbar down the
+   edge of a midnight page is the same problem as the overscroll flash, one pixel wide. */
+html:has(.mk) { scrollbar-color: #23406B #0A192F; }

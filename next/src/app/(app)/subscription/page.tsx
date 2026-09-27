@@ -5,6 +5,7 @@ import { api } from '@/lib/api-client'
 import { DEMO_MODE } from '@/lib/demo'
 import { formatBytes } from '@/lib/pricing'
 import type { SubscriptionMe } from '@/lib/types'
+import { CheckoutModal } from '@/components/CheckoutModal'
 
 function Meter({
   label,
@@ -120,18 +121,12 @@ export default function SubscriptionPage() {
 // the checkout does not charge.
 function GoPremium({ offer, onGranted }: { offer: SubscriptionMe['offer']; onGranted: () => Promise<unknown> }) {
   const [key, setKey] = useState('')
-  const [busy, setBusy] = useState<null | 'redeem' | 'pay'>(null)
+  const [busy, setBusy] = useState<null | 'redeem'>(null)
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
-
-  // The redeem/pay endpoints are live-only; the demo client has no handlers for them.
-  if (DEMO_MODE) {
-    return (
-      <div className="card">
-        <div className="card-title">Go Premium</div>
-        <p className="hint" style={{ margin: 0 }}>Upgrades run through the live app. They are disabled in this sample-data demo.</p>
-      </div>
-    )
-  }
+  /* The checkout popup. Mounted here rather than only on the marketing page because this is the
+     app's own upgrade screen: the buyer pressed "Upgrade" in the signed-in portal, and the modal
+     that answers is the same one /pricing opens, so the two flows cannot drift apart. */
+  const [open, setOpen] = useState(false)
 
   const redeem = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -154,57 +149,50 @@ function GoPremium({ offer, onGranted }: { offer: SubscriptionMe['offer']; onGra
 
   const startCheckout = async () => {
     setMsg(null)
-    setBusy('pay')
-    try {
-      /*
-       * AN UNPAID INVOICE COMES FIRST.
-       *
-       * If this account already has a live invoice, the buyer is sent to it rather than through
-       * the gateway again: the invoice page is where the QR or the virtual-account number lives,
-       * where the status updates itself, and where the payment method can be changed. Starting a
-       * second checkout here would leave two payable orders for one purchase.
-       *
-       * The check is a read, so it cannot fail the purchase: if it errors, the checkout below runs
-       * exactly as it did before.
-       */
-      const invoice = await api<{ invoice: { orderId: string; active: boolean } | null }>(
-        '/api/payments/invoice',
-      ).catch(() => null)
-      if (invoice?.invoice?.active) {
-        window.location.href = `/invoice?order=${encodeURIComponent(invoice.invoice.orderId)}`
-        return
-      }
-
-      const r = await api<{ redirectUrl: string }>('/api/payments/checkout', { method: 'POST' })
-      // Off to the gateway's hosted page, which lists every channel enabled on the merchant
-      // account. Which gateway that is (iPaymu or Midtrans) is the server's choice, not ours.
-      window.location.href = r.redirectUrl
-    } catch (err) {
-      setMsg({ ok: false, text: err instanceof Error ? err.message : 'Gagal memulai pembayaran.' })
-      setBusy(null)
-    }
+    /*
+     * THE CHECKOUT IS A POPUP, ON THIS PAGE.
+     *
+     * It used to do two things: look for an unpaid invoice and, if one existed, navigate to a
+     * standalone /invoice page; otherwise hand the buyer to the gateway's hosted page in the same
+     * tab. Both are gone. Payment now happens in the modal the marketing site already uses — the
+     * same one that draws the QR or the virtual-account number inline, polls for settlement and
+     * resumes an unpaid order instead of starting a second one. One flow, one screen, and the
+     * buyer never leaves the app to pay.
+     */
+    setOpen(true)
   }
 
   return (
     <div className="card">
       <div className="card-title">Go Premium</div>
 
-      <form onSubmit={redeem} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <input
-          value={key}
-          onChange={(e) => setKey(e.target.value)}
-          placeholder="Activation key"
-          style={{ flex: 1, minWidth: 180 }}
-        />
-        <button type="submit" disabled={busy !== null || !key.trim()}>
-          {busy === 'redeem' ? 'Redeeming…' : 'Redeem'}
-        </button>
-      </form>
+      {DEMO_MODE ? (
+        /* Key redemption is a real database write and has no demo handler, so the form is replaced
+           by a line saying so. The CHECKOUT below is not: /api/payments/ipaymu/direct answers in
+           demo mode, so the popup is fully previewable — QR and virtual account both. */
+        <p className="hint" style={{ margin: '0 0 14px' }}>
+          Key redemption runs against the live database, so it is disabled in this sample-data demo.
+        </p>
+      ) : (
+        <>
+          <form onSubmit={redeem} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <input
+              value={key}
+              onChange={(e) => setKey(e.target.value)}
+              placeholder="Activation key"
+              style={{ flex: 1, minWidth: 180 }}
+            />
+            <button type="submit" disabled={busy !== null || !key.trim()}>
+              {busy === 'redeem' ? 'Redeeming…' : 'Redeem'}
+            </button>
+          </form>
 
-      <div className="hint" style={{ margin: '14px 0 10px', textAlign: 'center' }}>or</div>
+          <div className="hint" style={{ margin: '14px 0 10px', textAlign: 'center' }}>or</div>
+        </>
+      )}
 
-      <button type="button" onClick={startCheckout} disabled={busy !== null} style={{ width: '100%' }}>
-        {busy === 'pay' ? 'Membuka pembayaran…' : `Upgrade ke Premium: ${offer.priceLabel}`}
+      <button type="button" onClick={startCheckout} style={{ width: '100%' }}>
+        {`Upgrade ke Premium: ${offer.priceLabel}`}
       </button>
       <p className="hint" style={{ marginTop: 8, marginBottom: 0, textAlign: 'center' }}>
         {offer.days} hari, semua fitur, penyimpanan {offer.storageLabel}. Bisa QRIS, transfer bank / VA,
@@ -216,6 +204,16 @@ function GoPremium({ offer, onGranted }: { offer: SubscriptionMe['offer']; onGra
           {msg.text}
         </p>
       )}
+
+      {/* THE POPUP. Same component the pricing page opens, so the QR, the virtual account, the
+          polling and the resume-an-unpaid-order behaviour are one implementation, not two. */}
+      <CheckoutModal
+        isOpen={open}
+        onClose={() => setOpen(false)}
+        offerLabel={offer.priceLabel}
+        storageLabel={offer.storageLabel}
+        locale="id"
+      />
     </div>
   )
 }

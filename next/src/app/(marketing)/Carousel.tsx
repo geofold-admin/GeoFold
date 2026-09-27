@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 /**
  * Swipeable carousel, built on CSS scroll-snap rather than a library.
@@ -30,21 +31,56 @@ import type { ReactNode } from 'react'
  * position per slide and behaves exactly as before. On a desktop it is however many stops the
  * track actually has, which is the honest number: the arrows move, every dot goes somewhere, and
  * no control is ever a no-op. `resize` re-measures, so crossing the breakpoint re-derives it.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────────────────────
+ * WHAT CHANGED IN THE MIDNIGHT PASS, and why.
+ *
+ * 1. THE SLIDES SNAP TO THE CONTENT EDGE, NOT TO THE CENTRE. The track spans a card, and the
+ *    slides inside it start at the same left edge as the section's heading. Centring meant the
+ *    first slide sat half a gutter to the RIGHT of the heading above it, and at the end of the
+ *    track the last slide was pushed past the card's right padding — the one alignment this site
+ *    has been careful about everywhere else. `scroll-snap-align: start` with a matching
+ *    `scroll-padding-inline-start` is what fixes it, and `positionsFor` now measures the same
+ *    thing the browser snaps to instead of measuring the centre.
+ *
+ * 2. THE TRACK FADES AT BOTH EDGES. A hard edge on a horizontal scroller reads as a clipped
+ *    element rather than as content that continues; the mask is what turns "chopped off" into
+ *    "there is more". It is drawn by the track's own `mask-image` (see the stylesheet) so a slide
+ *    can never paint over it.
+ *
+ * 3. THE CONTROLS ARE ONE ROW UNDER THE TRACK: an arrow at each end, and the dots with a printed
+ *    count between them. The count answers the question a row of dots only implies — "2 / 5" —
+ *    and it is `aria-hidden`, because the dots already announce each stop as a tab and a live
+ *    readout on every swipe would be noise.
+ *
+ * 4. THE ARROWS ARE ICONS on a 36px target (44px on a touch pointer), which is the floor every
+ *    other control on this site holds itself to.
  */
 
 /** Distance in px within which two computed positions are treated as the same stop. */
 const SAME_POSITION = 8
 
+/**
+ * The distinct scroll offsets this track can actually reach, in order.
+ *
+ * Measured from the slides' own offsets rather than assumed from their count: at any width where
+ * more than one slide is visible, several slides collapse onto the same stop, and a control that
+ * navigates to a stop the track is already at does nothing when pressed.
+ */
 function positionsFor(track: HTMLElement): number[] {
   const max = Math.max(0, track.scrollWidth - track.clientWidth)
+  const padStart = Number.parseFloat(getComputedStyle(track).paddingInlineStart || '0') || 0
   const seen: number[] = []
   for (const child of Array.from(track.children)) {
     const el = child as HTMLElement
-    const centred = el.offsetLeft - (track.clientWidth - el.offsetWidth) / 2
-    const target = Math.round(Math.max(0, Math.min(max, centred)))
+    /* `offsetLeft` is measured against the nearest positioned ancestor — the same element for the
+       track and for its children — so subtracting the track's own offset gives the slide's
+       position inside the track. The padding is then removed because that is where the browser
+       puts a start-aligned snap. */
+    const target = Math.round(Math.max(0, Math.min(max, el.offsetLeft - track.offsetLeft - padStart)))
     if (!seen.some((p) => Math.abs(p - target) < SAME_POSITION)) seen.push(target)
   }
-  // Clamp can collapse trailing slides onto the end stop; keep the order, it is already ascending.
+  /* Clamp can collapse trailing slides onto the end stop; keep the order, it is already ascending. */
   return seen
 }
 
@@ -121,11 +157,33 @@ export function Carousel({
     })
   }, [])
 
+  /* The track is focusable so a keyboard user can page it without a pointer at all; the handler
+     is only for the arrows that would otherwise scroll the PAGE sideways. */
+  const onKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault()
+        goTo(Math.max(0, active - 1))
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault()
+        goTo(Math.min(stops.length - 1, active + 1))
+      }
+    },
+    [active, stops.length, goTo],
+  )
+
   const count = stops.length
 
   return (
     <section className="mk-car" aria-roledescription="carousel" aria-label={label}>
-      <div className="mk-car-track" ref={trackRef}>
+      <div
+        className="mk-car-track"
+        ref={trackRef}
+        tabIndex={0}
+        role="group"
+        aria-label={label}
+        onKeyDown={onKeyDown}
+      >
         {children.map((child, i) => (
           <div
             className="mk-car-slide"
@@ -147,21 +205,28 @@ export function Carousel({
             onClick={() => goTo(Math.max(0, active - 1))}
             disabled={active === 0}
             aria-label="Sebelumnya / Previous">
-            ←
+            <ChevronLeft size={17} aria-hidden="true" />
           </button>
 
-          <div className="mk-car-dots" role="tablist" aria-label={label}>
-            {stops.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                role="tab"
-                aria-selected={i === active}
-                aria-label={`${i + 1} / ${count}`}
-                className={i === active ? 'on' : undefined}
-                onClick={() => goTo(i)}
-              />
-            ))}
+          <div className="mk-car-mid">
+            <div className="mk-car-dots" role="tablist" aria-label={label}>
+              {stops.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  role="tab"
+                  aria-selected={i === active}
+                  aria-label={`${i + 1} / ${count}`}
+                  className={i === active ? 'on' : undefined}
+                  onClick={() => goTo(i)}
+                />
+              ))}
+            </div>
+            <span className="mk-car-count" aria-hidden="true">
+              <strong>{active + 1}</strong>
+              <span aria-hidden="true">/</span>
+              {count}
+            </span>
           </div>
 
           <button
@@ -170,7 +235,7 @@ export function Carousel({
             onClick={() => goTo(Math.min(count - 1, active + 1))}
             disabled={active === count - 1}
             aria-label="Berikutnya / Next">
-            →
+            <ChevronRight size={17} aria-hidden="true" />
           </button>
         </div>
       )}

@@ -172,19 +172,41 @@ export async function POST(req: Request) {
       { status: 409, headers: { 'Cache-Control': 'no-store', 'Retry-After': '3' } },
     )
 
-  /* THE REDIRECT. The buyer already has a live invoice; the client sends them to it rather than
-     creating a second one. 409 rather than 200 because nothing new was created, and the order id
-     is included so the redirect can address that exact order. */
-  if (reservation.kind === 'pending_invoice')
+  /* THE OUTSTANDING INVOICE, ANSWERED IN PLACE.
+     The buyer already has a live order and pressed "Upgrade" again. The server refuses to create a
+     second one, and it used to answer 409 with a link to a standalone invoice page. That page is
+     gone — the brief is explicit that payment happens in a popup, on the page where the buyer
+     already is — so the refusal now carries the order's OWN instructions, in the same shape a
+     successful call returns, plus `resumed: true`.
+
+     The client can therefore render the QR or the virtual-account number straight into the modal
+     it already has open. One order, one screen, no navigation. The status stays 409 because
+     nothing new was created; `resumed` is what tells the two apart. */
+  if (reservation.kind === 'pending_invoice') {
+    const stored = storedInstructions(reservation.row)
+    if (!stored)
+      return NextResponse.json(
+        {
+          error: 'invoice_pending',
+          message: 'Anda masih punya tagihan yang belum dibayar. Buka tagihan itu untuk melihat kodenya.',
+          orderId: reservation.row.ProviderOrderId,
+        },
+        { status: 409, headers: { 'Cache-Control': 'no-store' } },
+      )
+    const { qrPayload: _storedPayload, ...publicInstructions } = stored
     return NextResponse.json(
       {
         error: 'invoice_pending',
-        message: 'Anda masih punya tagihan yang belum dibayar. Selesaikan tagihan itu dulu.',
+        message: 'Anda masih punya tagihan yang belum dibayar. Lanjutkan pembayaran di bawah ini.',
         orderId: reservation.row.ProviderOrderId,
-        invoiceUrl: `/invoice?order=${encodeURIComponent(reservation.row.ProviderOrderId)}`,
+        resumed: true,
+        ...publicInstructions,
+        amountIdr: amount,
+        grantsDays: days,
       },
       { status: 409, headers: { 'Cache-Control': 'no-store' } },
     )
+  }
 
   if (reservation.kind === 'existing') {
     const stored = storedInstructions(reservation.row)

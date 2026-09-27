@@ -50,23 +50,37 @@
      dialog OUT of the `.mk` subtree, so no `--mk-*` value is inherited and the self-reference
      had nothing to resolve against.
 
-     The palette is therefore restated in full, scoped to this dialog. It is ONE block now rather
-     than three: the light/dark pair and its `prefers-color-scheme` copy are gone with the theme
-     system, so this is the only place outside paper.css that declares these values, and it must
-     be kept in step with the `.mk` token block there. */
-  --mk-bg: #FFFFFF;
-  --mk-raise: #F1F5F9;
-  --mk-panel: #FFFFFF;
-  --mk-line: #E2E8F0;
-  --mk-input-line: #CBD5E1;
-  --mk-control-line: #94A3B8;
-  --mk-ink: #1E293B;
-  --mk-prose: #64748B;
-  --mk-muted: #64748B;
-  --mk-faint: #64748B;
-  --mk-green: #014AB5;
-  --mk-green-2: #013A8F;
-  --mk-on-green: #FFFFFF;
+     The palette is therefore restated in full, scoped to this dialog, and it is the DARK one: the
+     site's ground is midnight now, and a white plate in the middle of it would read as a widget
+     from a different product — the exact failure this file's own header warns about. It is ONE
+     block rather than three (the light/dark pair and its `prefers-color-scheme` copy went with
+     the theme system), so it is the only place outside paper.css that declares these values, and
+     it must be kept in step with the `.mk` token block there.
+
+     THE QR PLATE IS STILL LIGHT, and that is the one exception, on purpose: a scanner needs a
+     light quiet zone around the code. See `.gf-ck-qr` below. */
+  --mk-bg: #0A192F;
+  --mk-raise: #16305A;
+  --mk-panel: #0F2440;
+  --mk-line: #23406B;
+  --mk-input-line: #4A73AD;
+  --mk-control-line: #4A73AD;
+  --mk-ink: #FFFFFF;
+  --mk-prose: #C3CEDC;
+  --mk-muted: #9DB0CC;
+  --mk-faint: #9DB0CC;
+  --mk-green: #7FA8E8;
+  --mk-green-2: #A9C6F2;
+  --mk-on-green: #0A192F;
+  /* The dialog sits on the same midnight ground as the page behind it, so the two tokens the
+     dark palette introduced travel with it: the blue as a FILL (the brand #014AB5 measures
+     2.13:1 against this ground and would be an invisible button) and the orange, whose label is
+     navy rather than white because white on #F35D19 measures 3.29:1 and fails AA. */
+  --mk-blue-fill: #1E5FBF;
+  --mk-blue-fill-2: #2A72D8;
+  --mk-on-blue-fill: #FFFFFF;
+  --mk-marker: #F35D19;
+  --mk-on-marker: #0A192F;
 
   width: 100%; max-width: 460px; max-height: calc(100vh - 32px);
   /* 100dvh tracks the shrinking/growing URL bar on mobile; the vh line above is the fallback for
@@ -346,3 +360,54 @@
   .gf-ck-overlay, .gf-ck { animation: none; }
   .gf-ck-spin { animation: none; }
 }
+
+/* =====================================================================================
+   THE SURFACE LADDER, RE-POINTED FOR A DARK DIALOG — 2026-09-27.
+
+   Every rule above was written when the dialog was a WHITE plate, and it used the two surface
+   tokens the way a light interface does: `--mk-panel` was the brightest value (so it meant "the
+   dialog itself"), and `--mk-raise` was the second-brightest (so it meant "a panel sitting on the
+   dialog"). On the light palette that ordering was true — panel #FFFFFF, raise #F1F5F9.
+
+   On the dark palette the ladder INVERTS: panel #0F2440 is DARKER than raise #16305A. So every
+   rule above that paints a panel with `--mk-panel` now paints it the SAME colour as the dialog,
+   and the element disappears — a channel button, an OAuth button and a form field all became
+   invisible plates with floating labels, which is the kind of thing that only shows up when you
+   look at the built page rather than at the stylesheet.
+
+   THE LADDER, in this dialog, is: bg #0A192F (the page behind) → panel #0F2440 (the dialog) →
+   raise #16305A (anything ON the dialog). Everything that has to read as a separate object takes
+   `--mk-raise`; everything that has to read as a recess is `--mk-bg`. The QR plate is the one
+   element that keeps a light ground, and it is not on this ladder at all — see `.gf-ck-qr`.
+   ===================================================================================== */
+
+/* Raised: the plates that must read as separate from the dialog ground. */
+.gf-ck-channel,
+.gf-ck-oauth,
+.gf-ck-form input,
+.gf-ck-value button { background: var(--mk-raise); }
+
+/* Recessed: the segmented track and the wells inside a raised plate. */
+.gf-ck-tabs { background: var(--mk-bg); }
+.gf-ck-tabs button.on { background: var(--mk-raise); }
+
+/* THE PRIMARY BUTTON IS THE BLUE FILL, not the pale ink blue. `--mk-green` is the blue as TYPE
+   (#7FA8E8, 6.44:1 on the ground) and it is the right colour for a link, an icon or a hairline.
+   As a button FILL it would be a pastel plate — technically legible with its navy label, but it
+   reads as a disabled control next to the site's own orange CTA. The fill token is the blue the
+   palette supplies for exactly this: #1E5FBF behind white, 6.10:1. */
+.gf-ck-primary {
+  background: var(--mk-blue-fill);
+  border-color: var(--mk-blue-fill);
+  color: var(--mk-on-blue-fill);
+}
+.gf-ck-primary:hover:not(:disabled) {
+  background: var(--mk-blue-fill-2);
+  border-color: var(--mk-blue-fill-2);
+}
+
+/* THE ERROR COLOUR. `.gf-ck-error` falls back to #b3261e, which was chosen against white: on the
+   dialog's midnight ground it measures 2.09:1 — a red so dark it reads as part of the panel. The
+   value below is the light step of the same hue and measures 7.8:1, so the one line a buyer must
+   not miss is also the most legible thing on the screen. */
+.gf-ck { --mk-error: #FCA5A5; }

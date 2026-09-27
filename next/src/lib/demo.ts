@@ -99,11 +99,10 @@ export function demoResponse<T>(path: string, options: RequestInit): T {
   if (clean.endsWith('/initiate')) return { photoId: 'demo-p', uploadUrl: 'demo', storagePath: 'demo' } as T
   if (clean.endsWith('/url')) return { url: demoPhoto } as T
 
-  /* ---- THE PAYMENT FLOW, SO THE CHECKOUT AND THE INVOICE CAN BE SEEN AT ALL ----
+  /* ---- THE PAYMENT FLOW, SO THE CHECKOUT CAN BE SEEN AT ALL ----
      These routes had no demo answer, so in demo mode the checkout modal's channel buttons produced
-     an empty dialog (the request returned `undefined`) and /invoice had to hard-code its own
-     sample. Both now answer from one place, and the sample order is the same object the invoice
-     page shows, which is what makes the pair previewable — and testable — without a gateway. */
+     an empty dialog (the request returned `undefined`). They answer from one place now, so the
+     modal's QR and virtual-account screens are previewable — and testable — without a gateway. */
   if (clean === '/api/payments/ipaymu/direct' && method === 'POST') {
     const body = JSON.parse(String(options.body ?? '{}'))
     const isVa = body.method === 'va'
@@ -126,31 +125,70 @@ export function demoResponse<T>(path: string, options: RequestInit): T {
       grantsDays: 30,
     } as T
   }
-  if (clean === '/api/payments/invoice' && method === 'GET') {
-    return {
-      invoice: {
-        orderId: 'DEMO-ORDER-0001',
-        status: 'pending',
-        active: true,
-        method: 'qris',
-        channel: 'mpm',
-        label: 'QRIS',
-        paymentNo: null,
-        qrUrl: demoQr,
-        qrAvailable: true,
-        hostedUrl: null,
-        amountIdr: 35000,
-        feeIdr: 0,
-        totalIdr: 35000,
-        expiresAt: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
-        createdAtUtc: new Date().toISOString(),
-        grantsDays: 30,
-      },
-      offer: { priceIdr: 35000, priceLabel: 'Rp 35.000', days: 30, storageLabel: '500 MB' },
-    } as T
-  }
   if (clean === '/api/payments/ipaymu/sync' && method === 'POST') return { granted: false } as T
   if (clean === '/api/payments/ipaymu/qr') return { qr: demoQr } as T
+
+  /* ---- THE LEDGER, SO THE ACCOUNT MENU AND /account CAN BE SEEN AT ALL ----
+     The account page is the one screen a signed-in buyer opens after paying, and in demo mode
+     there is no database to read it from. The sample below is deliberately MIXED — one settled
+     order, one pending one, and one that lapsed — because a table previewed with three identical
+     rows hides exactly the thing that is hard to get right: the status column and the two dates.
+     Amounts and order ids follow the same conventions the real rows use, so the table's alignment
+     and truncation are honest at any width. */
+  if (clean === '/api/payments/history' && method === 'GET') {
+    const now = Date.now()
+    const day = 24 * 3600 * 1000
+    return {
+      payments: [
+        {
+          orderId: 'GF-M8K2P1-9F3A2C4E',
+          provider: 'ipaymu',
+          method: 'qris',
+          channel: 'mpm',
+          label: 'QRIS',
+          amountIdr: 35000,
+          feeIdr: 0,
+          totalIdr: 35000,
+          grantsDays: 30,
+          status: 'settled',
+          createdAtUtc: new Date(now - 34 * day).toISOString(),
+          settledAtUtc: new Date(now - 34 * day + 4 * 60 * 1000).toISOString(),
+          expiresAt: null,
+        },
+        {
+          orderId: 'GF-M8J9Q4-71B6E0D5',
+          provider: 'ipaymu',
+          method: 'qris',
+          channel: 'mpm',
+          label: 'QRIS',
+          amountIdr: 35000,
+          feeIdr: 0,
+          totalIdr: 35000,
+          grantsDays: 30,
+          status: 'pending',
+          createdAtUtc: new Date(now - 2 * 3600 * 1000).toISOString(),
+          settledAtUtc: null,
+          expiresAt: new Date(now + 22 * 3600 * 1000).toISOString(),
+        },
+        {
+          orderId: 'GF-M7X5N8-2C9A4B1F',
+          provider: 'ipaymu',
+          method: 'va',
+          channel: 'bca',
+          label: 'BCA',
+          amountIdr: 35000,
+          feeIdr: 0,
+          totalIdr: 35000,
+          grantsDays: 30,
+          status: 'expired',
+          createdAtUtc: new Date(now - 96 * day).toISOString(),
+          settledAtUtc: null,
+          expiresAt: new Date(now - 95 * day).toISOString(),
+        },
+      ],
+      offer: { priceIdr: 35000, priceLabel: 'Rp 35.000', days: 30, storageLabel: '5 GB' },
+    } as T
+  }
 
   return undefined as T
 }

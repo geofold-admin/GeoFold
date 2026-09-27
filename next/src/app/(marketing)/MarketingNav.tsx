@@ -4,7 +4,9 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useId, useRef, useState } from 'react'
 import { chrome, type Locale } from '@/lib/i18n'
+import { useAuth } from '@/lib/AuthContext'
 import { LangToggle } from './NavControls'
+import { AccountMenu } from './AccountMenu'
 import NavPill from '@/components/NavPill'
 import { LogoLockup } from '@/components/Logo'
 
@@ -37,6 +39,7 @@ import { LogoLockup } from '@/components/Logo'
 export function MarketingNav({ locale }: { locale: Locale }) {
   const pathname = usePathname()
   const c = chrome[locale]
+  const { session } = useAuth()
   const [open, setOpen] = useState(false)
   const panelId = useId()
   const panelRef = useRef<HTMLDivElement>(null)
@@ -117,9 +120,17 @@ export function MarketingNav({ locale }: { locale: Locale }) {
 
       <div className="mk-nav-tools">
         <LangToggle locale={locale} label={c.a11y.language} />
-        <Link href="/login" className="mk-portal">
-          {c.nav.portal} ↗
-        </Link>
+        {/* THE ACCOUNT CHIP, OR THE PORTAL LINK — never both.
+            Once a buyer is signed in, "Portal" is the wrong affordance: it offers a door to
+            somewhere they already are, and it says nothing about the thing they most often come
+            back to check. The chip replaces it and carries the ledger. Signed out, this renders
+            nothing and the Portal link is the header's own way in. */}
+        <AccountMenu locale={locale} />
+        {!session && (
+          <Link href="/login" className="mk-portal">
+            {c.nav.portal} ↗
+          </Link>
+        )}
 
         {/* The compact control, shown only below 900px. aria-expanded reflects real state and
             aria-controls points at the panel, so the relationship is announced rather than implied.
@@ -168,14 +179,17 @@ export function MarketingNav({ locale }: { locale: Locale }) {
           ))}
           <div className="mk-menu-foot">
             <LangToggle locale={locale} label={c.a11y.language} />
-            <Link
-              href="/login"
-              className="mk-portal"
-              tabIndex={open ? 0 : -1}
-              onClick={() => setOpen(false)}
-            >
-              {c.nav.portal} ↗
-            </Link>
+            <AccountMenu locale={locale} />
+            {!session && (
+              <Link
+                href="/login"
+                className="mk-portal"
+                tabIndex={open ? 0 : -1}
+                onClick={() => setOpen(false)}
+              >
+                {c.nav.portal} ↗
+              </Link>
+            )}
           </div>
         </div>
       </div>
