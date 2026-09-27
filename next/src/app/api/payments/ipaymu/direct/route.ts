@@ -6,6 +6,7 @@ import { ensureProfile } from '@/lib/profile'
 import { BUSINESS } from '@/lib/business'
 import { checkoutAvailability, checkoutExpiryHours, checkoutFailure, ipaymuConfig, createDirectPayment } from '@/lib/ipaymu'
 import { DIRECT_CHANNELS, buyerFields, channelLabel, isDirectChannel, isTrustedQrUrl } from '@/lib/ipaymu-direct'
+import { parseIpaymuDeadline } from '@/lib/ipaymu-time'
 import { PREMIUM_PRICE_IDR, PREMIUM_DAYS, PREMIUM_STORAGE_LABEL } from '@/lib/pricing'
 
 export const runtime = 'nodejs'
@@ -123,34 +124,37 @@ export async function POST(req: Request) {
       LIMIT 1 FOR UPDATE`
 
     if (existing) {
-      /* Same channel and we still hold its instructions → hand the same invoice back. */
-      const reusable =
-        existing.Method === method &&
-        !!storedInstructions(existing) &&
-        /* A QRIS code expires in minutes; iPaymu reports the deadline and we stored it. Only
-           reuse while it is still in the future. A VA number is good for hours, so it is
-           reused on the reservation window alone. */
-        (method !== 'qris' || isQrStillValid(storedInstructions(existing)?.expiresAt))
-      if (reusable) return { kind: 'existing', row: existing }
+      const stored = storedInstructions(existing)
+      const sameChannel = existing.Method === method
+
+      /* Same channel and we still hold instructions that can still be paid → hand the same
+         invoice back. The payability test is what separates a live order from a dead one: a
+         QRIS code that has lapsed, or instructions that were never stored, are NOT reusable. */
+      if (sameChannel && isStoredInvoicePayable(stored, existing.Method)) return { kind: 'existing', row: existing }
 
       /* Still inside the window where the gateway call may be in flight: do not race it. */
-      if (existing.IsFreshReservation && existing.Method === method) return { kind: 'in_progress' }
+      if (existing.IsFreshReservation && sameChannel) return { kind: 'in_progress' }
 
-      /* AN UNPAID INVOICE IS NOT SILENTLY REPLACED.
+      /* AN UNPAID INVOICE IS NOT SILENTLY REPLACED — while it can still be paid.
          This is the buyer who already holds a live order and has come back through the pricing
          page's checkout rather than through their own invoice. Two things could happen here, and
          only one of them is honest: issue a second payable order (two invoices for one purchase,
          and a support question when both are paid), or send the buyer to the order they already
-         have. `supersede` is the invoice page's deliberate "change my payment method" — the one
-         caller that means to replace the order. Everyone else is redirected.
+         have. `supersede` is a deliberate "change my payment method" from the caller. Everyone
+         else is redirected — but ONLY when there is something left to be redirected TO.
 
-         The reuse window is the gateway's own expiry, so this only fires for an order that is
-         still payable; an older row falls through to the supersede path below and is denied. */
-      if (!supersede) return { kind: 'pending_invoice', row: existing }
+         A DEAD INVOICE MUST NOT TRAP THE BUYER. When the order's own code has lapsed — a QRIS
+         deadline in the past, or instructions that were never stored because the gateway call
+         failed halfway — there is nothing left to resume. Refusing to create a new order then
+         leaves the buyer looking at a dead code with a server that will not issue a live one:
+         the exact dead end this route used to produce, and the reason a buyer reported "the QR
+         is gone and I cannot pay". Such a row is superseded WITHOUT the flag, because it is not
+         a choice the buyer is making; it is the only way forward. */
+      if (!supersede && isStoredInvoicePayable(stored, existing.Method)) return { kind: 'pending_invoice', row: existing }
 
-      /* Anything else — a stale reservation, or the buyer switched channel — is superseded.
-         Marking it denied releases the unique order id and stops a forgotten invoice from being
-         paid later against a period the buyer no longer expects. */
+      /* Anything else — a stale reservation, a dead code, or the buyer switched channel — is
+         superseded. Marking it denied releases the unique order id and stops a forgotten invoice
+         from being paid later against a period the buyer no longer expects. */
       await tx`
         UPDATE payments SET "Status" = 'denied',
           "RawPayload" = COALESCE("RawPayload", '{}'::jsonb) ||
@@ -184,6 +188,10 @@ export async function POST(req: Request) {
      nothing new was created; `resumed` is what tells the two apart. */
   if (reservation.kind === 'pending_invoice') {
     const stored = storedInstructions(reservation.row)
+    /* Unreachable by construction — `isStoredInvoicePayable` is what let this kind through, and it
+       returns false for a row with no instructions. Kept as a type guard and a safety net: the
+       fallback tells the buyer the truth (there is a tagihan, we cannot render it) rather than
+       handing back an empty dialog. */
     if (!stored)
       return NextResponse.json(
         {
@@ -305,17 +313,39 @@ export async function POST(req: Request) {
 }
 
 /**
- * A stored QRIS deadline, as iPaymu formats it ("2023-12-31 23:59:59", local time).
+ * A stored QRIS deadline, as iPaymu formats it ("2023-12-31 23:59:59", WIB).
  *
- * Treated as local time deliberately: iPaymu reports WIB and the server may run in UTC, so
- * parsing it as UTC would shift the deadline by seven hours — in the direction that reuses an
- * expired code. A short grace is subtracted so a code that is about to lapse is replaced rather
- * than handed over. An unparseable value returns false, which forces a fresh invoice; that is the
- * safe direction to fail in.
+ * THE ZONE IS THE WHOLE POINT. iPaymu reports WIB and the server runs in UTC, so the old
+ * `Date.parse(value.replace(' ', 'T'))` read a 20:00 WIB deadline as 20:00 UTC — seven hours
+ * LATER than it really was. A code that had already died was considered live until the next
+ * morning, and the checkout kept handing back a QR the gateway had already killed, which is the
+ * bug a buyer hits as "the QR is gone and I cannot pay". `parseIpaymuDeadline` reads the string
+ * as WIB, which is what it is. A short grace is subtracted so a code about to lapse is replaced
+ * rather than handed over; an unparseable value returns false, which forces a fresh invoice —
+ * the safe direction to fail in.
  */
 function isQrStillValid(value: unknown): boolean {
-  if (typeof value !== 'string' || value.length === 0) return false
-  const parsed = Date.parse(value.replace(' ', 'T'))
+  const parsed = parseIpaymuDeadline(value)
   if (!Number.isFinite(parsed)) return false
   return parsed - Date.now() > 60_000
+}
+
+/**
+ * Is this stored invoice still payable by the buyer, as far as its own instructions say?
+ *
+ * A pending row is not automatically a live one. Two clocks can have run out: the QRIS code's own
+ * deadline (minutes), and the reservation window the row was created under (hours). The row is
+ * reusable only while both are in the future.
+ *
+ * THIS IS WHAT UNBLOCKS A STALE INVOICE. Before this check the route reused any pending row inside
+ * the reservation window, so a buyer whose QRIS had lapsed got the dead code back on every
+ * attempt and the route refused to issue a new one — a dead end with no way out from the UI. A row
+ * that fails this test is now treated as abandoned and superseded on the next request.
+ */
+function isStoredInvoicePayable(stored: Record<string, unknown> | null, method: string): boolean {
+  if (!stored) return false
+  /* The method comes from the ROW's own column, not from the payload: an older row whose stored
+     instructions predate a field must not be judged by what the payload happens to say. */
+  if (method !== 'qris') return true
+  return isQrStillValid(stored.expiresAt)
 }

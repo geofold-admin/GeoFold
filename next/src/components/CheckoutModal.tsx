@@ -190,7 +190,8 @@ interface Instructions {
   grantsDays: number
 }
 
-interface Channel {
+/** One payable channel: the method the gateway sees, the bank/QR code, and the label on screen. */
+export interface Channel {
   method: 'qris' | 'va'
   channel: string
   label: string
@@ -203,6 +204,16 @@ interface CheckoutModalProps {
   storageLabel?: string
   /** The marketing locale, so the last screen before payment is in the buyer's language. */
   locale?: Locale
+  /**
+   * The channel of an invoice the buyer ALREADY holds, when the caller knows it.
+   *
+   * The account page opens this modal from a pending tagihan, and asking its owner to pick a
+   * channel again would be asking them to re-order the thing they already ordered — the exact
+   * complaint ("the QR is gone and I have to request it again") this path exists to answer. When
+   * this is set the modal goes straight to the code: the server hands back the same invoice if it
+   * is still payable, or supersedes the dead one and issues a live one in its place.
+   */
+  resume?: Channel | null
 }
 
 const DEFAULT_CHANNELS: Channel[] = [
@@ -220,6 +231,7 @@ export function CheckoutModal({
   offerLabel = 'Rp 35.000',
   storageLabel = '500 MB',
   locale = 'id',
+  resume = null,
 }: CheckoutModalProps) {
   const c = copy[locale]
   const { session } = useAuth()
@@ -342,7 +354,7 @@ export function CheckoutModal({
     }
   }
 
-  const handleStart = async (chosen: Channel) => {
+  const handleStart = useCallback(async (chosen: Channel) => {
     setChannel(chosen)
     setPayState('initiating')
     setErrorMessage(null)
@@ -392,7 +404,33 @@ export function CheckoutModal({
         err instanceof Error ? err.message : locale === 'id' ? 'Gagal menyiapkan pembayaran.' : 'Could not start the payment.',
       )
     }
-  }
+  }, [locale])
+
+  /*
+   * ---- resuming an invoice the buyer already holds ----
+   *
+   * Opened from the account page's pending tagihan, the modal goes STRAIGHT to the code instead of
+   * asking which channel to use. Asking would be asking the buyer to re-order the thing they
+   * already ordered, which is precisely the complaint this path answers ("the QR is gone and I
+   * have to request it again").
+   *
+   * `handleStart` is the same call the channel buttons make, so the SERVER decides the outcome
+   * from its own records: a live invoice comes back as-is, a lapsed one is superseded and a fresh
+   * code is issued in its place. The modal does not need to know which of the two it will get.
+   *
+   * The ref keeps this to ONE attempt per open. Without it every re-render would fire another
+   * request, and a failing request would retry in a loop.
+   */
+  const resumedRef = useRef(false)
+  useEffect(() => {
+    if (!isOpen) {
+      resumedRef.current = false
+      return
+    }
+    if (!session || !resume || resumedRef.current) return
+    resumedRef.current = true
+    handleStart(resume)
+  }, [isOpen, session, resume, handleStart])
 
   const handleManualCheck = async () => {
     setChecking(true)

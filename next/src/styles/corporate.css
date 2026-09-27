@@ -148,7 +148,6 @@
 .mk .mk-hero,
 .mk .mk-h,
 .mk .mk-close,
-.mk .pg-close,
 .mk .mk-sec,
 .mk .mk-section {
   position: relative;
@@ -159,7 +158,6 @@
 .mk .mk-hero::before,
 .mk .mk-h::before,
 .mk .mk-close::before,
-.mk .pg-close::before,
 .mk .mk-sec::before,
 .mk .mk-section::before {
   content: '';
@@ -194,10 +192,14 @@
 }
 .mk .mk-hero,
 .mk .mk-h,
-.mk .mk-close,
-.mk .pg-close {
+.mk .mk-close {
   margin-block: var(--card-gap);
 }
+/* The landing page's closing block is a `.pg-wrap` INSIDE its `.pg-sec` host, not a host of its
+   own. It used to be listed with the hosts above, which drew a second card inside the section's
+   card: measured on the home page, two nested `::before` plates at rgb(15,36,64) with two 1px
+   borders a few pixels apart, which the client reported as a broken background. The section is
+   the card; the wrap is content. */
 /* The hosts that used to lean on their own padding-block or on a section's. Each gets a floor, so
    a card never ends flush against its last line of text. */
 .mk .mk-hero { padding-block: 48px 44px; }
@@ -270,14 +272,21 @@
    a card now, like everything between the chrome, so its own ground and both rules go. The
    label's inset has to become the CARD's padding, because the card's edge is one card-padding
    further out than the label used to start. */
-.mk .pg-marquee {
+/* THE SELECTORS NAME THE ELEMENT'S OWN ATTRIBUTE, and that is not decoration. paper.css paints
+   `.mk .pg-marquee` — background AND a hairline top and bottom — at the same specificity as the
+   rules below, and the bundler emits paper's rules after this file, so paper won: measured on the
+   live site, the band's computed background was rgb(22,48,90) with a 1px border, which put a
+   full-width slab behind a card that was supposed to sit on the ground. `[data-marquee]` is
+   already in the markup (the animation script reads it), so naming it costs nothing and lifts
+   these rules above the older skin whatever order the bundler chooses. */
+.mk .pg-marquee[data-marquee] {
   background: none;
   border: 0;
   margin-inline: var(--card-inset);
   position: relative;
   isolation: isolate;
 }
-.mk .pg-marquee::before {
+.mk .pg-marquee[data-marquee]::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -288,7 +297,7 @@
   pointer-events: none;
   z-index: -1;
 }
-.mk .pg-marquee-label { background: none; padding-inline: var(--card-pad); }
+.mk .pg-marquee[data-marquee] .pg-marquee-label { background: none; padding-inline: var(--card-pad); }
 
 /* -------------------------------------------------------------------------------------
    5. THE CHROME — A FULL-BLEED BAR AND A FULL-BLEED BAND
@@ -372,6 +381,10 @@
 .mk .mk-footer .mk-footer-blurb,
 .mk .mk-footer .mk-seal-note,
 .mk .mk-footer .mk-seal-scale { color: var(--mk-deep-prose); }
+/* The blurb is a link now, so it gets a hover the other prose does not. It has to live HERE
+   rather than beside the base rule in paper.css: `.mk .mk-footer .mk-footer-blurb` is (0,3,0)
+   and outranks a (0,2,1) `:hover` rule, so the hover would never have painted. */
+.mk .mk-footer .mk-footer-blurb:hover { color: var(--mk-deep-ink); }
 .mk .mk-footer .mk-footer-col a:hover { color: var(--mk-deep-ink); opacity: 1; }
 .mk .mk-footer .mk-seal-rows { border-color: var(--mk-deep-line); }
 .mk .mk-footer .mk-seal-rows > div + div { border-top-color: var(--mk-deep-line); }
@@ -493,6 +506,13 @@
   background: transparent;
 }
 .mk .mk-btn-outline:hover { border-color: var(--mk-ink); background: rgba(255, 255, 255, .04); }
+/* ON A CARD THE LINE HAS TO CLEAR THE CARD'S OWN FILL, NOT THE PAGE.
+   `--mk-control-line` (#4A73AD) measures 3.23:1 on the panel and 3.64:1 on the ground, but the
+   pricing card's fill is the lighter `--mk-raise` (#16305A), where the same border drops to
+   2.71:1 — a control edge below WCAG 1.4.11. One step lighter clears it at 3.61:1 and still
+   reads as a quiet secondary next to the orange CTA. */
+.mk .mk-price-card .mk-btn-outline { border-color: #5E88C4; }
+.mk .mk-price-card .mk-btn-outline:hover { border-color: var(--mk-ink); }
 .mk .mk-btn-ghost { color: var(--mk-green); border-color: transparent; background: transparent; }
 .mk .mk-btn-ghost:hover { background: var(--mk-raise); }
 
@@ -502,6 +522,15 @@
 .mk .mk-plan-cta { border-color: var(--mk-control-line); color: var(--mk-ink); }
 .mk .mk-plan-cta.solid { background: var(--mk-raise); color: var(--mk-ink); border-color: var(--mk-raise); }
 .mk .mk-plan.featured .mk-plan-cta { border-color: rgba(255, 255, 255, .55); color: var(--mk-on-blue-fill); }
+
+/* THE LANDING PAGE'S PRICE CARDS TAKE THE SAME BUTTON AS /pricing's.
+   Measured on the home page at 1440px: the free card's "Start" was a 96px outline pill and the
+   premium card's was a 143px orange one, each as wide as its own label, so the pair read as two
+   different components and neither matched the full-width buttons on /pricing. A plan card's CTA
+   is the thing the reader came to press, and a full-width control is both easier to hit and
+   honest about being the card's action. */
+.mk .pg-price-card > div:last-child { width: 100%; }
+.mk .pg-price-card .pg-btn { width: 100%; justify-content: center; }
 
 /* -------------------------------------------------------------------------------------
    7. THE PANELS INSIDE CARDS
@@ -571,9 +600,31 @@
 .mk .mk-sec:not(.mk-sec-dark) .mk-why p { color: var(--mk-prose); }
 .mk .mk-sec:not(.mk-sec-dark) .mk-why strong { color: var(--mk-ink); }
 
-/* The pricing note under the cards sat on the page ground with a gutter inset; it is on the card
-   now, so the inset would double up. */
-.mk .mk-price-note { padding-inline: 0; }
+/* THE PRICING PAGE'S BLOCKS NOW SPAN THE CONTENT COLUMN.
+   Measured before this rule, at 1440px: the two plan cards sat in an 880px box pinned to x=0,
+   so the pair ended at x=880 while the page's own content column ends at 1360 — 480px of empty
+   card to their right, which the client read as "not symmetrical". The cards, the comparison
+   table and the FAQ grid were each capped at 720-760px from the era when the page WAS that
+   narrow, and each cap was independently left-aligned.
+
+   They now take the same shell as every other page: `--mk-shell` wide, centred, with the page
+   pad as the inset — the identical arithmetic `.pg-wrap` uses on the landing page, so the two
+   pages' content columns are the same width and share one left edge at every viewport.
+   `--mk-pad` is used rather than `--mk-gutter` because a capped element resolves a percentage
+   gutter against its PARENT's width, not its own, which is how the old cap went wrong at
+   wide viewports. */
+.mk .mk-sec .mk-price,
+.mk .mk-sec .mk-compare,
+.mk .mk-sec .mk-qa,
+.mk .mk-sec .mk-price-note {
+  max-width: var(--mk-shell);
+  margin-inline: auto;
+  padding-inline: var(--mk-pad);
+}
+/* The FAQ preview runs three across once the column is wide enough for 400px items. */
+@media (min-width: 1100px) {
+  .mk .mk-sec .mk-qa { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
 
 /* The landing page's closing section is preceded by an `<hr class="pg-rule">`. A rule is how this
    design separated two things on a shared ground; there is no shared ground any more, and the two
@@ -603,15 +654,23 @@
 .mk .mk-close,
 .mk .mk-closer,
 .mk .pg-sec,
-.mk .pg-hero,
-.mk .pg-close {
+.mk .pg-hero {
   background: none;
   border: 0;
 }
-.mk .mk-sec-tint,
-.mk .mk-sec-dark,
-.mk .pg-sec-tint,
-.mk .pg-sec-dark {
+/* THE BAND PAINTS ARE DEAD — at a specificity the older skins cannot outrank.
+   `pg-sec-tint` / `mk-sec-tint` and `pg-sec-dark` / `mk-sec-dark` no longer paint a band of
+   their own; the card's `::before` is the only surface. That intent was already written here
+   once, as a two-class selector, and it LOST: paper.css paints the same elements with the same
+   specificity and the bundler emits paper's rules after this file, so the last one won. Measured
+   on the live site: `.pg-sec-tint` computed `background: rgb(22,48,90)` (--mk-raise) on a
+   full-bleed box x=0→1440, which filled the 26px ground gap between cards with band colour and
+   made every section read as one continuous slab. Naming the section's own band class — a third
+   class in the compound — outranks the old skin whatever the bundler's order happens to be. */
+.mk .mk-sec.mk-sec-tint,
+.mk .mk-sec.mk-sec-dark,
+.mk .pg-sec.pg-sec-tint,
+.mk .pg-sec.pg-sec-dark {
   background: none;
   border: 0;
 }
@@ -652,7 +711,7 @@
    with a route-marker, a scroll-condense behaviour and a mobile sheet, and a dead end needs none
    of it. A brand mark and one way back is the whole job. */
 
-.mk-nf { min-height: 100dvh; background: var(--mk-ground); display: flex; flex-direction: column; }
+.mk-nf { min-height: 100dvh; background: var(--mk-bg); display: flex; flex-direction: column; }
 
 .mk-nf-bar {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
@@ -922,6 +981,14 @@
 .mk-acctpage-callout strong { font-size: 15px; color: var(--mk-ink); }
 .mk-acctpage-callout span { font-size: 13px; color: var(--mk-prose); }
 .mk-acctpage-callout .mk-btn { display: inline-flex; align-items: center; gap: 6px; }
+/* The lapsed state of the same callout. It keeps the shape and loses the orange: the colour on
+   this page marks ONE thing, and "the code you had is dead" is not an emergency — it is a receipt
+   for something that expired. A quieter slate border says the same thing without competing with
+   the live-invoice callout above it. */
+.mk-acctpage-callout.is-lapsed {
+  background: var(--mk-raise);
+  border-color: var(--mk-line);
+}
 
 .mk-ledger {
   border: 1px solid var(--mk-line);
@@ -1072,7 +1139,40 @@
 }
 .mk .mk-car-track::-webkit-scrollbar { display: none; }
 .mk .mk-car-track:focus-visible { outline: 2px solid var(--mk-green); outline-offset: 2px; }
+/* THE SLIDE WIDTH IS A LADDER, AND IT IS WRITTEN OUT IN FULL HERE.
+   home.css carries the original ladder — 84% on a phone, 46% from 700px, 32% from 1080px — and it
+   stopped applying the moment this file started naming `.mk .mk-car-slide`: two classes beat one,
+   so a single 84% base rule overrode every rung of home's ladder at EVERY width. Measured on the
+   live site at 1440px: one 1065px slide whose contents (a 166px phone and a 508px column of copy)
+   filled the left half of it, with roughly 500px of empty card to the right. That is the "carousel
+   looks broken on desktop" the buyer reported.
+   The rungs are repeated rather than inherited because there is no way to reach into home.css's
+   media queries from here; keeping the two files' numbers identical is the contract. */
 .mk .mk-car-slide { flex: 0 0 84%; scroll-snap-align: start; }
+@media (min-width: 700px) {
+  .mk .mk-car-slide { flex-basis: 46%; }
+}
+@media (min-width: 1080px) {
+  .mk .mk-car-slide { flex-basis: 32%; }
+}
+
+/* THE CAPABILITY CARD IS A COLUMN AT EVERY WIDTH, AND ITS PHONE IS CENTRED AND BIG.
+   Two measured faults, one rule each.
+
+   1. The card went to a ROW between 700px and 1080px. At 800px that gave the copy column 98px —
+      a 4-5 word line — and at 1000px, 178px. The card only has one slide's width to work with
+      (46% of the track), so a row cannot fit a phone AND a readable column; it fits neither.
+      Stacked, the copy gets the card's full content width at every breakpoint.
+
+   2. The phone was LEFT-ALIGNED and 168px wide inside a 392px card. Measured at 1440px: 213px of
+      empty card to its right, and the reader's eye had to jump a gap between the screen and the
+      copy that describes it. A phone is a FIGURE, not a column of text, so it centres; and at
+      min(72%, 230px) it reads as the subject of the card rather than an icon in its corner. The
+      caption below it stays left-aligned with the copy, which is what keeps the card on the
+      site's own left edge. */
+.mk .mk-cap { flex-direction: column; align-items: flex-start; gap: 18px; }
+.mk .mk-cap .mk-phone { align-self: center; width: min(72%, 230px); }
+.mk .mk-cap .mk-phone-frame { width: 100%; }
 
 /* The emphasis, where the browser can drive it from scroll position: the centred slide sits at
    full size and full opacity, its neighbours a little smaller and lifted slightly. Scale and

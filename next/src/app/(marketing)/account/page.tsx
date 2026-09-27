@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { api } from '@/lib/api-client'
 import { useAuth } from '@/lib/AuthContext'
 import { LOCALE_COOKIE, type Locale } from '@/lib/i18n'
+import { parseIpaymuDeadline } from '@/lib/ipaymu-time'
+import { CheckoutModal, type Channel } from '@/components/CheckoutModal'
 import { ArrowUpRight, Check, Loader2, Receipt, RefreshCw, ShieldCheck, Wallet } from 'lucide-react'
 
 /**
@@ -78,6 +80,12 @@ const copy = {
     cta: 'Perpanjang sekarang',
     pendingNote: 'Anda punya tagihan yang belum dibayar.',
     pendingCta: 'Bayar sekarang',
+    /* The lapsed invoice. Its row is still 'pending' in the database and its own deadline has
+       passed, so there is no code left to resume — but the buyer's intent ("I want to pay") is
+       still valid, and the server supersedes the dead order and issues a live one. The copy has
+       to say that, or the button reads like a retry of something that cannot work. */
+    lapsedNote: 'Tagihan terakhir sudah kedaluwarsa.',
+    lapsedCta: 'Buat kode baru',
     secured: 'Diproses oleh gateway pembayaran berizin di Indonesia',
     status: {
       settled: 'Berhasil',
@@ -110,6 +118,8 @@ const copy = {
     cta: 'Extend now',
     pendingNote: 'You have an unpaid invoice.',
     pendingCta: 'Pay now',
+    lapsedNote: 'Your last invoice has expired.',
+    lapsedCta: 'Request a new code',
     secured: 'Processed by a licensed Indonesian payment gateway',
     status: {
       settled: 'Paid',
@@ -142,15 +152,16 @@ function formatDateTime(iso: string, locale: Locale): string {
  * own deadline — and no scheduler flips those rows. Showing "Menunggu" on an order that can no
  * longer be paid is the single most misleading thing this page could do, so the deadline is
  * checked on every read.
+ *
+ * The deadline is parsed as WIB (see `parseIpaymuDeadline`): iPaymu reports WIB with no offset,
+ * and reading it as local time moved the deadline seven hours in the direction that kept a dead
+ * code looking live — on the browser this is the buyer's own zone, so the error changed with
+ * where they were sitting.
  */
 function displayStatus(p: PaymentRow): string {
   if (p.status !== 'pending') return p.status
   if (!p.expiresAt) return p.status
-  /* Parsed as LOCAL time on purpose: iPaymu reports WIB and the browser may be anywhere, so
-     reading it as UTC would move the deadline seven hours in the direction that keeps a dead code
-     on screen. An unparseable value counts as live, because the alternative is telling a buyer
-     their live invoice is dead. */
-  const deadline = Date.parse(p.expiresAt.replace(' ', 'T'))
+  const deadline = parseIpaymuDeadline(p.expiresAt)
   if (Number.isFinite(deadline) && deadline - Date.now() < 0) return 'expired'
   return p.status
 }
@@ -202,7 +213,37 @@ export default function AccountPage() {
     () => (rows ?? []).find((r) => displayStatus(r) === 'pending') ?? null,
     [rows],
   )
+  /* THE LAPSED ONE. A row can be 'pending' in the database and past its own deadline at the same
+     time — no scheduler flips those rows — so it needs its own slot. Without it the callout
+     simply vanished and the buyer was left with a ledger line that said "Kedaluwarsa" and no way
+     to act on the intent that brought them here. The server supersedes a dead order when the
+     modal asks for a new one, so this is a real path, not a dead end dressed up as a button.
+
+     ONLY rows that are STILL 'pending' in the database qualify. An order the gateway itself
+     marked expired months ago is history, not a call to action, and offering "buat kode baru"
+     against it would be selling an upgrade the buyer never asked for. */
+  const lapsed = useMemo(
+    () => (rows ?? []).find((r) => r.status === 'pending' && displayStatus(r) === 'expired') ?? null,
+    [rows],
+  )
   const latest = settled[0] ?? null
+
+  /* The channel to resume, derived from whichever tagihan the callout is showing. The label is
+     the human name ("QRIS", "BCA"); `channel` is the code the server validates. A row whose
+     payload predates the channel field falls back to the method, which is enough for the server
+     to find the order and decide whether it is still payable. */
+  const resumeChannel = useMemo<Channel | null>(() => {
+    const row = pending ?? lapsed
+    if (!row) return null
+    const method: Channel['method'] = row.method === 'va' ? 'va' : 'qris'
+    return { method, channel: row.channel ?? (method === 'qris' ? 'mpm' : 'bca'), label: row.label ?? row.method.toUpperCase() }
+  }, [pending, lapsed])
+
+  /* The checkout popup, opened FROM THIS PAGE. The brief is explicit that payment happens in a
+     popup on the page the buyer is already on, and a pending invoice is exactly the moment they
+     are looking for it — sending them to /pricing to start over was the old behaviour, and it
+     meant the order they already held was never the one they ended up paying. */
+  const [checkoutOpen, setCheckoutOpen] = useState(false)
 
   /* ---------- signed out ---------- */
   if (!authLoading && !session) {
@@ -254,7 +295,9 @@ export default function AccountPage() {
           </div>
 
           {/* THE UNPAID ORDER, when there is one. It sits above the ledger because it is the only
-              row on this page with an action attached to it. */}
+              row on this page with an action attached to it. The button OPENS THE CHECKOUT HERE:
+              it does not navigate, so the invoice the buyer already holds is the one the modal
+              resumes, and if that invoice has lapsed the server issues a fresh one in its place. */}
           {pending && (
             <div className="mk-acctpage-callout">
               <div>
@@ -264,10 +307,37 @@ export default function AccountPage() {
                   {pending.expiresAt ? ` · ${c.until} ${formatDateTime(pending.expiresAt, locale)}` : ''}
                 </span>
               </div>
-              <Link href="/pricing" className="mk-btn mk-btn-primary">
+              <button
+                type="button"
+                className="mk-btn mk-btn-primary"
+                onClick={() => setCheckoutOpen(true)}
+              >
                 {c.pendingCta}
                 <ArrowUpRight size={15} aria-hidden="true" />
-              </Link>
+              </button>
+            </div>
+          )}
+
+          {/* THE LAPSED ORDER. Its code is gone, so there is nothing to resume — but the buyer is
+              here to pay, and the server will supersede the dead order when the modal asks for a
+              new code. Same button, honest label. */}
+          {!pending && lapsed && (
+            <div className="mk-acctpage-callout is-lapsed">
+              <div>
+                <strong>{c.lapsedNote}</strong>
+                <span>
+                  {lapsed.label ?? lapsed.method.toUpperCase()} · {formatIdr(lapsed.totalIdr)}
+                  {lapsed.expiresAt ? ` · ${formatDateTime(lapsed.expiresAt, locale)}` : ''}
+                </span>
+              </div>
+              <button
+                type="button"
+                className="mk-btn mk-btn-primary"
+                onClick={() => setCheckoutOpen(true)}
+              >
+                {c.lapsedCta}
+                <ArrowUpRight size={15} aria-hidden="true" />
+              </button>
             </div>
           )}
 
@@ -341,17 +411,24 @@ export default function AccountPage() {
             </div>
           )}
 
-          {/* THE ONE CONVERSION CONTROL ON THIS PAGE, and it is orange like every other page's. */}
-          {!pending && (
+          {/* THE ONE CONVERSION CONTROL ON THIS PAGE, and it is orange like every other page's.
+              Hidden while a tagihan is on screen in either state: the callout above already
+              carries the page's single orange control, and two of them side by side would break
+              the one-marker rule the palette is built on. */}
+          {!pending && !lapsed && (
             <div className="mk-acctpage-cta">
               <div>
                 <strong>{c.ctaTitle}</strong>
                 <span>{c.ctaBody}</span>
               </div>
-              <Link href="/pricing" className="mk-btn mk-btn-primary">
+              <button
+                type="button"
+                className="mk-btn mk-btn-primary"
+                onClick={() => setCheckoutOpen(true)}
+              >
                 {offer?.priceLabel ?? c.cta}
                 <ArrowUpRight size={15} aria-hidden="true" />
-              </Link>
+              </button>
             </div>
           )}
 
@@ -361,6 +438,21 @@ export default function AccountPage() {
           </p>
         </div>
       </section>
+
+      {/* The popup itself. Mounted here, on this page, exactly as the pricing page mounts it —
+          payment never navigates away from where the buyer is standing.
+
+          `resume` carries the channel of the tagihan that put the button on screen, so the modal
+          opens on the code rather than on the channel picker: the buyer already chose QRIS or BCA
+          once, and being asked again is being asked to re-order. */}
+      <CheckoutModal
+        isOpen={checkoutOpen}
+        onClose={() => setCheckoutOpen(false)}
+        offerLabel={offer?.priceLabel ?? 'Rp 35.000'}
+        storageLabel={offer?.storageLabel ?? '500 MB'}
+        locale={locale}
+        resume={resumeChannel}
+      />
     </main>
   )
 }

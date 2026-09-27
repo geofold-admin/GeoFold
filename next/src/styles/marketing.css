@@ -227,7 +227,22 @@
 .mk-plan-list svg { margin-top: 2px; flex: none; }
 .mk-plan-cta { padding: 12px; border-radius: 3px; font-weight: 600; font-size: 14px; text-align: center; border: 1px solid var(--mk-green); color: var(--mk-green); }
 .mk-plan-cta.solid { background: var(--mk-sand); color: var(--mk-sand-ink); border-color: var(--mk-sand); }
-.mk-faq { max-width: 760px; margin: 0 auto; }
+/* THE FAQ LIST FILLS ITS COLUMN.
+   It used to be a single 760px column centred in a 1200px content area, which on a 1440px page
+   left ~220px of empty card on each side and read as a narrow strip that did not belong to the
+   same page as the full-width hero above it. Six groups of short rows are the ideal shape for
+   two columns: the reader scans the left column, then the right, and every question stays above
+   the fold of its own group. Below 1100px it stays one column, where the rows are wide enough
+   that a second column would break the measure. */
+.mk-faq { max-width: none; }
+@media (min-width: 1100px) {
+  .mk .mk-faq {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 30px 48px;
+    align-items: start;
+  }
+}
 .mk-faq h2 { font-weight: 700; font-size: 24px; margin: 0 0 28px; text-align: center; }
 .mk-faq-list { display: flex; flex-direction: column; gap: 0; }
 .mk-faq-a { font-size: 14px; line-height: 1.65; color: var(--mk-muted); }

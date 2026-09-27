@@ -127,9 +127,23 @@ export default async function MarketingLayout({ children }: { children: ReactNod
             <div className="mk-footer-brand">
               <LogoLockup size={24} />
             </div>
-            {/* The blurb is the sentence that used to sit under the parent heading: it says who
-                makes GeoFold and where they are, which is exactly what a brand column is for. */}
-            <p className="mk-footer-blurb">{c.seal.parentNote}</p>
+            {/* The blurb IS the parent link. It used to be a paragraph here and a separate
+                "A product of SAYBA ARC" anchor in the trust column, so the footer said SAYBA ARC
+                three times (blurb, parent link, copyright line) and the reader saw a duplicate.
+                Making the sentence itself the outbound link keeps every fact and every href while
+                removing the repetition: one statement, one link, in the column whose whole job is
+                to say who makes this. */}
+            <a
+              className="mk-footer-blurb"
+              href={LEGAL.parent.url}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {c.seal.parentNote}
+              <span className="mk-parent-arrow" aria-hidden="true">
+                ↗
+              </span>
+            </a>
           </div>
 
           <nav className="mk-footer-col" aria-labelledby="mk-f-product">
@@ -201,13 +215,12 @@ export default async function MarketingLayout({ children }: { children: ReactNod
               <OssMark />
               <span>{c.seal.oss}</span>
             </a>
-            <a className="mk-parent-link" href={LEGAL.parent.url} target="_blank" rel="noopener noreferrer">
-              {c.seal.parentPre} {LEGAL.parent.name}
-              <span className="mk-parent-arrow" aria-hidden="true">
-                ↗
-              </span>
-            </a>
-            <p className="mk-seal-note">{c.seal.ossNote}</p>
+            {/* TWO THINGS WERE REMOVED HERE, and both were the client's call.
+                1. The "A product of SAYBA ARC" anchor: the brand column's own sentence says this
+                   in full and is itself the link now, so the footer stated it three times.
+                2. The note explaining what a NIB is: it restated the NIB row and the OSS chip
+                   directly above it. The column keeps what only it can say — the numbers and the
+                   chip that verifies them — and a verifier needs nothing explained. */}
           </section>
         </div>
 

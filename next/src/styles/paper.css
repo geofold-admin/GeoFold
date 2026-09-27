@@ -112,10 +112,17 @@
   --mk-phone-frame: #050B16;
   --mk-phone-notch: #1E293B;
   --mk-phone-ink: #1E293B;
-  --mk-phone-muted: #64748B;
-  --mk-phone-faint: #64748B;
+  /* 4.9:1 on the screen's #F1F5F9, one step darker than the page's own body grey: the mockup's
+     labels are 6-7.5px, where 4.34:1 reads as haze. */
+  --mk-phone-muted: #5B6B82;
+  --mk-phone-faint: #5B6B82;
   --mk-phone-line: #E2E8F0;
   --mk-phone-raise: #F1F5F9;
+  /* THE SCREEN'S ONE ACCENT. The mockup is the app, not the site, so its accent is the brand blue
+     rather than the page's orange: the chips' active pill and the record dot. It was used in
+     home.css twice and never defined, so the active chip fell back to transparent and rendered
+     white text on the white screen — invisible. 8.1:1 against the white it sits on. */
+  --mk-phone-accent: #014AB5;
 
   /* The map panels. Three steps of the brand blue, dark enough that the white reticle, pins and
      readouts drawn on top stay legible: the darkest step is 9.6:1 against white. */
@@ -559,8 +566,17 @@
 
 /* The blurb. Same job as the reference paragraph: say who makes this and where. */
 .mk .mk-footer-blurb {
+  /* IT IS AN ANCHOR NOW. The sentence that says who builds GeoFold is also the link to them, so
+     the styles are the link's, not a paragraph's: the underline appears on hover only, and the
+     arrow rides the baseline. Same colour as before, because it is still supporting copy — it
+     just happens to be clickable. */
+  display: inline-block;
   margin: 0; font-size: 12px; line-height: 1.6; color: var(--mk-faint); max-width: 38ch;
+  text-decoration: none;
+  transition: color .2s ease;
 }
+.mk .mk-footer-blurb:hover { color: var(--mk-deep-ink); opacity: 1; }
+.mk .mk-footer-blurb .mk-parent-arrow { margin-left: 4px; }
 
 .mk .mk-footer-col { display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
 .mk .mk-footer-col > span {
@@ -718,11 +734,26 @@
 @media (max-width: 620px) {
   .mk .mk-footer-main { padding: 26px var(--mk-gutter) 22px; gap: 22px 20px; }
   .mk .mk-footer-col { gap: 6px; font-size: 12px; }
-  .mk .mk-footer-col a { font-size: 12px; }
+  /* A footer link is still a tap target. At 18px tall the hit area was a sliver; the padding
+     brings it to ~30px without changing the visual rhythm of the column. */
+  .mk .mk-footer-col a { font-size: 12px; padding: 5px 0; }
   .mk .mk-seal-rows { gap: 4px 18px; margin-bottom: 9px; }
   .mk .mk-seal-kbli-label { font-size: 11px; line-height: 1.35; }
   .mk .mk-seal-note { margin-top: 7px; font-size: 11px; }
-  .mk .mk-footer-bar { gap: 4px 16px; padding: 12px var(--mk-gutter) 16px; font-size: 12px; }
+  /* THE BAR STACKS ON A PHONE. At 390px the four items ran together into one cramped line —
+     the address wrapped mid-sentence and the email and phone sat shoulder to shoulder with a
+     single space between them. A column with a real row gap gives each item its own line, the
+     address aligns left like everything else, and the email and phone get their own tappable
+     rows instead of being read as one string. */
+  .mk .mk-footer-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 18px var(--mk-gutter) 22px;
+    line-height: 1.5;
+  }
+  .mk .mk-footer-addr { margin-left: 0; text-align: left; }
+  .mk .mk-footer-bar a { padding: 3px 0; }
 }
 
 /* =====================================================================================
