@@ -254,7 +254,7 @@ export default async function ContactPage() {
         </div>
       </div>
 
-      <div style={{ padding: '0 var(--mk-pad) 88px' }}>
+      <div style={{ padding: '0 var(--mk-gutter) 88px' }}>
         <div className="mk-contact">
           <ContactForm inbox={BUSINESS.email.support} locale={locale} />
           <aside className="mk-aside">

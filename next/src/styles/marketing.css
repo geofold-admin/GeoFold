@@ -45,6 +45,27 @@
   --mk-deep-ink: #F8FAFC;
   --mk-deep-prose: #C3CEDC;
   --mk-deep-accent: #7FA8E8;
+
+  /* ---- THE PAGE GUTTER, AND IT HAS TO LIVE HERE ----
+     Every full-bleed element on this site — the sticky nav, the footer, the audience band's
+     label — is padded with `var(--mk-pad)`, and every content block is indented by the same
+     amount through `.pg-wrap`. That only works if the token has a value at EVERY width.
+
+     It did not. This declaration was removed from the token block in 5903337 (while the file was
+     being re-pointed at the current palette) on the reasoning that the media-query overrides
+     below still covered it. They cover ≤1000px and ≤680px, which left desktop with an UNDEFINED
+     custom property. An undefined var() in a shorthand resolves to its initial value, so at
+     1440px the nav, the footer and the marquee label all computed `padding: 0` and sat flush
+     against the viewport edge while `.pg-wrap` — which carries the same token, plus `margin: auto`
+     — was centred at x=80. Measured on the served build: logo x=0, footer padding 0px, marquee
+     label x=0, content x=80. Nothing was "broken" in the sense of a missing element; the page
+     simply had two different left edges and every section announced it.
+
+     The value is fluid rather than a step so there is no width at which it is momentarily wrong,
+     and it lands on exactly 80px at 1440px — the gutter the content already used, so this is a
+     restoration and not a redesign. The two media-query overrides stay: they now agree with it
+     instead of being the only thing holding the layout together. */
+  --mk-pad: clamp(20px, 5.5vw, 80px);
 }
 
 .mk ::selection { background: color-mix(in srgb, var(--mk-green) 26%, transparent); }
@@ -59,7 +80,7 @@
 .mk :focus-visible { outline: 2px solid var(--mk-green); outline-offset: 1px; }
 
 /* ---- header / footer ---- */
-.mk-nav { display: flex; align-items: center; gap: 36px; padding: 24px var(--mk-pad); }
+.mk-nav { display: flex; align-items: center; gap: 36px; padding: 24px var(--mk-gutter); }
 .mk-wordmark { font-family: var(--font-sans), sans-serif; font-weight: 700; font-size: 20px; letter-spacing: -0.01em; }
 .mk-nav-links { display: flex; gap: 28px; font-size: 14px; font-weight: 500; flex: 1; }
 .mk-nav-links a { color: var(--mk-muted); }
@@ -71,7 +92,7 @@
 }
 
 .mk-footer {
-  padding: 36px var(--mk-pad); border-top: 1px solid var(--mk-line);
+  padding: 36px var(--mk-gutter); border-top: 1px solid var(--mk-line);
   display: flex; justify-content: space-between; align-items: flex-start; gap: 32px; flex-wrap: wrap;
 }
 .mk-footer-brand { font-family: var(--font-sans), sans-serif; font-weight: 700; font-size: 18px; margin-bottom: 8px; }
@@ -82,7 +103,11 @@
 .mk-footer-col a { color: var(--mk-muted); }
 
 /* ---- shared page furniture ---- */
-.mk-hero { text-align: center; padding: 56px var(--mk-pad) 0; }
+/* `--mk-gutter` throughout this block: these are the full-bleed wrappers for the inner pages, so
+   their inset has to be the shared one or a hero on /faq starts at x=80 while the nav above it and
+   the section below it are on a different edge on a wide screen. See the token block in paper.css
+   for the measurement and the shell rule. */
+.mk-hero { text-align: center; padding: 56px var(--mk-gutter) 0; }
 .mk-hero.pad-b { padding-bottom: 64px; }
 .mk-hero.pad-b-sm { padding-bottom: 56px; }
 .mk-eyebrow {
@@ -95,11 +120,16 @@
 .mk-lede { font-size: 18px; line-height: 1.6; color: var(--mk-muted); max-width: 580px; margin: 0 auto; }
 .mk-hero.lg .mk-lede { font-size: 18px; max-width: 600px; margin-bottom: 32px; }
 
-.mk-section { padding: 72px var(--mk-pad); }
-.mk-section.tight { padding: 64px var(--mk-pad); }
+.mk-section { padding: 72px var(--mk-gutter); }
+.mk-section.tight { padding: 64px var(--mk-gutter); }
+/* `.mk-inner` is a SECOND, narrower measure used inside a section. It is centred, so at 1440px it
+   sits at x=120 while the section's own heading sits at x=80: the block below a heading reads as
+   indented from it. Only /faq uses it (the contact-cards band under the accordion), and there the
+   heading is centred too, so the offset is deliberate there. Left at 1200px and documented rather
+   than changed: it is a component, not a page edge. */
 .mk-inner { max-width: 1200px; margin: 0 auto; }
-.mk-band { background: var(--mk-green); color: var(--mk-bg); padding: 64px var(--mk-pad); }
-.mk-band.tall { padding: 72px var(--mk-pad); }
+.mk-band { background: var(--mk-green); color: var(--mk-bg); padding: 64px var(--mk-gutter); }
+.mk-band.tall { padding: 72px var(--mk-gutter); }
 .mk-kicker { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 14px; }
 .mk-kicker.on-green { color: var(--mk-on-green-dim); }
 .mk-kicker.on-paper { color: var(--mk-sand-ink); }
@@ -127,7 +157,7 @@
 .mk-feature svg { margin-bottom: 14px; }
 .mk-feature-t { font-family: var(--font-sans), sans-serif; font-weight: 600; font-size: 16px; margin-bottom: 8px; }
 .mk-feature-b { font-size: 14px; line-height: 1.6; color: var(--mk-muted); }
-.mk-closer { padding: 64px var(--mk-pad); text-align: center; border-top: 1px solid var(--mk-line); }
+.mk-closer { padding: 64px var(--mk-gutter); text-align: center; border-top: 1px solid var(--mk-line); }
 .mk-closer h2 { font-weight: 700; font-size: 24px; margin: 0 0 20px; }
 
 /* ---- product ---- */
@@ -361,7 +391,7 @@ textarea.mk-input { min-height: 0; resize: vertical; }
 
 /* ---- login ---- */
 .mk-login-shell { min-height: 100vh; display: flex; flex-direction: column; }
-.mk-login-top { padding: 24px var(--mk-pad); }
+.mk-login-top { padding: 24px var(--mk-gutter); }
 .mk-login-body { flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px 20px 80px; }
 /* THE LOGIN CARD. Three defects fixed here, all of them the same shape as the form-field bug:
 
@@ -416,16 +446,21 @@ textarea.mk-input { min-height: 0; resize: vertical; }
 }
 .mk-note { background: var(--mk-sand); color: var(--mk-sand-ink); border-radius: 4px; padding: 10px 12px; font-size: 14px; margin-bottom: 16px; }
 
-/* ---- responsive: the source design is desktop-only, these are additive ---- */
+/* ---- responsive: the source design is desktop-only, these are additive ----
+   NOTE: `--mk-pad` used to be re-declared here (32px) and again at ≤680px (20px). Both are gone.
+   They were steps on top of a token that had no base value, which is how the desktop gutter came
+   to be missing in the first place; and being steps, they also produced two visible jumps — at
+   1000px the gutter snapped 55px → 32px, at 680px 32px → 20px, so the whole page's left edge
+   moved under the reader while resizing. The token is now a single clamp() that passes through
+   both of those values on its way up, so the gutter is continuous at every width and the
+   breakpoints below only change LAYOUT, which is what a breakpoint is for. */
 @media (max-width: 1000px) {
-  .mk { --mk-pad: 32px; }
   .mk-features { grid-template-columns: repeat(2, 1fr); }
   .mk-plans { grid-template-columns: 1fr; max-width: 460px; }
   .mk-meta-grid { grid-template-columns: repeat(2, 1fr); }
   .mk-contact { grid-template-columns: 1fr; gap: 32px; }
   .mk-split { grid-template-columns: 1fr; gap: 32px; }
   .mk-split .mk-slot { order: -1; }
-  .mk-hero { padding-left: 32px; padding-right: 32px; }
   .mk-hero.lg h1 { font-size: 38px; }
   .mk-hero h1 { font-size: 38px; }
 }
@@ -442,7 +477,6 @@ textarea.mk-input { min-height: 0; resize: vertical; }
 }
 
 @media (max-width: 680px) {
-  .mk { --mk-pad: 20px; }
   .mk-steps, .mk-features, .mk-pillars, .mk-meta-grid { grid-template-columns: 1fr; gap: 28px; }
   .mk-footer { flex-direction: column; gap: 28px; }
   .mk-footer-cols { gap: 32px; }

@@ -10,7 +10,7 @@
    confused with one another.
    ===================================================================================== */
 
-.mk-h { padding: 40px var(--mk-pad) 8px; }
+.mk-h { padding: 40px var(--mk-gutter) 8px; }
 .mk-h-eyebrow {
   display: inline-block; font-family: var(--font-sans), sans-serif; font-size: 11px;
   font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--mk-green);
@@ -47,12 +47,12 @@
 .mk-sec { padding: var(--mk-rhythm) 0; }
 .mk-sec-tint { background: var(--mk-sand); }
 .mk-sec-dark { background: var(--mk-green); }
-.mk-sec-head { padding: 0 var(--mk-pad); margin-bottom: 26px; }
+.mk-sec-head { padding: 0 var(--mk-gutter); margin-bottom: 26px; }
 .mk-sec-head h2 {
   font-family: var(--font-sans), sans-serif; font-weight: 700; font-size: 24px; line-height: 1.15;
   letter-spacing: -.015em; margin: 8px 0 0; color: var(--mk-ink);
 }
-.mk-sec-head p { margin: 8px 0 0; font-size: 14px; color: var(--mk-muted); }
+.mk-sec-head p { margin: 8px 0 0; font-size: 14px; color: var(--mk-muted); max-width: 64ch; }
 .mk-sec-dark .mk-sec-head h2 { color: #f4f8f4; }
 .mk-kick {
   font-family: var(--font-sans), sans-serif; font-size: 11px; font-weight: 600;
@@ -82,7 +82,7 @@
    Nothing is hidden, nothing is dimmed, nothing is softened. */
 .mk-car-track {
   display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory;
-  padding: 4px var(--mk-pad) 8px; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  padding: 4px var(--mk-gutter) 8px; scrollbar-width: none; -webkit-overflow-scrolling: touch;
 }
 .mk-car-track::-webkit-scrollbar { display: none; }
 .mk-car-slide { flex: 0 0 84%; scroll-snap-align: center; }
@@ -270,7 +270,7 @@
 }
 
 /* ---------- steps ---------- */
-.mk-steps2 { list-style: none; margin: 0; padding: 0 var(--mk-pad); display: grid; gap: 20px; }
+.mk-steps2 { list-style: none; margin: 0; padding: 0 var(--mk-gutter); display: grid; gap: 20px; }
 .mk-steps2 li { display: flex; gap: 14px; align-items: flex-start; }
 .mk-steps2-n {
   font-family: var(--font-mono), monospace; font-size: 12px; font-weight: 700; color: var(--mk-green);
@@ -282,19 +282,26 @@
 .mk-steps2 p { margin: 0; font-size: 14px; line-height: 1.6; color: var(--mk-muted); }
 
 /* ---------- the why ---------- */
-.mk-why { padding: 0 var(--mk-pad); max-width: 62ch; }
+/* `--mk-gutter` on both sides AND in the cap, because `max-width` measures the padded box. At 62ch
+   alone the measure was silently 62ch minus two gutters: at 1440px that was 62ch - 160px, and on a
+   2560px screen the block stayed pinned to the left edge at x=80 while the sections above it had
+   moved to x=640. The cap has to grow with the gutter so the TEXT is 62ch at every width. */
+.mk-why { padding: 0 var(--mk-gutter); max-width: calc(62ch + 2 * var(--mk-gutter)); }
 .mk-why p { font-size: 16px; line-height: 1.7; color: var(--mk-deep-prose); margin: 0 0 14px; }
 .mk-why strong { color: #fff; font-weight: 600; }
 
 /* ---------- audience tags ---------- */
-.mk-tags { list-style: none; margin: 0; padding: 0 var(--mk-pad); display: flex; flex-wrap: wrap; gap: 8px; }
+.mk-tags { list-style: none; margin: 0; padding: 0 var(--mk-gutter); display: flex; flex-wrap: wrap; gap: 8px; }
 .mk-tags li {
   font-size: 14px; padding: 8px 13px; border-radius: 100px; border: 1px solid var(--mk-line);
   color: var(--mk-prose); background: #fff;
 }
 
 /* ---------- pricing teaser ---------- */
-.mk-price { padding: 0 var(--mk-pad); display: grid; gap: 12px; }
+/* The base is a one-column stack (phone). The gutter, not the pad: at 2560px the pad pinned this
+   block to x=80 while the section headings above it had moved to x=640, so the cards read as
+   belonging to a narrower page than their own heading. See the token block in paper.css. */
+.mk-price { padding: 0 var(--mk-gutter); display: grid; gap: 12px; }
 .mk-price-card {
   background: #fff; border: 1px solid var(--mk-line); border-radius: 14px; padding: 20px;
   display: flex; flex-direction: column;
@@ -315,12 +322,20 @@
 .mk-price-card.feat p { color: var(--mk-deep-prose); }
 .mk-price-card .mk-btn { width: 100%; justify-content: center; margin-top: auto; }
 .mk-price-note {
-  padding: 16px var(--mk-pad) 0; font-size: 12px; color: var(--mk-muted); text-align: center; margin: 0;
+  /* THE NOTE HAS TO CENTRE UNDER THE CARDS, NOT UNDER THE PAGE. This is `text-align: center` on a
+     full-bleed box, so its text lands on the viewport's centre line — at 1440px that is x=720 —
+     while the two cards above it occupy 80..800 and centre on x=440. Measured on the served build:
+     the note's text sat 280px to the right of the cards it describes, which reads as a stray line
+     rather than as a caption. Constraining the box to the cards' own shell puts the two back on
+     one axis: 0..880 with the gutter inside, so the text centres on 440. Same shell arithmetic as
+     `.mk-price` and `.mk-compare` (see the token block in paper.css). */
+  padding: 16px var(--mk-gutter) 0; max-width: calc(720px + 2 * var(--mk-gutter));
+  font-size: 12px; color: var(--mk-muted); text-align: center; margin: 0;
 }
 .mk-price-note a { color: var(--mk-green); text-decoration: underline; text-underline-offset: 2px; }
 
 /* ---------- closer ---------- */
-.mk-close { padding: 56px var(--mk-pad) 64px; text-align: center; }
+.mk-close { padding: 56px var(--mk-gutter) 64px; text-align: center; }
 .mk-close h2 {
   font-family: var(--font-sans), sans-serif; font-weight: 700; font-size: 24px; margin: 0 0 8px;
   letter-spacing: -.015em; color: var(--mk-ink);
@@ -340,7 +355,18 @@
   .mk-cap { flex-direction: row; align-items: center; gap: 20px; }
   .mk-steps2 { grid-template-columns: repeat(3, 1fr); gap: 28px; }
   .mk-steps2 li { flex-direction: column; gap: 12px; }
-  .mk-price { grid-template-columns: repeat(2, 1fr); max-width: 720px; margin: 0 auto; }
+  /* TWO CARDS, THE SAME WIDTH, AND THEY START ON THE HEADING'S EDGE.
+     `repeat(2, 1fr)` is really `minmax(auto, 1fr)`, so the Premium card's `nowrap` price row set
+     its own minimum and the two cards came out 312px and 237px: side by side, visibly unequal.
+     `minmax(0, 1fr)` removes the content's vote and splits the row evenly.
+     The cap is `720px + both gutters` because `max-width` measures the padded box: at a flat 720px
+     the content was 720 - 160 = 560px, so each card's text box was 195px and the price row had to
+     wrap on the card that had the most to say. 720px of content is what this grid was designed
+     for; the gutter has to sit outside it.
+     NOT CENTRED, and that is the third correction. The cards used to sit at x=360 under a heading
+     at x=80, so the page changed its left edge halfway down and the pair read as a widget dropped
+     into the middle of an article. Left-aligned on the same gutter as everything else. */
+  .mk-price { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: calc(720px + 2 * var(--mk-gutter)); }
   .mk-close h2 { font-size: 38px; }
 }
 
@@ -369,8 +395,12 @@
 .mk .mk-price-card.feat .mk-btn-primary { background: var(--mk-bg); color: var(--mk-green); }
 
 /* ---------- product: what one record carries ---------- */
-.mk-recs { padding: 0 var(--mk-pad); display: grid; gap: 1px; background: var(--mk-line);
-  border: 1px solid var(--mk-line); border-radius: 12px; overflow: hidden; margin: 0 var(--mk-pad); }
+/* ONE INSET, NOT TWO. This carried `padding: 0 var(--mk-pad)` AND `margin: 0 var(--mk-pad)`, so the
+   grid's first cell started 159px from the viewport edge at 1440px while the heading above it
+   started at 79px: the six specimen cards were indented from their own section title. The margin
+   alone is the inset, and the padding goes: the cards now begin on the heading's left edge. */
+.mk-recs { display: grid; gap: 1px; background: var(--mk-line);
+  border: 1px solid var(--mk-line); border-radius: 12px; overflow: hidden; margin: 0 var(--mk-gutter); }
 .mk-rec { background: #fff; padding: 16px 18px; }
 .mk-rec-t { font-family: var(--font-sans), sans-serif; font-weight: 600; font-size: 14px;
   color: var(--mk-ink); margin-bottom: 4px; }
@@ -432,7 +462,12 @@
 }
 
 /* ---------- shared Q&A block ---------- */
-.mk-qa { padding: 0 var(--mk-pad); display: grid; gap: 20px; max-width: 760px; margin: 0 auto; }
+/* Left-aligned on the page gutter, like the heading above it: this block is used on /pricing,
+   whose hero and headings are left-aligned. It used to be centred at 760px, so the questions
+   started 180px right of their own section title and the page changed its left edge there.
+   The cap counts the gutters because `max-width` measures the padded box (see the shell note in
+   paper.css): at 760px flat the text column would have been 600px, not the 760px intended. */
+.mk-qa { padding: 0 var(--mk-gutter); display: grid; gap: 20px; max-width: calc(760px + 2 * var(--mk-gutter)); }
 .mk-qa h3 { font-family: var(--font-sans), sans-serif; font-size: 16px; margin: 0 0 6px;
   color: var(--mk-ink); }
 .mk-qa p { margin: 0; font-size: 14px; line-height: 1.65; color: var(--mk-muted); }

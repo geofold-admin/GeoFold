@@ -167,7 +167,7 @@ export default async function AboutPage() {
       </section>
 
       <section className="mk-sec">
-        <div className="mk-why" style={{ maxWidth: '68ch' }}>
+        <div className="mk-why" style={{ maxWidth: 'calc(68ch + 2 * var(--mk-gutter))' }}>
           <p style={{ color: 'var(--mk-prose)' }}>{c.story.p1}</p>
           <p style={{ color: 'var(--mk-prose)' }}>{c.story.p2}</p>
           <p style={{ color: 'var(--mk-prose)' }}>
@@ -203,7 +203,7 @@ export default async function AboutPage() {
             {c.whoBody.after}
           </p>
         </div>
-        <p style={{ padding: '0 var(--mk-pad)', fontSize: 14, color: 'var(--mk-muted)', margin: 0 }}>
+        <p style={{ padding: '0 var(--mk-gutter)', fontSize: 14, color: 'var(--mk-muted)', margin: 0 }}>
           {c.email.before}
           <a
             href={`mailto:${BUSINESS.email.general}`}

@@ -346,7 +346,7 @@ export default async function ProductPage() {
             </li>
           ))}
         </ul>
-        <p style={{ padding: '0 var(--mk-pad)', fontSize: 14, color: 'var(--mk-muted)', margin: 0 }}>
+        <p style={{ padding: '0 var(--mk-gutter)', fontSize: 14, color: 'var(--mk-muted)', margin: 0 }}>
           {c.formNote}
         </p>
       </section>

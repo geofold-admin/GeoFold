@@ -173,6 +173,37 @@
 
   --pg-max: 1280px;
 
+  /* ---- THE ONE LEFT EDGE ----
+     Every piece of chrome on this site is full-bleed (the nav, the footer, the audience band) and
+     every piece of content is centred on a 1280px measure. For the two to line up, the chrome's
+     gutter has to be the SAME NUMBER as the content's outer margin, and it has to be that number
+     at every viewport width — not just the one the design was drawn at.
+
+     Measured before this token existed, on the served build:
+
+       1440px   nav logo x=0     content x=80      ← the missing --mk-pad
+       1600px   nav logo x=80    content x=240     ← the wrap's own padding, added on top
+       2560px   nav logo x=80    content x=720     ← 640px apart
+
+     So there were two separate faults and they pulled in opposite directions. The first was the
+     undefined `--mk-pad` (see marketing.css): with no value, the nav's padding computed to 0 and
+     the logo sat on the screen edge. The second is this one: `.pg-wrap` was `max-width: 1280px`
+     with `padding-inline: var(--mk-pad)`, so once the token HAD a value the wrap indented its
+     content by a further 80px INSIDE a box that was already centred with an 80px margin. Fixing
+     the first without this one just moved the misalignment from 80px to 160px.
+
+     `--mk-shell` is the content's true outer width — the measure plus a gutter on each side — so
+     a full-bleed element can work out where the content's edge actually is:
+
+       gutter = max(0, (my width - shell) / 2) + pad
+
+     Below the shell width the max() clamps to 0 and the gutter is just the page padding; above it,
+     the extra centring offset is added. The content and the chrome therefore share one left edge
+     at every width from 320px to 2560px, and the content column is a true 1280px rather than the
+     1122px the double gutter was leaving it. */
+  --mk-shell: calc(var(--pg-max) + 2 * var(--mk-pad));
+  --mk-gutter: calc(max(0px, (100% - var(--mk-shell)) / 2) + var(--mk-pad));
+
   background: var(--mk-bg);
   color: var(--mk-ink);
   /* The topographic texture is gone. Stated explicitly because marketing.css does not set it —
@@ -232,6 +263,33 @@
 }
 .mk .pg-body { font-size: 16px; line-height: 1.65; color: var(--mk-prose); margin: 0; }
 
+/* A BLANKET MARGIN RESET FOR PROSE, and it is here because of a class of bug rather than one bug.
+   Four separate `<p>` elements on this page were each carrying the UA's `margin: 1em 0` because
+   their own rule set font, size, colour and letter-spacing but never the margin: `.pg-price-fig`
+   (60px → 120px of dead space per card), `.pg-marquee-label` (11px → a 46px ground inside a 68px
+   band), `.pg-cell-n` (12px × 10 edges across the bento) and `.pg-seal-entity`. Each one looked
+   like a spacing decision someone had made; none of them was, and each had to be found by
+   measuring the rendered box rather than by reading the stylesheet, because the stylesheet said
+   nothing at all about the margin.
+
+   This block does not replace those fixes — they carry the reasoning and the measurements. It
+   stops the next `<p>` from repeating the mistake: the components below are all grid or flex
+   children that declare their own gaps, so an inherited `1em` on any of them is always wrong.
+
+   IT HAS TO STAY BELOW EVERY CLASS RULE, AND `:where()` IS WHAT DOES THAT. Written as `.mk p`
+   this selector was (0,1,1) and outranked, or tied-and-later-than, four deliberate margins:
+   `.mk-lede`'s `margin: 0 auto` (0,1,0) — so every centred hero subtitle on the inner pages sat
+   hard against the left edge instead of under its heading, measured at x=79 with a -361px offset
+   from centre on /faq; `.mk-h-lede`'s and `.mk-why p`'s bottom margins (0,1,0 and 0,1,1), which
+   flattened the space between a lede and the section under it; and `.mk-price-card p`'s 16px,
+   which pushed every price blurb against its feature list. None of those were visible as missing
+   declarations: the stylesheet still said `margin: 0 auto`, and only the computed box showed it
+   had been overruled. `:where()` drops the specificity to the bare element (0,0,1), so the reset
+   still beats the UA stylesheet — author styles always do — while every class rule wins on merit.
+   Order is irrelevant here for the same reason, which is why it sits with the type scale rather
+   than at the foot of the file. */
+:where(.mk) p { margin: 0; }
+
 /* The micro-label. One treatment, used for every eyebrow, kicker, column head and legend on the
    site, so a small uppercase label always means the same thing. */
 .mk .pg-micro {
@@ -264,8 +322,12 @@
   /* 13px, down from 20px. The bar measured 87px at 1440px, and 40 of those were this padding alone
      against 46px of content: the chrome was spending more on air than on itself. 13px keeps the
      controls off the edge and lands the bar at 72px, which is the range a marketing header is
-     normally read at. Nothing here is decoration, so nothing was removed to get there. */
-  padding: 13px var(--mk-pad);
+     normally read at. Nothing here is decoration, so nothing was removed to get there.
+
+     `--mk-gutter`, not `--mk-pad`: the bar is full-bleed, so it has to add the content's centring
+     offset to its own padding or the logo stops at 80px on a 2560px screen while the headline
+     starts at 720. See the token block for the measurement. */
+  padding: 13px var(--mk-gutter);
   transition: padding .3s cubic-bezier(.22, .61, .36, 1), border-color .3s ease,
               background-color .3s ease;
 }
@@ -273,7 +335,7 @@
    rule appears, so the page has a sense of having been scrolled without a second sticky element
    to say so. */
 .mk-nav.is-stuck {
-  padding: 9px var(--mk-pad); border-bottom-color: var(--mk-line); background: #ffffff;
+  padding: 9px var(--mk-gutter); border-bottom-color: var(--mk-line); background: #ffffff;
 }
 
 .mk-wordmark {
@@ -440,7 +502,9 @@
   grid-template-columns: minmax(0, 1.5fr) repeat(4, minmax(0, .78fr)) minmax(0, 1.4fr);
   gap: 34px 26px;
   align-items: start;
-  padding: 32px var(--mk-pad) 26px;
+  /* `--mk-gutter`: the footer is full-bleed, so its first column has to land on the same x as the
+     hero's headline. See the token block. */
+  padding: 32px var(--mk-gutter) 26px;
 }
 .mk .mk-footer-brand-block { max-width: 40ch; }
 .mk .mk-footer-brand { margin-bottom: 10px; }
@@ -471,8 +535,10 @@
    In the row it is a column, so it is packed as one: the entity on its own line, the two figures
    inline, then the badge, the parent link and the note. */
 .mk .mk-seal-heading {
+  /* 11px, the same size as every other small uppercase column head on the site. See the note on
+     .mk-seal-rows dt. */
   font-family: var(--font-inter), sans-serif;
-  font-size: 10px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase;
+  font-size: 11px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase;
   color: var(--mk-faint); margin: 0 0 8px;
 }
 
@@ -488,7 +554,10 @@
 .mk .mk-seal-rows { margin: 0 0 11px; display: flex; flex-wrap: wrap; gap: 6px 20px; }
 .mk .mk-seal-rows > div { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
 .mk .mk-seal-rows dt {
-  font-family: var(--font-inter), sans-serif; font-size: 10px; font-weight: 500;
+  /* 11px, matching `.mk .pg-micro` and `.mk .mk-footer-col > span`. These three labels are the
+     same role — a small uppercase column head — and they were 10px, 11px and 10px respectively,
+     so the same visual weight changed size depending on which block it sat in. One size now. */
+  font-family: var(--font-inter), sans-serif; font-size: 11px; font-weight: 500;
   letter-spacing: .12em; text-transform: uppercase; color: var(--mk-faint);
 }
 .mk .mk-seal-rows dd {
@@ -547,7 +616,7 @@
 .mk .mk-footer-bar {
   display: flex; flex-wrap: wrap; align-items: center;
   gap: 6px 22px;
-  padding: 14px var(--mk-pad) 18px;
+  padding: 14px var(--mk-gutter) 18px;
   border-top: 1px solid var(--mk-line);
   font-size: 12px; color: var(--mk-faint);
 }
@@ -599,13 +668,13 @@
    and the KBLI description stays in full because it is the line that tells a verifier what the
    number means. Only the leading, the gaps and the description size come down. */
 @media (max-width: 620px) {
-  .mk .mk-footer-main { padding: 26px var(--mk-pad) 22px; gap: 22px 20px; }
+  .mk .mk-footer-main { padding: 26px var(--mk-gutter) 22px; gap: 22px 20px; }
   .mk .mk-footer-col { gap: 6px; font-size: 12px; }
   .mk .mk-footer-col a { font-size: 12px; }
   .mk .mk-seal-rows { gap: 4px 18px; margin-bottom: 9px; }
   .mk .mk-seal-kbli-label { font-size: 11px; line-height: 1.35; }
   .mk .mk-seal-note { margin-top: 7px; font-size: 11px; }
-  .mk .mk-footer-bar { gap: 4px 16px; padding: 12px var(--mk-pad) 16px; font-size: 12px; }
+  .mk .mk-footer-bar { gap: 4px 16px; padding: 12px var(--mk-gutter) 16px; font-size: 12px; }
 }
 
 /* =====================================================================================
@@ -720,7 +789,13 @@
    THE LANDING PAGE — `pg-` components
    ===================================================================================== */
 
-.mk .pg-wrap { max-width: var(--pg-max); margin: 0 auto; padding-inline: var(--mk-pad); width: 100%; }
+/* THE CONTENT COLUMN, AND IT IS THE ONLY DEFINITION OF THE MEASURE.
+   `--pg-max` is the measure and `--mk-pad` is the gutter, so the wrap's own box is the shell —
+   which is exactly what `--mk-gutter` resolves to on a full-bleed element. One declaration, one
+   left edge, and every other full-bleed block reads the same two numbers rather than re-deriving
+   them. `box-sizing: border-box` is set globally in globals.css, so the padding is inside the
+   1280px and the content column is 1280 - 160 = 1120px wide at 1440px. */
+.mk .pg-wrap { max-width: var(--mk-shell); margin: 0 auto; padding-inline: var(--mk-pad); width: 100%; }
 .mk .pg-sec { padding-block: var(--mk-rhythm); position: relative; }
 /* The section that follows the audience band opens tighter than the standard rhythm. A design
    review called the gap there a "dead zone": the band is a full-bleed strip, so the section under
@@ -848,7 +923,17 @@
   font-size: clamp(24px, 2.6vw, 38px); letter-spacing: -.03em; color: var(--mk-ink);
   line-height: 1;
 }
-.mk .pg-stat dd small { font-size: .46em; font-weight: 400; color: var(--mk-muted); margin-left: 9px; letter-spacing: 0; }
+/* THE UNIT IS A UNIT, NOT A SECOND NUMBER.
+   It was `.46em`, which is proportional to a figure that runs up to 38px — so at 1440px the
+   "forever" / "free plan" / "XLSX · CSV" tails rendered at 17.2px, 46% of the number they qualify.
+   Measured against the label above them (11px), the unit was the second-largest thing in the
+   cell and the strip read as eight pieces of type rather than four figures with their units.
+   A fixed size with its own line-height fixes the ratio at every width: the number scales with
+   the viewport, the unit stays a caption, and the pair reads as one measurement. */
+.mk .pg-stat dd small {
+  font-size: 13px; font-weight: 400; color: var(--mk-muted);
+  margin-left: 8px; letter-spacing: 0; line-height: 1.2;
+}
 
 /* ---------- marquee ---------- */
 /* A single strip of who this is for, moving continuously. It is the one piece of ambient motion
@@ -881,9 +966,14 @@
 .mk .pg-marquee-label {
   flex: none;
   display: flex; align-items: center;
-  padding: 22px var(--mk-pad);
+  padding: 22px var(--mk-gutter);
   background: var(--mk-raise);
   border-right: 1px solid var(--mk-line);
+  /* Zeroed: this is a `<p>`, so the UA's `margin: 1em 0` applied — 11px above and below at this
+     rule's own 11px font-size. The band stretches its children, so the margin did not show as a
+     gap outside the label; it showed as the label's own ground being 46px tall inside a 68px band,
+     with the band's colour above and below it. Measured before: 46px box in a 68px row. */
+  margin: 0;
   font-family: var(--font-inter), sans-serif;
   font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
   color: var(--mk-faint);
@@ -1057,41 +1147,108 @@
 .mk .pg-cell-n {
   font-family: var(--font-tight), sans-serif; font-weight: 300; font-size: 12px;
   color: var(--mk-faint); letter-spacing: .04em;
+  /* Zeroed, because this is a `<p>` and the UA gives every `<p>` `margin: 1em 0`. Inside a grid
+     that is not a margin collapse question — it is 12px of real height added above and below every
+     one of the five capability numbers, and the copy column's own 10px gap on top of it. Measured
+     on the served build: 12px top and 12px bottom on all five cells. Small per cell, five cells
+     plus the lead, and it is the kind of padding that makes a tidy card look loose. */
+  margin: 0;
 }
-/* EVERY cell fills its row, and this is the part that took three attempts.
+/* EVERY CELL FILLS ITS ROW — but the FIGURE KEEPS ITS OWN SHAPE, and that is the correction.
 
-   A grid row is as tall as its tallest cell, so when the lead is 725px the small cell beside it is
-   also 725px while its own content needs about 510. That is where the void came from, and it is why
-   stretching the lead's figure alone was never going to be enough: it fixed the lead and left the
-   neighbour 213px short, which the measurement caught (`bento.cjs` now asserts on it).
+   The previous rule here stretched the figure to absorb whatever height a cell had over its copy
+   (`grid-template-rows: auto 1fr` + `height: 100%` on the art). The reasoning was sound — a grid
+   row is as tall as its tallest cell, so the slack has to go somewhere — but the arithmetic was
+   never checked against the drawings, and all five figures share a 320x240 (4:3) viewBox.
 
-   The general fix is the one every bento uses: the FIGURE absorbs whatever height the cell has over
-   its copy, and the copy stays at its natural size. So each cell is `auto 1fr` (copy, then figure)
-   and the figure stretches. Nothing is padded, nothing is stretched that should not be, and no cell
-   can have a void at its foot whatever its neighbour does, because the figure takes up the slack.
-   The lead inverts the two rows so its figure still leads, which is the one order difference it
-   keeps. */
-.mk .pg-cell { grid-template-rows: auto 1fr; }
+   Measured on the served build at 1440px, before this change:
+
+     cell 02 art   365 x 556   → a 0.66 ratio box holding a 1.33 ratio drawing
+     cell 02 svg   327 x 245   → 245px of drawing inside 556px of grey
+
+   So 56% of that box was empty ground, and it read as a tall grey tube with a small diagram
+   floating in the middle — the same void the earlier fix was trying to remove, moved inside the
+   figure instead of under it. The other cells were milder versions of the same thing (348, 313
+   and 287px boxes for the same 245px drawing), which is also why the bento's right column looked
+   ragged: every figure sat at a different scale.
+
+   The rule now is one line: THE BOX TAKES THE DRAWING'S RATIO. `aspect-ratio: 4 / 3` matches every
+   viewBox in Figures.tsx, so each SVG fills its box edge to edge with no letterboxing and no
+   stretch, and all five figures render at the same scale as each other. The cell's leftover height
+   goes to the gap between the copy and the figure (`align-content: space-between`), which reads as
+   a card with its figure resting at the foot rather than as a hole under the text. */
+.mk .pg-cell { grid-template-rows: auto auto; align-content: space-between; }
 .mk .pg-cell-art {
   border: 1px solid var(--mk-line); border-radius: 8px; background: var(--mk-raise);
   overflow: hidden; display: grid; place-items: center; padding: 18px;
-  min-height: 190px; height: 100%; margin-top: 4px;
+  /* 4:3, the ratio of every figure's viewBox. See the note above. */
+  aspect-ratio: 4 / 3; height: auto; margin-top: 4px;
 }
-.mk .pg-cell-art svg { max-width: 100%; max-height: 100%; }
-.mk .pg-cell--lead { grid-template-rows: 1fr auto; }
-.mk .pg-cell--lead .pg-cell-art { order: 1; min-height: 260px; padding: 28px; }
+/* `width/height: 100%` and NOT `max-width/max-height`: the box is already at the drawing's own
+   ratio, so filling the content box lets the SVG's own `preserveAspectRatio` (the default
+   `xMidYMid meet`) place the drawing. The old `max-*` pair let the SVG shrink to whichever axis
+   bound first, which is how a 245px drawing ended up centred in a 556px frame. `height: auto`
+   would be worse still: with the box at 4:3 and its padding subtracted, the content box is a
+   hair wider than 4:3, so an auto height overflows by a few pixels and the frame CLIPS the
+   drawing — which is what the hero figure was quietly doing (474x356 SVG in a 344px content box,
+   ~6px cut top and bottom). */
+.mk .pg-cell-art svg { width: 100%; height: 100%; display: block; }
+/* The lead inverts the two rows so its figure still leads, and on a desktop it stops stacking at
+   all: it becomes a two-column card, figure beside copy.
+
+   WHY. The lead spans 4 of 6 columns, so it is 847px wide against its neighbour's 415px, and the
+   two of them share a row. Stacked, its copy + figure needed 583px while the row was 846px tall —
+   the row height is set by cell 02's copy + figure in the same row — so 263px of slack went into
+   the gap between the lead's copy and its figure. Measured: 282px of empty ground between the last
+   line of its body text and the top of its figure, in the largest card on the page. Stretching the
+   figure to absorb it was the old approach and it produced a 365x556 grey tube around a 245px
+   drawing (see the note on `.pg-cell-art` above); capping the figure just moved the hole to its
+   sides. Two columns is the shape that fits: the card is wide because it is a double cell, so it
+   spends the extra width on a second column rather than on vertical air, and the two halves are
+   centred against each other instead of pinned to opposite ends.
+
+   The row order swap is kept for the STACKED layouts (tablet and phone), where it still does the
+   job it was written for. On desktop the columns carry the order instead: figure left, copy right,
+   which is the same reading order the stacked version has. */
+.mk .pg-cell--lead { grid-template-rows: auto auto; }
+.mk .pg-cell--lead .pg-cell-art { order: 1; padding: 28px; }
 .mk .pg-cell--lead .pg-cell-copy { order: 2; }
-.mk .pg-cell--lead .pg-cell-art svg { width: 100%; height: 100%; }
+@media (min-width: 1101px) {
+  .mk .pg-cell--lead {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.06fr);
+    grid-template-rows: auto;
+    align-items: center;
+    /* `align-content`, not just `align-items`. The cell is 583px tall (its row is set by cell 02)
+       while the two columns together are about 276px, so with the default `start` the pair sat at
+       the top and left 275px of empty card under it — measured: art at y=31, copy at y=50, nothing
+       below y=307. `align-items: center` centres each column in ITS row track, and the track is
+       only as tall as the tallest column, so it changes nothing about where the track sits.
+       `align-content: center` centres the TRACKS in the cell, which is what the eye reads as
+       balance: measured after, 155px above and 151px below. */
+    align-content: center;
+    column-gap: 30px;
+  }
+  .mk .pg-cell--lead .pg-cell-art { padding: 22px; margin-top: 0; }
+}
 .mk .pg-sec-tint .pg-cell-art { background: var(--mk-raise); }
 
 /* The hero's own figure still carries this class and still needs its box. It is the one place the
    class survives: the capabilities grid no longer uses it, but the hero's parallax layer does, and
    removing the rule with the grid took the hero's frame with it. Kept here, deliberately, with the
-   note, because the next person to clean up the bento rules will otherwise delete it again. */
+   note, because the next person to clean up the bento rules will otherwise delete it again.
+
+   NO PADDING, and that is the fix. The box was `aspect-ratio: 4/3` with `padding: 22px`, so its
+   content box was 476x346 — a ratio of 1.376, not 1.333. A 4:3 drawing cannot fit that box without
+   giving up one axis, and the SVG was taking the width: measured 474x356 against a 346px-tall
+   content box, so ~5px was clipped off the top and bottom of the frame. The drawings already carry
+   their own margins inside the viewBox (the frame sits at x=30..290, y=26..214 of 320x240), so the
+   CSS padding was doubling up on a margin that was already drawn and then eating the difference.
+   The box now IS the drawing's ratio and the drawing fills it edge to edge. */
 .mk .pg-row-art {
   border: 1px solid var(--mk-line); border-radius: 8px; background: var(--mk-raise);
-  overflow: hidden; aspect-ratio: 4 / 3; display: grid; place-items: center; padding: 22px;
+  overflow: hidden; aspect-ratio: 4 / 3; display: grid; place-items: center; padding: 0;
 }
+.mk .pg-row-art svg { width: 100%; height: 100%; display: block; }
 
 /* Tablet: two columns, and the lead cell stops being a double. */
 @media (max-width: 1100px) {
@@ -1248,6 +1405,16 @@
 .mk .pg-price-fig {
   font-family: var(--font-tight), sans-serif; font-weight: 300; letter-spacing: -.035em;
   font-size: clamp(38px, 4.4vw, 60px); line-height: 1; color: var(--mk-ink);
+  /* THE PHANTOM MARGIN. This is a `<p>`, so it carries the UA's `margin: 1em 0` — and at this
+     rule's own 60px font-size that is 60px above and 60px below. Measured on the served build:
+     the price row was 180px tall for a 60px line of type, and the card carried 120px of empty
+     space around its own headline price. It is the single largest piece of dead space on the
+     page, and because both cards got it the pair looked deliberate rather than broken.
+
+     Every other component in this file zeroes its own margins; this one was missed because the
+     price is the only `<p>` on the site set at display size, so its 1em was the biggest. The
+     `.mk h1..h4` reset in the type scale does not reach it either — it is a paragraph. */
+  margin: 0;
 }
 .mk .pg-price-fig small { font-size: .3em; font-weight: 400; letter-spacing: 0; color: var(--mk-muted); margin-left: 8px; }
 .mk .pg-price-card.feat .pg-price-fig small { color: var(--mk-deep-prose); }
@@ -1347,14 +1514,22 @@
    NARROW SCREENS — two things the desktop composition hid
    ===================================================================================== */
 
-/* 1. THE HERO FIGURE WAS THE SAME DRAWING TWICE. The hero's art is a decorative repeat of
-      capability row 01, which is fine side-by-side at 1000px+ where the two are a screen apart,
-      and not fine stacked, where the identical schematic appears twice within one thumb-scroll.
-      It is aria-hidden decoration, so removing it below the two-column breakpoint costs nothing
-      semantic and leaves the mobile hero as type and two buttons — which is the strongest
-      version of it anyway. */
+/* 1. THE HERO FIGURE IS NOW SHOWN ON A PHONE TOO, and it is a different drawing from row 01's.
+
+      The rule here used to be `display: none` below 1000px, and it was right at the time: the
+      hero's art WAS capability row 01's `FigCapture`, so on a phone the identical schematic
+      appeared twice within one thumb-scroll. Hiding one copy was the cheapest honest fix.
+
+      The cause is gone — the hero draws `FigHero` now (the act: a handset taking the point and the
+      stamp it writes) while row 01 keeps `FigCapture` (the result: the stamped photograph). So
+      there is nothing to de-duplicate, and hiding it was costing the mobile hero its only visual.
+      Measured at 390px before this change: the hero was 734px of type and two buttons, with the
+      first figure 2400px further down the page.
+
+      It sits BETWEEN the copy and the stat strip, which is where the eye already is when it
+      finishes the lede, and the box keeps the 4:3 ratio every other figure uses. */
 @media (max-width: 999px) {
-  .mk .pg-hero .pg-row-art { display: none; }
+  .mk .pg-hero .pg-row-art { margin-top: 4px; }
 }
 
 /* 2. THE NAV STRIP READ AS CLIPPED TEXT, NOT AS MORE CONTENT. marketing.css wraps the links to
@@ -1436,9 +1611,15 @@
     z-index: 91;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
     min-height: 44px;
-    padding: 0 14px;
+    /* A SQUARE 44px TARGET, and the width is the fix rather than the height. Measured at 390px
+       before this: 39x44 — under the 44px this project holds itself to on the axis that matters
+       for a thumb, and the only control in the bar that missed it. `min-width` rather than a fixed
+       width so the label can still widen the button between 680px and 900px, where it is shown. */
+    min-width: 44px;
+    padding: 0 11px;
     margin-left: 2px;
     border: 1px solid var(--mk-control-line);
     border-radius: 100px;
@@ -1520,7 +1701,7 @@
     z-index: 40;
     background: var(--mk-panel);
     border-top: 1px solid var(--mk-line);
-    padding: 0 var(--mk-pad);
+    padding: 0 var(--mk-gutter);
     overflow-y: auto;
     overscroll-behavior: contain;
     animation: mk-menu-in .22s cubic-bezier(.22, .61, .36, 1);
@@ -2337,10 +2518,18 @@ html[data-theme='dark'] .mk .mk-theme-btn .mk-icon-moon { display: none; }
    furthest from the eye-line the cards had established.
    Now it is capped at 720px and centred like the cards, which also means the label column is no
    longer 52% of the table: at this width the three columns are 245/238/238. */
+/* Same measure as the two cards above it — and the same three corrections, because this block had
+   all of the same faults. `max-width: 720px` on its own measured the PADDED box, so the table's
+   content was 720 - 160 = 560px while the cards' grid above it had 720px: the two columns the
+   reader is comparing were squeezed into 187px each. The padding was `--mk-pad`, which pinned the
+   block to the viewport's own gutter on a wide screen rather than to the cards' centred edge. And
+   it was centred while the cards were too, which put both on x=360 under a heading on x=80.
+   All three are the shell rule now: the cap counts the gutters, the gutter is the shared one, and
+   the block starts on the heading's left edge like every other block on the page. */
 .mk .mk-compare {
-  margin-top: 44px;
-  max-width: 720px; margin-inline: auto;
-  padding-inline: var(--mk-pad);
+  margin: 44px 0 0;
+  max-width: calc(720px + 2 * var(--mk-gutter));
+  padding-inline: var(--mk-gutter);
 }
 .mk .mk-compare table {
   width: 100%; border-collapse: collapse; margin-top: 16px;

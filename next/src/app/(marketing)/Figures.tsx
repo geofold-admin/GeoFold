@@ -28,6 +28,7 @@ type FigProps = { locale: Locale }
 const BOX = '0 0 320 240'
 
 const text: Record<Locale, {
+  altHero: string
   altCapture: string
   altOffline: string
   altMap: string
@@ -41,6 +42,7 @@ const text: Record<Locale, {
   flightPath: string
 }> = {
   id: {
+    altHero: 'Ponsel lapangan memotret satu titik, koordinatnya tercetak ke dalam foto',
     altCapture: 'Foto dengan koordinat tercetak di gambarnya',
     altOffline: 'Titik tersimpan di perangkat dan terkirim saat ada sinyal',
     altMap: 'Semua titik survei di atas peta dengan grid kuadrat',
@@ -54,6 +56,7 @@ const text: Record<Locale, {
     flightPath: 'Jalur terbang',
   },
   en: {
+    altHero: 'A field phone capturing one point, with the coordinates printed into the photo',
     altCapture: 'A photo with its coordinates printed into the image',
     altOffline: 'Points held on the device and sent once there is a signal',
     altMap: 'Every survey point on a map with a quadrat grid',
@@ -66,6 +69,59 @@ const text: Record<Locale, {
     colPhoto: 'Photo',
     flightPath: 'Flight path',
   },
+}
+
+/**
+ * Hero: the whole product in one frame — a field phone taking the point, and the stamp it writes.
+ *
+ * WHY THE HERO NEEDED ITS OWN DRAWING. It used to render `FigCapture`, which is also capability
+ * row 01's figure. At 1440px the two are one screen apart, so the same schematic appeared twice on
+ * the way down the page, and on a phone the hero's copy was hidden by a media query and the row
+ * kept the drawing — so the hero lost its art entirely and the reader met the viewfinder only
+ * later. Neither is a bug in the drawing; both are the drawing being in two places.
+ *
+ * This is the one figure that shows the ACT rather than the RESULT: a handset on the left, the
+ * captured point travelling across, and the stamped photograph on the right with the coordinate
+ * strip burned into its foot. It is the same story the headline tells, so it belongs in the hero
+ * and nowhere else. `FigCapture` stays the canonical close-up on row 01.
+ *
+ * The horizontal layout also suits the hero column, which is wider than it is tall, where the
+ * square-ish capability figures were leaving slack above and below.
+ */
+export function FigHero({ locale }: FigProps) {
+  return (
+    <svg viewBox={BOX} className="pg-fig" role="img" aria-label={text[locale].altHero}>
+      {/* ---- left: the handset, screen up ---- */}
+      <rect x="26" y="42" width="86" height="156" rx="10" className="pg-fig-line" />
+      <rect x="34" y="56" width="70" height="114" rx="4" className="pg-fig-soft" />
+      {/* the viewfinder on its screen: the same reticle idiom the product uses */}
+      {['M52 76v-9h9', 'M86 76v-9h-9', 'M52 124v9h9', 'M86 124v9h-9'].map((d) => (
+        <path key={d} d={d} className="pg-fig-accent" strokeWidth="1.3" />
+      ))}
+      <circle cx="69" cy="100" r="2.5" className="pg-fig-fill" />
+      {/* the shutter, and the home rule below the screen */}
+      <circle cx="69" cy="182" r="7" className="pg-fig-accent" strokeWidth="1.3" />
+      <path d="M54 210h30" className="pg-fig-line" />
+
+      {/* ---- middle: the point travelling from the phone to the record ---- */}
+      <path d="M126 120h42" className="pg-fig-line" strokeDasharray="3 4" />
+      <path d="M164 115l8 5-8 5z" className="pg-fig-fill" />
+
+      {/* ---- right: the photograph, with the coordinates printed into it ---- */}
+      <rect x="188" y="42" width="106" height="156" rx="6" className="pg-fig-line" />
+      {/* the horizon drawn inside it, so it reads as a photograph and not as another screen */}
+      <path d="M196 150l26-30 20 22 16-16 20 24" className="pg-fig-line" strokeWidth="1.2" />
+      <circle cx="272" cy="72" r="7" className="pg-fig-line" strokeWidth="1.2" />
+      {/* THE STAMP: the whole argument of the product, at the foot of the frame.
+          Painted in the same order FigCapture uses — ground, then text, then the rule on top —
+          because SVG paints later elements over earlier ones and the rule is what reads as the
+          edge of the strip. */}
+      <rect x="188" y="162" width="106" height="36" className="pg-fig-soft" />
+      <text x="196" y="176" className="pg-fig-label">-0.023405</text>
+      <text x="196" y="188" className="pg-fig-label">109.342101 · ±4 M</text>
+      <path d="M188 162h106" className="pg-fig-line" strokeWidth="1.2" />
+    </svg>
+  )
 }
 
 /** Capture: the frame, the reticle, and the stamp that ends up burned into the photograph. */

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
-import { FigAerial, FigCapture, FigExport, FigMap, FigOffline } from './Figures'
+import { FigAerial, FigCapture, FigExport, FigHero, FigMap, FigOffline } from './Figures'
 import { SurveyField } from '@/components/SurveyField'
 import { SurveyGlobe } from '@/components/SurveyGlobe'
 import { TopographyField } from '@/components/TopographyField'
@@ -418,10 +418,13 @@ export default async function HomePage() {
               </div>
             </div>
 
-            {/* Decorative, and marked so: row 01 below repeats this figure with its real label and
-                its own alt text. Parallax is applied here and nowhere near copy or controls. */}
+            {/* The hero's own figure, and it is NOT capability row 01's. Both used to be
+                `FigCapture`, which put the identical schematic twice within one screen of
+                scrolling at 1440px — and below 1000px the hero's copy is hidden, so the hero
+                lost its art while the row kept it. `FigHero` draws the act (a handset taking the
+                point, and the stamp it writes); `FigCapture` stays the close-up on row 01. */}
             <div className="pg-row-art" data-parallax="-6" aria-hidden="true">
-              <FigCapture locale={locale} />
+              <FigHero locale={locale} />
             </div>
           </div>
 
