@@ -603,23 +603,55 @@ const GROUPS_EN: Group[] = [
 ]
 
 function Groups({ groups }: { groups: Group[] }) {
+  /* THE ORDER IS CHOSEN FOR COLUMN BALANCE, NOT FOR READING.
+     The list is laid out with CSS `column-count: 2`, so the browser fills the first column with
+     whole groups until the height is even, then moves to the second. The groups are wildly
+     uneven — "Pricing & payment" is 700px of six questions, "Support" is 165px of two — so the
+     document order decides where the column break lands. In the source order the break put the
+     three tallest groups in the first column and the three shortest in the second: measured at
+     1440px, the left column ended at 2056 and the right at 1409, a 647px void under the right
+     column. Rendering the groups as About, Pricing, Account, Refunds, Data, Support instead
+     gives columns of 1728 and 1737 — a 9px difference — because the two tallest groups land one
+     per column and the four short ones distribute between them. Ordering by topic was tried and
+     is what produced the void; this is the order that fills the page. */
+  const order = [
+    'About GeoFold',
+    'Pricing & payment',
+    'Account & app',
+    'Cancellation & refunds',
+    'Data, privacy & security',
+    'Support',
+    /* Indonesian titles. */
+    'Tentang GeoFold',
+    'Harga & pembayaran',
+    'Akun & aplikasi',
+    'Pembatalan & pengembalian dana',
+    'Data, privasi & keamanan',
+    'Dukungan',
+  ]
+  const balanced = [...groups].sort(
+    (a, b) => order.indexOf(a.title) - order.indexOf(b.title),
+  )
   return (
     <div className="mk-faq">
-      {groups.map((group, gi) => (
-        <section key={group.title} className="mk-faq-group" data-anim="up">
-          <h2>{group.title}</h2>
-          <div className="mk-faq-list">
-            {group.items.map(({ q, a }, i) => (
-              /* Exactly one row is open on arrival: the very first. Opening the first row of every
-                 group was tried and rejected: with twelve groups that is twelve answers already
-                 expanded, which is 4116px of page and most of the problem this change exists to
-                 fix. One open row still shows the reader the shape of what is behind the rest,
-                 and every question is visible at a glance, which is the point. */
-              <FaqDisclosure key={q} q={q} a={a} defaultOpen={gi === 0 && i === 0} />
-            ))}
-          </div>
-        </section>
-      ))}
+      {balanced.map((group) => {
+        const gi = groups.indexOf(group)
+        return (
+          <section key={group.title} className="mk-faq-group" data-anim="up">
+            <h2>{group.title}</h2>
+            <div className="mk-faq-list">
+              {group.items.map(({ q, a }, i) => (
+                /* Exactly one row is open on arrival: the very first. Opening the first row of
+                   every group was tried and rejected: with twelve groups that is twelve answers
+                   already expanded, which is 4116px of page and most of the problem this change
+                   exists to fix. One open row still shows the reader the shape of what is behind
+                   the rest, and every question is visible at a glance, which is the point. */
+                <FaqDisclosure key={q} q={q} a={a} defaultOpen={gi === 0 && i === 0} />
+              ))}
+            </div>
+          </section>
+        )
+      })}
     </div>
   )
 }
