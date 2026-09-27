@@ -75,11 +75,31 @@ export function Logo({
  * what the supplied artwork's lettering does. Keeping it as live text rather than tracing the
  * letterforms means it stays selectable, translatable and crisp at every size — and the mark
  * carries the brand on its own at the sizes where text would not read.
+ *
+ * WHY THE MARK SITS ON A WHITE DISC (added 2026-09-28, at the buyer's suggestion).
+ *
+ * The previous comment here argued that the header and footer bands would stay LIGHT so the mark
+ * could sit on the same ground it does in light mode. That is not what shipped: the Midnight pass
+ * made the chrome dark (`.mk-nav` is rgba(10,25,47,.93), the footer is #070F1F), and the mark —
+ * whose globe lines are holes that show the background — measured 2.14:1 on it. The blue G
+ * effectively disappeared, which is what the buyer saw and reported as "logonya... gimana?".
+ *
+ * The disc is the honest fix. The artwork is a cut-out and cannot be recoloured, so it needs a
+ * light ground; a 46px white circle gives it exactly that while reading as a deliberate device
+ * badge — a lens, a survey mark on a sheet — rather than as a patch. It is the shape the buyer
+ * proposed, and it is the only one that keeps the mark's own colours on a dark bar.
+ *
+ * THE DISC SCALES WITH THE MARK. Its diameter is 1.75x the mark's height, which is the ratio at
+ * which the artwork's diagonal (the mark is 578x429, so wider than tall) still clears the circle
+ * with room to breathe. The wordmark stays OUTSIDE the disc: it is white type and belongs on the
+ * bar, not on the badge.
  */
 export function LogoLockup({ size = 26, className }: { size?: number; className?: string }) {
   return (
     <span className={`gf-lockup${className ? ` ${className}` : ''}`}>
-      <Logo size={size} alt="" />
+      <span className="gf-plate" style={{ width: size * 1.75, height: size * 1.75 }}>
+        <Logo size={size * 0.92} alt="" />
+      </span>
       <span className="gf-lockup-word">GeoFold</span>
     </span>
   )

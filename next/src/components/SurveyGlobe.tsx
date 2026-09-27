@@ -63,7 +63,19 @@ export function SurveyGlobe({ className }: { className?: string }) {
     let w = 0
     let h = 0
     let radius = 0
-    let spin = -MARKER.lon * (Math.PI / 180) // start with the marker facing the viewer
+    /* START WITH THE MARKER FACING THE VIEWER — and it did not, until 2026-09-28.
+       The old line was `spin = -MARKER.lon * (Math.PI / 180)`, which reads as "rotate to the
+       marker's longitude" but is not what the projection wants: measured on the canvas, the
+       marker's rotated z came out +0.64, and `draw()` skips any point with z > 0 because that
+       is the far hemisphere. The one lit thing on the sphere — the entire reason the globe
+       exists — was on the back of it at load, and at the idle spin of 0.0016 rad/frame a
+       visitor would have had to watch for about half a minute to see it turn round.
+
+       The projection is `z(s) = x·sin(s) + z·cos(s)`, which is minimised (most negative =
+       nearest the viewer) at `s = atan2(-x, -z)`. That is the rest angle, computed from the
+       marker itself, so it stays correct if the marker ever moves. */
+    const markerXYZ = latLonToXYZ(MARKER.lat, MARKER.lon)
+    let spin = Math.atan2(-markerXYZ.x, -markerXYZ.z)
     let tilt = TILT_BASE
     let targetTilt = TILT_BASE
     let targetSpinSpeed = SPIN_IDLE
@@ -105,11 +117,32 @@ export function SurveyGlobe({ className }: { className?: string }) {
       const cosT = Math.cos(tilt)
       const sinT = Math.sin(tilt)
 
+      /* ATMOSPHERE. A soft halo outside the limb, so the sphere reads as a body with air
+         rather than as a circle of wire. One radial gradient, drawn first, and it is the
+         cheapest thing here — a single fill. It also gives the wireframe something to sit
+         against on the dark band, where thin blue lines on navy otherwise dissolve. */
+      const halo = ctx.createRadialGradient(cx, cy, radius * 0.86, cx, cy, radius * 1.34)
+      halo.addColorStop(0, 'rgba(127, 168, 232, 0)')
+      halo.addColorStop(0.62, 'rgba(127, 168, 232, .085)')
+      halo.addColorStop(1, 'rgba(127, 168, 232, 0)')
+      ctx.beginPath()
+      ctx.arc(cx, cy, radius * 1.34, 0, Math.PI * 2)
+      ctx.fillStyle = halo
+      ctx.fill()
+
+      /* The body: a barely-there disc under the wire, so the far-side lines read as BEHIND
+         the sphere instead of crossing in front of it. Without this the far meridians and the
+         near ones are the same navy and the ball flattens into a tangle. */
+      ctx.beginPath()
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2)
+      ctx.fillStyle = 'rgba(10, 25, 47, .55)'
+      ctx.fill()
+
       // Sphere silhouette, so the ball reads as a body even where no line falls.
       ctx.beginPath()
       ctx.arc(cx, cy, radius, 0, Math.PI * 2)
       ctx.strokeStyle = line
-      ctx.globalAlpha = 0.22
+      ctx.globalAlpha = 0.3
       ctx.lineWidth = 1
       ctx.stroke()
 
@@ -131,7 +164,7 @@ export function SurveyGlobe({ className }: { className?: string }) {
           } else ctx.lineTo(sx, sy)
         }
         ctx.strokeStyle = line
-        ctx.globalAlpha = near ? 0.5 : 0.16
+        ctx.globalAlpha = near ? 0.5 : 0.14
         ctx.lineWidth = near ? 1 : 0.75
         ctx.stroke()
       }
@@ -139,6 +172,10 @@ export function SurveyGlobe({ className }: { className?: string }) {
       const RINGS = 7
       const MERIDIANS = 12
       const SEGMENTS = 90
+      /* The equator is index ring 4 of 7 (−90 + 180·i/8 = 0 at i=4). It is drawn again after
+         the others at higher alpha, the way a printed sheet picks out the prime line — the
+         one piece of hierarchy that makes the sphere read as a globe and not a ball of yarn. */
+      const EQUATOR = 4
 
       for (const near of [false, true]) {
         // latitude rings
@@ -161,21 +198,77 @@ export function SurveyGlobe({ className }: { className?: string }) {
         }
       }
 
+      // The index ring, redrawn on top of its own pass.
+      for (const near of [false, true]) {
+        const lat = -90 + (180 * EQUATOR) / (RINGS + 1)
+        const pts = []
+        for (let s = 0; s <= SEGMENTS; s++) {
+          pts.push(latLonToXYZ(lat, -180 + (360 * s) / SEGMENTS))
+        }
+        ctx.beginPath()
+        let started = false
+        for (const p of pts) {
+          const r = project(p, cosT, sinT)
+          if (near ? r.z > 0 : r.z <= 0) {
+            started = false
+            continue
+          }
+          const sx = cx + r.x * radius
+          const sy = cy + r.y * radius
+          if (!started) {
+            ctx.moveTo(sx, sy)
+            started = true
+          } else ctx.lineTo(sx, sy)
+        }
+        ctx.strokeStyle = line
+        ctx.globalAlpha = near ? 0.78 : 0.2
+        ctx.lineWidth = near ? 1.15 : 0.75
+        ctx.stroke()
+      }
+
       // The marker: the one lit thing on the sphere, and the reason it exists.
       const m = project(latLonToXYZ(MARKER.lat, MARKER.lon), cosT, sinT)
       if (m.z <= 0) {
         const mx = cx + m.x * radius
         const my = cy + m.y * radius
-        const pulse = 0.6 + 0.4 * Math.sin(performance.now() / 600)
-        ctx.globalAlpha = 0.18 * pulse
+        const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 700)
+
+        /* THE RETICLE. A survey instrument marks a point with a ring and four ticks, not with
+           a bare dot — the ticks are what make it read as "measured here" rather than as a
+           bullet on a map. Ticks are drawn on the two axes only: eight arms turn the mark
+           into a snowflake at 3px. */
+        ctx.globalAlpha = 0.5 + 0.3 * pulse
         ctx.beginPath()
-        ctx.arc(mx, my, 9, 0, Math.PI * 2)
+        ctx.arc(mx, my, 10.5, 0, Math.PI * 2)
+        ctx.strokeStyle = accent
+        ctx.lineWidth = 1
+        ctx.stroke()
+
+        ctx.globalAlpha = 0.85
+        ctx.beginPath()
+        ctx.moveTo(mx - 15.5, my); ctx.lineTo(mx - 7.5, my)
+        ctx.moveTo(mx + 7.5, my); ctx.lineTo(mx + 15.5, my)
+        ctx.moveTo(mx, my - 15.5); ctx.lineTo(mx, my - 7.5)
+        ctx.moveTo(mx, my + 7.5); ctx.lineTo(mx, my + 15.5)
+        ctx.lineWidth = 1
+        ctx.stroke()
+
+        // The fill, on a slower breath than the reticle so the two do not pulse as one blob.
+        ctx.globalAlpha = 0.16 * (0.6 + 0.4 * pulse)
+        ctx.beginPath()
+        ctx.arc(mx, my, 15 + 5 * pulse, 0, Math.PI * 2)
         ctx.fillStyle = accent
         ctx.fill()
+
         ctx.globalAlpha = 1
         ctx.beginPath()
-        ctx.arc(mx, my, 3.2, 0, Math.PI * 2)
+        ctx.arc(mx, my, 3.4, 0, Math.PI * 2)
         ctx.fillStyle = accent
+        ctx.fill()
+        // A white pip inside the dot: at 3px on a navy field the orange alone is a smudge.
+        ctx.beginPath()
+        ctx.arc(mx - 0.9, my - 0.9, 1.15, 0, Math.PI * 2)
+        ctx.fillStyle = 'rgba(255,255,255,.9)'
         ctx.fill()
       }
 

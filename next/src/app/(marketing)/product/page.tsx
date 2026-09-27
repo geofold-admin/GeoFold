@@ -293,10 +293,23 @@ export default async function ProductPage() {
         </div>
         <Carousel label={c.carouselLabel}>
           {c.slides.map((s, i) => (
-            <article className="mk-cap" data-spotlight key={s.title}>
-              <PhoneMock>{screens[i]}</PhoneMock>
-              <div className="mk-cap-copy">
-                <span className="mk-cap-kick">{s.kicker}</span>
+            /* THE STAGE, NOT THE CARD. The slide used to be a bordered panel holding a phone and
+               a column of copy, and at desktop width the panel was mostly empty air. It is now a
+               stage: the device floats on the section's own ground with a soft light behind it,
+               and the caption sits underneath it, centred on the device — the shape a product
+               page uses when the screen IS the content. Nothing is boxed, so there is no box to
+               be half-empty. */
+            <article className="mk-stage" key={s.title}>
+              <div className="mk-stage-device">
+                <PhoneMock>{screens[i]}</PhoneMock>
+              </div>
+              <div className="mk-stage-meta">
+                <span className="mk-stage-line">
+                  <span className="mk-stage-num" aria-hidden="true">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <span className="mk-stage-kick">{s.kicker}</span>
+                </span>
                 <h3>{s.title}</h3>
                 <p>{s.body}</p>
               </div>

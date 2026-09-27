@@ -26,7 +26,11 @@ export function MobileNav() {
     <>
       <header className="mobile-top">
         <div className="brand" style={{ padding: 0, height: 'auto', border: 0, fontSize: 17 }}>
-          <span className="mark" style={{ width: 24, height: 24 }}>G</span>GeoFold
+          <span className="mark" style={{ width: 24, height: 24 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element -- see Sidebar.tsx. */}
+            <img src="/geofold-mark.svg" alt="" width={578} height={429} />
+          </span>
+          GeoFold
         </div>
         <div className="actions">
           <Link href="/subscription" aria-label="Subscription" className={`theme-toggle${pathname.startsWith('/subscription') ? ' active' : ''}`} style={{ display: 'grid', placeItems: 'center' }}><CreditCard size={16} /></Link>

@@ -8,38 +8,66 @@
 
 :root,
 :root[data-theme='light'] {
-  --paper: #f2f2f3;
-  --surface: #e9e9ea;
-  --surface-2: #f5f5f8;
-  --ink: #1d1f20;
-  --ink-2: #5d5d60;
-  --ink-3: #7a7a7d;
-  --line: color-mix(in srgb, #1d1f20 16%, transparent);
-  --line-strong: color-mix(in srgb, #1d1f20 28%, transparent);
-  --mark: color-mix(in srgb, #1d1f20 55%, transparent);
+  /* ---------------------------------------------------------------------------------------
+     THE APPLICATION PALETTE, ALIGNED TO THE CLIENT'S OWN STANDARD (2026-09-28).
 
-  --accent: #5980a6;
-  --accent-hover: #597ea3;
-  --accent-soft: #eef6ff;
-  --accent-ink: #2c455d;
-  --accent-deep: #1d2d3d;
+     `color_palettes_gf.md` is the client's UI/UX design system for the GEOFOLD APPLICATION —
+     and the portal after login IS that application, so these tokens are now its values rather
+     than the "Industry" steel-blue the app chrome shipped with. The mapping is the document's
+     own, role for role:
+
+       #FFFFFF  Panel Utama      → --surface   (the sidebar, tool panels, info popups)
+       #F3F4F6  Kanvas Netral    → --paper     (the canvas the panels sit on)
+       #E5E7EB  Grid Border      → --line      (panel dividers, table rules, input edges)
+       #111827  Teks Presisi     → --ink       (coordinates, computed areas, place names)
+       #6B7280  Teks Atribut     → --ink-2     (form labels, table metadata, secondary menus)
+       #014AB5  GEOFOLD Blue     → --accent    (active state, Save, polyline, drawing tools)
+       #F35D19  GEOFOLD Orange   → --marker    (survey pin / FAB ONLY — never a surface)
+
+     The marketing site keeps its own dark palette: that is a shop window, and this is the
+     instrument. They share the brand blue, which is the one colour the client's document
+     reserves for "status and command".
+
+     Contrast, computed on these values:
+       #111827 on #FFFFFF = 16.9:1   #6B7280 on #FFFFFF = 4.82:1
+       #014AB5 on #FFFFFF =  7.92:1  white on #014AB5   =  7.92:1
+     Every one of those clears WCAG AA, and the blue clears it for normal-size text. */
+  --paper: #F3F4F6;
+  --surface: #FFFFFF;
+  --surface-2: #F9FAFB;
+  --ink: #111827;
+  --ink-2: #6B7280;
+  --ink-3: #9CA3AF;
+  --line: #E5E7EB;
+  --line-strong: #D1D5DB;
+  --mark: color-mix(in srgb, #111827 55%, transparent);
+
+  --accent: #014AB5;
+  --accent-hover: #013A8F;
+  --accent-soft: #EFF5FF;
+  --accent-ink: #0B3C86;
+  --accent-deep: #0A192F;
   /* The hero is a reversed accent field: it must stay DARK in both themes, because its
      type is always paper-white. Deriving it from --accent-deep made it white-on-white in dark. */
-  --hero-bg: #1d2d3d;
+  --hero-bg: #0A192F;
 
-  --moss: #597ea3;
+  /* The one colour the client's document reserves for the survey pin and the capture FAB.
+     Named `--marker` rather than reusing a surface token so a grep finds every use. */
+  --marker: #F35D19;
+
+  --moss: #0F766E;
   --ochre: #8a6d3b;
   --ochre-soft: #f0e9dd;
   --ochre-ink: #6b5327;
   --clay: #8a5a3b;
-  --sky: #416180;
+  --sky: #0369A1;
   --danger: #a3453b;
   --danger-soft: #f5e4e1;
-  --graticule: color-mix(in srgb, #1d1f20 7%, transparent);
+  --graticule: color-mix(in srgb, #111827 7%, transparent);
 
-  --shadow-sm: 0 1px 2px color-mix(in srgb, #2b2b2d 14%, transparent);
-  --shadow: 0 3px 10px color-mix(in srgb, #2b2b2d 16%, transparent);
-  --shadow-lg: 0 12px 32px color-mix(in srgb, #2b2b2d 22%, transparent);
+  --shadow-sm: 0 1px 2px color-mix(in srgb, #111827 10%, transparent);
+  --shadow: 0 3px 10px color-mix(in srgb, #111827 12%, transparent);
+  --shadow-lg: 0 12px 32px color-mix(in srgb, #111827 18%, transparent);
   color-scheme: light;
 }
 
@@ -103,20 +131,35 @@ a:not(.mk a):hover { color: var(--accent); }
 }
 
 /* ---------- App chrome: sidebar (desktop) + top/bottom bars (mobile) ---------- */
+/* THE PANEL IS WHITE AND THE CANVAS IS GREY — the client's own two values, applied where the
+   document puts them. The sidebar is "Panel Utama" (#FFFFFF): the place tools live. The content
+   behind it is "Kanvas Netral" (#F3F4F6), the neutral field that must not compete with the map
+   imagery on top of it. Before this the two were nearly the same grey and the column edge
+   vanished on a badly calibrated screen. */
 .shell { display: flex; min-height: 100vh; }
-.sidebar { width: var(--sidebar-w); flex-shrink: 0; background: transparent; border-right: 1px solid var(--line);
+.sidebar { width: var(--sidebar-w); flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--line);
   display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; }
 .brand { display: flex; align-items: center; gap: 10px; height: 60px; flex: none; padding: 0 20px;
   border-bottom: 1px solid var(--line); font-family: var(--font-cond); font-weight: 600; font-size: 19px;
   letter-spacing: 0.01em; text-transform: uppercase; color: var(--ink); }
-.brand .mark { width: 26px; height: 26px; flex: none; border: 1px solid var(--accent); border-radius: 0;
-  background: transparent; color: var(--accent); display: grid; place-items: center;
-  font-family: var(--font-cond); font-weight: 600; font-size: 14px; line-height: 1; }
+/* The brand mark is the real artwork, not a letter in a box. A "G" in a square is a stand-in
+   that says nothing; the mark is the client's own and it reads at 26px. */
+.brand .mark { width: 26px; height: 26px; flex: none; display: grid; place-items: center; }
+.brand .mark img { width: 100%; height: auto; }
 .side-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; padding: var(--space-4) 10px; }
 .side-nav a { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 0;
   color: var(--ink-2); font-weight: 500; font-size: 13.5px; border-left: 2px solid transparent; }
 .side-nav a:hover { background: color-mix(in srgb, var(--ink) 5%, transparent); color: var(--ink); }
-.side-nav a.active { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--ink); border-left-color: var(--accent); }
+/* THE ACTIVE ROW IS THE BRAND BLUE, per the client's document: #014AB5 is the app's "active
+   state / status and command" colour. It is the left bar AND the label, because a bar alone
+   disappears when the sidebar is narrow, and a label alone has no position. */
+.side-nav a.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-left-color: var(--accent);
+  font-weight: 600;
+}
+.side-nav a.active svg { color: var(--accent); }
 .side-nav a svg { width: 18px; height: 18px; stroke-width: 1.5; flex: none; }
 .side-foot { border-top: 1px solid var(--line); padding: var(--space-3) 14px; display: flex; gap: 8px; }
 

@@ -34,7 +34,11 @@ export default function ProjectsPage() {
             <div style={{ fontWeight: 500, color: 'var(--ink)' }}>{p.name}</div>
             {p.description && <div className="hint">{p.description}</div>}
           </div>
-          <span className="badge accent">{p.surveyCount} surveys</span>
+          {/* The count is a sentence, so it agrees with itself: "1 surveys" was shipping on every
+              project with a single survey. English only — this app's UI is English throughout. */}
+          <span className="badge accent">
+            {p.surveyCount} {p.surveyCount === 1 ? 'survey' : 'surveys'}
+          </span>
         </Link>
       ))}
     </div>

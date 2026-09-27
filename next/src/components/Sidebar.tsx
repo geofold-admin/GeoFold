@@ -23,7 +23,16 @@ export function Sidebar() {
 
   return (
     <aside className="sidebar">
-      <div className="brand"><span className="mark">G</span>GeoFold</div>
+      {/* The mark, at 26px, on the panel's white ground — the same artwork the marketing chrome
+          uses, and the reason the sidebar can carry the brand without a wordmark sized to shout. */}
+      <div className="brand">
+        <span className="mark">
+          {/* eslint-disable-next-line @next/next/no-img-element -- the same traced SVG the
+              marketing chrome loads; next/image would only add an optimizer round-trip. */}
+          <img src="/geofold-mark.svg" alt="" width={578} height={429} />
+        </span>
+        GeoFold
+      </div>
       <nav className="side-nav">
         {navItems.map(({ href, label, icon: Icon }) => (
           <Link key={href} href={href} className={pathname.startsWith(href) ? 'active' : ''}>

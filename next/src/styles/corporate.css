@@ -180,6 +180,68 @@
   display: block;
 }
 
+/* =====================================================================================
+   THE REGISTRATION MARKS. A crosshair in each corner of a content card — the printer's
+   register mark, and the motif the product's own screens already use (the portal's stat
+   cards mark every intersection with a tiny + crosshair).
+
+   WHY IT BELONGS HERE. The site's whole visual argument is that this is survey equipment:
+   the ground is a contour field, the copy is about coordinates and accuracy, and the product
+   draws crosshairs on its maps. A corner crosshair is the one piece of that language the
+   chrome itself can speak, and it costs one pseudo-element — no images, no dependency.
+
+   HOW IT IS DRAWN. One `::after` spanning the card draws all four marks as eight
+   linear-gradients (an arm each way per corner) placed with `background-position`. Four
+   separate elements would need four pseudo-elements, and the card only has one left.
+
+   WHERE IT IS SUPPRESSED. The hero, the closing CTA and the dark band are excluded: the
+   hero's artwork fills that space and a crosshair over it reads as a rendering artefact,
+   and the closing CTA is the page's one orange moment where a grey tick is noise. */
+.mk .mk-sec::after,
+.mk .mk-section::after {
+  content: '';
+  position: absolute;
+  /* The same box the card's own plate covers, so a mark can never drift off the card. */
+  inset: 0 var(--card-inset);
+  pointer-events: none;
+  /* Eight arms: 4 corners x (horizontal + vertical). The gradients are declared as pure
+     images — a shorthand with its size and position baked in is NOT valid inside
+     background-image, and Chrome drops the whole declaration (measured: computed
+     background-image read `none` while every other property resolved). Size and position
+     are therefore listed separately, one entry per arm. */
+  background-image:
+    linear-gradient(var(--mk-mark-line, rgba(157, 180, 204, .34)) 0 0),
+    linear-gradient(var(--mk-mark-line, rgba(157, 180, 204, .34)) 0 0),
+    linear-gradient(var(--mk-mark-line, rgba(157, 180, 204, .34)) 0 0),
+    linear-gradient(var(--mk-mark-line, rgba(157, 180, 204, .34)) 0 0),
+    linear-gradient(var(--mk-mark-line, rgba(157, 180, 204, .34)) 0 0),
+    linear-gradient(var(--mk-mark-line, rgba(157, 180, 204, .34)) 0 0),
+    linear-gradient(var(--mk-mark-line, rgba(157, 180, 204, .34)) 0 0),
+    linear-gradient(var(--mk-mark-line, rgba(157, 180, 204, .34)) 0 0);
+  background-size:
+    9px 1px, 1px 9px,
+    9px 1px, 1px 9px,
+    9px 1px, 1px 9px,
+    9px 1px, 1px 9px;
+  /* 18px in from the card's edge — the same distance the corner radius turns, so the marks
+     sit inside the curve rather than on it.
+     Each corner gets a horizontal arm and a vertical arm that CROSS, not meet: a 9px arm
+     centred on the corner point starts 4.5px before it and ends 4.5px after, so the two
+     tiles are offset by half an arm in each direction. Anchoring both to the same point
+     drew an L-bracket instead of a crosshair — measured on the first render, the mark read
+     as a crop mark, which is a different symbol and the wrong one here. */
+  background-position:
+    /* top-left: h then v */
+    calc(18px - 4.5px) calc(18px - 0.5px), calc(18px - 0.5px) calc(18px - 4.5px),
+    /* top-right */
+    calc(100% - 18px - 4.5px) calc(18px - 0.5px), calc(100% - 18px - 0.5px) calc(18px - 4.5px),
+    /* bottom-left */
+    calc(18px - 4.5px) calc(100% - 18px - 0.5px), calc(18px - 0.5px) calc(100% - 18px - 4.5px),
+    /* bottom-right */
+    calc(100% - 18px - 4.5px) calc(100% - 18px - 0.5px), calc(100% - 18px - 0.5px) calc(100% - 18px - 4.5px);
+  background-repeat: no-repeat;
+}
+
 /* THE VERTICAL RHYTHM. A card's own padding is the space between its edge and its content; the
    gap between two cards is `--card-gap`, which is also the only place the ground is visible
    between them. The old section rhythm is therefore split: most of it becomes padding inside the
@@ -1170,9 +1232,78 @@
       min(72%, 230px) it reads as the subject of the card rather than an icon in its corner. The
       caption below it stays left-aligned with the copy, which is what keeps the card on the
       site's own left edge. */
-.mk .mk-cap { flex-direction: column; align-items: flex-start; gap: 18px; }
-.mk .mk-cap .mk-phone { align-self: center; width: min(72%, 230px); }
-.mk .mk-cap .mk-phone-frame { width: 100%; }
+/* =====================================================================================
+   THE STAGE — the carousel slide, rebuilt 2026-09-28 as a device on ground rather than a
+   card holding a device.
+
+   WHY IT CHANGED. The slide used to be a bordered panel (.mk-cap) with a phone pinned in
+   its top half and the copy under it. Measured at 1440px, one slide was 392px wide and the
+   phone inside it was 220px, so a third of every card was a margin no content ever used;
+   the buyer read that as "kebanyakan bagian kosong". A box whose contents do not fill it
+   is a box that should not be there.
+
+   WHAT IT IS NOW. No card. The device stands on the section's own ground with a soft
+   radial lift behind it, and the caption sits under the device, centred with it — the
+   standard product-page shape (the reference the buyer supplied, image_518b47.png, is
+   exactly this: device, then a small uppercase label, then the description, no boxes).
+
+   The stage number (01–05) is doing real work rather than decorating: five unboxed slides
+   with no numbers read as five unrelated images, and the count is the only thing that says
+   this is a sequence. It is mono and dim so it never competes with the kicker beside it. */
+.mk .mk-stage {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 22px; height: 100%;
+  /* The light the device stands in. One soft pool, no second source, so the stage has a
+     floor without a horizon line. */
+  background: radial-gradient(120% 62% at 50% 34%,
+    color-mix(in srgb, var(--mk-green) 9%, transparent) 0%,
+    transparent 68%);
+}
+.mk .mk-stage-device { display: flex; justify-content: center; width: 100%; }
+/* The device is the subject: sized against the slide (never a fixed px width), and centred,
+   so the two side margins are equal at every rung of the ladder. */
+.mk .mk-stage .mk-phone { width: min(78%, 250px); }
+/* THE DEVICE IS SILVER, NOT BLACK (2026-09-28).
+   The frame was #070F1F — the site's own deepest navy — which on this ground is invisible: the
+   device measured as a white screen floating with no body around it, and on the two slides whose
+   screens are themselves white (records, export) there was no device at all, just a white
+   rectangle. The buyer's reference (image_518b47.png) shows the opposite: light silver frames
+   that read as hardware against a dark stage.
+
+   A light frame is also the honest picture of the product: the app runs on ordinary Android
+   handsets, and the black slab was a styling choice, not a fact about the device. */
+.mk .mk-stage .mk-phone-frame {
+  background: linear-gradient(150deg, #FBFCFE 0%, #E7ECF4 42%, #C9D4E3 100%);
+  border: 1px solid rgba(255, 255, 255, .5);
+  /* The body's edge against the stage. One soft shadow, cast straight down: the pool of light
+     behind the device is the other half of the same idea, and they must not disagree about
+     which way is up. */
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, .55) inset,
+    0 18px 40px -12px rgba(2, 8, 20, .65),
+    0 4px 12px rgba(2, 8, 20, .35);
+}
+/* The notch stays dark — it is a hole in the glass, and a light notch on a light frame reads as
+   a smudge rather than as a cutout. */
+.mk .mk-stage .mk-phone-notch { background: #0B1526; }
+/* The screen keeps its 1px seam so a white screen is still visibly a screen and not the frame
+   itself. Without it, slides 2 and 4 (records, export) lose their device outline entirely. */
+.mk .mk-stage .mk-phone-screen { box-shadow: 0 0 0 1px rgba(11, 21, 38, .22) inset; }
+.mk .mk-stage-meta { max-width: 46ch; text-align: center; }
+.mk .mk-stage-line {
+  display: inline-flex; align-items: center; gap: 9px;
+  font-family: var(--font-mono), monospace;
+  font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+}
+/* The number is the sequence; the kicker is the stage's name. The number is dimmer because
+   it is an index, not a label. */
+.mk .mk-stage-num { color: var(--mk-faint); }
+.mk .mk-stage-kick { color: var(--mk-green); font-weight: 600; }
+.mk .mk-stage-meta h3 {
+  font-family: var(--font-sans), sans-serif; font-weight: 700; font-size: 19px; line-height: 1.25;
+  margin: 9px 0 7px; color: var(--mk-ink);
+}
+.mk .mk-stage-meta p { margin: 0; font-size: 14px; line-height: 1.62; color: var(--mk-muted); }
 
 /* The emphasis, where the browser can drive it from scroll position: the centred slide sits at
    full size and full opacity, its neighbours a little smaller and lifted slightly. Scale and

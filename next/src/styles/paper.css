@@ -1922,14 +1922,31 @@
    the site where a hover changed a whole surface. It now does what every other outline control
    here does: the edge and the label take the accent, over a wash of it. Same affordance, at the
    weight the control actually deserves.
-   ===================================================================================== */
+
+   ── 2026-09-28: THE PORTAL IS NOW THE SOLID ONE, AND THE LANGUAGE TOGGLE IS NOT.
+   The buyer read the header and could not tell what it wanted them to do: the language
+   segment's active half was filled with --mk-ink (white on midnight, the loudest fill in the
+   palette) while the actual call to action — the way into the product — was a hairline
+   outline. Measured, the toggle was the highest-contrast control in the bar, and Portal was
+   the lowest. That is the hierarchy upside down.
+
+   So the fills are swapped in weight, not in colour: Portal takes the brand blue as a FILL
+   (--mk-blue-fill #1E5FBF, 6.10:1 behind a white label) because it is the one control in the
+   chrome that leads somewhere; the language segment's active half drops to --mk-raise, a
+   surface step, so it still reads as selected without competing for the eye. The language
+   toggle is a preference, and a preference should never outrank a destination. */
 .mk .mk-portal {
-  transition: border-color .2s ease, background-color .2s ease, color .2s ease;
+  /* The fill, not an outline: the token pair exists for exactly this (see --mk-blue-fill). */
+  background: var(--mk-blue-fill, #1E5FBF);
+  border-color: var(--mk-blue-fill, #1E5FBF);
+  color: var(--mk-on-blue-fill, #fff);
+  font-weight: 600;
+  transition: background-color .2s ease, border-color .2s ease, color .2s ease;
 }
 .mk .mk-portal:hover {
-  background: rgba(1, 74, 181, .07);
-  border-color: var(--mk-green);
-  color: var(--mk-green);
+  background: var(--mk-blue-fill-2, #2A72D8);
+  border-color: var(--mk-blue-fill-2, #2A72D8);
+  color: var(--mk-on-blue-fill, #fff);
 }
 
 /* =====================================================================================
@@ -1958,7 +1975,11 @@
   transition: color .2s ease, background-color .2s ease;
 }
 .mk .mk-lang-seg button:hover { color: var(--mk-ink); }
-.mk .mk-lang-seg button.on { background: var(--mk-ink); color: var(--mk-bg); }
+/* The active half is a SURFACE step, not the palette's loudest fill. It was --mk-ink (white
+   on midnight) and it out-shouted the Portal button beside it; see the note on .mk-portal.
+   --mk-raise still reads as selected — it is 1.6:1 against the segment's own ground, the same
+   relationship every raised card on the site has with the ground behind it. */
+.mk .mk-lang-seg button.on { background: var(--mk-raise); color: var(--mk-ink); }
 /* The divider only exists between the two off states; once one is filled it is redundant. */
 .mk .mk-lang-seg button + button { border-left: 1px solid var(--mk-line); }
 .mk .mk-lang-seg button.on + button, .mk .mk-lang-seg button:has(+ button.on) { border-left-color: transparent; }
@@ -1999,18 +2020,39 @@
    the file contains no pure-white pixel at all. So the mark inherits whatever
    sits behind it, and brand blue falls to 2.14:1 on the dark ground.
 
-   The answer is not to recolour the mark and not to draw a plate under it: it
-   is to keep the ground under the mark light. The header and footer bands stay
-   on paper in dark mode (see THE CHROME STAYS LIGHT IN DARK MODE above), so the
-   mark reads exactly as it does in the light theme and no plate exists anywhere.
+   WHAT WAS TRIED, AND WHAT ACTUALLY WORKS (corrected 2026-09-28).
 
-   There used to be a second, plated file and a `.gf-logo-swap` wrapper for CSS
-   to choose between them. With one artwork that is correct on both grounds,
-   both are gone: nothing to swap, nothing to disagree about before hydration.
+   An earlier version of this comment said the answer was to keep the header and
+   footer bands light so no plate would be needed. The Midnight pass shipped the
+   opposite chrome — `.mk-nav` at rgba(10,25,47,.93), the footer at #070F1F — so
+   that argument described a site that no longer exists, and the mark went
+   missing on both bars.
+
+   The mark now sits on a white DISC (`.gf-plate`), which is the one shape that
+   keeps the artwork's own colours on a dark bar: it is a light ground, it is
+   round because the mark's diagonal is not, and it reads as a device badge
+   rather than as a patch. See the rule below and Logo.tsx.
    --------------------------------------------------------------------------- */
 
 /* The mark + wordmark lockup. `gap` is in em so it tracks the wordmark size. */
-.gf-lockup { display: inline-flex; align-items: center; gap: 9px; }
+.gf-lockup { display: inline-flex; align-items: center; gap: 11px; }
+/* THE DISC. The mark is a cut-out — its globe lines are holes that show whatever is behind
+   it — so it needs a light ground, and the Midnight chrome is not one: brand blue measures
+   2.14:1 on it. A white circle under the mark is that ground, sized by the component at
+   1.75x the mark's height so the 578x429 artwork clears the edge on all four sides.
+
+   It is a plain circle rather than a ringed badge: a hairline around a white disc on a dark
+   bar reads as a focus ring or a pressed state, and this is neither. The contrast of the
+   disc itself against the bar is 17:1, so the badge is unmistakably a deliberate element
+   rather than an artefact. */
+.gf-plate {
+  display: grid; place-items: center; flex: none;
+  border-radius: 100px; background: #fff;
+  /* The disc's own light: a hairline in the page's blue, not grey, so it belongs to the
+     palette. Invisible on the white itself, it keeps the edge crisp where the bar's
+     backdrop-blur makes the boundary slightly soft. */
+  box-shadow: 0 0 0 1px rgba(10, 25, 47, .08), 0 2px 8px rgba(3, 8, 18, .35);
+}
 .gf-lockup-word {
   font-family: var(--font-sans), sans-serif;
   font-weight: 700; font-size: 20px; letter-spacing: -0.022em;
