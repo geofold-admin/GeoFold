@@ -73,24 +73,41 @@
 
   /* The padding between a card's edge and its content, and the gap between two cards. Both are
      viewport-derived and percentage-free, so they are safe to use in a `calc()` that another
-     element's geometry depends on. */
+     element's geometry depends on.
+
+     THE RADIUS FOLLOWS THE VIEWPORT. The reference this system was drawn from uses noticeably
+     rounder cards than the 18px this started at — measured on a 1920px screenshot, the corners
+     read at roughly 24px. A fixed value cannot do that at every width: 24px on a 390px phone is a
+     bubble, and 14px on a 2560px monitor is a paper cut. So it scales, with floors at both ends. */
   --card-pad: clamp(16px, 3vw, 40px);
   --card-gap: clamp(14px, 2vw, 26px);
-  --card-radius: 18px;
+  --card-radius: clamp(14px, 1.2vw, 22px);
 
-  /* How far in from the viewport edge a card's edge sits. Built from `100vw` for the reason in the
-     header: it has to be the same number whichever element resolves it. At 1440px this is
-     80 + 80 - 40 = 120px, so the card's edge sits 40px outside the content column's edge — one
-     card-padding, which is exactly the relationship the design calls for.
+  /* WHERE THE CONTENT COLUMN STARTS, measured from the viewport edge — the same number `--mk-gutter`
+     resolves to, but built from `100vw` so it means the same thing in ANY element. That matters for
+     the nav: the nav is itself inset by `--card-inset`, so a `%`-based gutter resolved inside it
+     would measure the nav's width and the logo would drift off the page's left edge. */
+  --content-edge: calc(max(0px, (100vw - var(--mk-shell)) / 2) + var(--mk-pad));
+
+  /* How far in from the viewport edge a card's edge sits. At 1440px this is 80 + 80 - 40 = 120px,
+     so the card's edge sits 40px outside the content column's edge — one card-padding, which is
+     exactly the relationship the design calls for.
 
      THE 10px FLOOR IS FOR PHONES. On a 390px screen the arithmetic above works out to about 5px,
      which leaves the contour ground as two hairline slivers down the sides of the page — present in
      the DOM, invisible to the reader. The floor guarantees the ground keeps a visible margin at
-     every width, which is the whole point of having one. */
+     every width, which is the whole point of having one.
+
+     AND WHEN THE FLOOR IS ACTIVE the padding inside a card has to shrink to match, or the content
+     stops lining up with the headings below it: at 390px the floor puts the card's edge at 10px
+     while the content column still starts at 21px, so the card's own padding is 11px, not the 16px
+     `--card-pad` would give it. `--card-edge-pad` is that difference, and it is what any card whose
+     CONTENT must sit on the page's left edge uses. */
   --card-inset: max(
     10px,
-    calc(max(0px, (100vw - var(--mk-shell)) / 2) + var(--mk-pad) - var(--card-pad))
+    calc(var(--content-edge) - var(--card-pad))
   );
+  --card-edge-pad: calc(var(--content-edge) - var(--card-inset));
 }
 
 /* -------------------------------------------------------------------------------------
@@ -363,26 +380,127 @@
 .mk .mk-footer .gf-lockup { background: var(--mk-deep-ink); border-radius: 6px; padding: 6px 10px; }
 .mk .mk-footer .gf-lockup-word { color: var(--mk-deep); }
 
-/* -------------------------------------------------------------------------------------
-   7. THE NAV
-   -------------------------------------------------------------------------------------
-   The nav stays a bar rather than becoming a card. It is chrome, not content, and a card that
-   scrolls away would defeat the point of pinning it. It is translucent over the ground so the
-   contour shows through, which is what keeps the "one ground" reading at the very top of the page,
-   where the reader forms their first impression of it. */
+/* THE NAV IS A CARD TOO — 2026-09-27.
+
+   It used to be a full-bleed sticky bar with a hairline along its bottom edge, and that was the
+   last band left on the site. Every other block became a card; the nav stayed a strip, so the very
+   first thing a reader saw was the one element that did NOT match the system behind it — a bar
+   welded to the viewport edges, with the ground visible on neither side of it.
+
+   It is now a floating card like everything else: inset by `--card-inset`, rounded, on the same
+   shadow, with the contour ground visible above it, beside it and behind its own translucency.
+   `--card-inset` and not `--mk-gutter`: the nav's content has to stay on the page's left edge (it
+   lines up with every heading below it), so the card's edge sits one card-padding further out —
+   exactly the relationship the sections use.
+
+   STICKY STILL, with a top offset rather than `top: 0`. A card flush against the viewport's top
+   edge is a card with its margin missing, so it pins `--card-gap` below the top and keeps that
+   margin at every scroll position. The shadow does the rest: a floating bar reads as floating
+   while it is pinned, which a full-bleed strip could never do.
+
+   THE GLASS IS KEPT and it matters more now, not less. A translucent card is what lets the contour
+   show through the nav itself, so the ground reads as continuous behind the chrome rather than
+   being interrupted by it. `.is-stuck` still tightens the bar on scroll — the padding shrinks and
+   the surface goes opaque so the links stay readable over whatever is passing underneath. */
 .mk .mk-nav {
-  background: color-mix(in srgb, var(--mk-bg) 86%, transparent);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--mk-line);
+  position: sticky;
+  top: var(--card-gap);
+  z-index: 50;
+  margin: var(--card-gap) var(--card-inset) 0;
+  border: 1px solid var(--mk-line);
+  border-radius: var(--card-radius);
+  background: color-mix(in srgb, var(--mk-panel) 88%, transparent);
+  box-shadow: var(--mk-shadow);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  backdrop-filter: blur(14px) saturate(1.4);
+  /* `--card-edge-pad`, not `--card-pad`, and the difference is the whole alignment story: the
+     nav's CONTENT has to sit on the page's left edge, the same x as every heading below it, so its
+     padding is whatever is left between the card's edge and that line. At 1440px both are 40px and
+     nothing shows; on a phone, where the 10px floor pushes the card's edge in further than the
+     content column moves, this is what keeps the logo aligned instead of 5px off. */
+  padding: 13px var(--card-edge-pad);
+  transition: padding .3s cubic-bezier(.22, .61, .36, 1), border-color .3s ease,
+              background-color .3s ease, box-shadow .3s ease;
 }
+.mk .mk-nav.is-stuck {
+  padding: 9px var(--card-edge-pad);
+  background: var(--mk-panel);
+  border-color: var(--mk-line);
+  box-shadow: var(--mk-shadow-lg);
+}
+/* A browser without backdrop-filter gets the opaque surface, which is what it already had. */
 @supports not (backdrop-filter: blur(10px)) {
-  .mk .mk-nav { background: var(--mk-bg); }
+  .mk .mk-nav { background: var(--mk-panel); }
+}
+
+/* THE PHONE MENU IS A CARD TOO. It was a full-bleed sheet hanging off the bar's bottom edge, which
+   on a page made of floating cards read as the one panel that had escaped the system. It now
+   carries the same surface, radius and shadow as everything else, and sits `--card-gap` under the
+   bar with the ground visible between them. Its content uses `--card-edge-pad` for the same reason
+   the bar does: the links have to land on the page's left edge, not on the card's. */
+@media (max-width: 900px) {
+  .mk .mk-menu-panel {
+    left: 0;
+    right: 0;
+    margin-top: var(--card-gap);
+    /* The panel starts one gap lower than it used to, so its height has to give that gap back or
+       the last link ends up under the browser chrome. */
+    height: calc(100vh - 100% - var(--card-gap));
+    height: calc(100dvh - 100% - var(--card-gap));
+    border: 1px solid var(--mk-line);
+    border-radius: var(--card-radius);
+    box-shadow: var(--mk-shadow-lg);
+    background: var(--mk-panel);
+    padding: 0 var(--card-edge-pad);
+  }
 }
 
 /* -------------------------------------------------------------------------------------
    8. LOOSE ENDS
    ------------------------------------------------------------------------------------- */
+
+/* THE BANDS THAT WERE STILL PAINTING — 2026-09-27.
+
+   The card recipe in section 2 draws a card behind each host, and until this pass the hosts were
+   still carrying their OWN band paint from the skins before this one. That paint is full-bleed:
+   the element is viewport-wide, so its background and borders ran to the viewport edges and showed
+   around the card, which is the one thing this system exists to prevent. Measured on the built
+   site, four sources:
+
+     .mk-footer     background #FFFFFF + border-top     → a white strip behind a midnight card
+     .mk-sec-tint   background + border-block 1px       → a hairline drawn the full width
+     .mk-sec-dark   background + border-block
+     .pg-sec-tint   background
+     .pg-sec-dark   background
+     .mk-closer     border-top
+
+   Every one of them is the same mistake in a different place, so they are answered in one block:
+   the card's own surface is the only thing allowed to paint. The class names stay in the markup
+   and in the rules above, because they still drive ink colours and panel grounds; only the band is
+   removed. */
+.mk .mk-footer,
+.mk .mk-sec,
+.mk .mk-section,
+.mk .mk-hero,
+.mk .mk-h,
+.mk .mk-close,
+.mk .mk-closer,
+.mk .pg-sec,
+.mk .pg-hero,
+.mk .pg-close {
+  background: none;
+  border: 0;
+}
+.mk .mk-sec-tint,
+.mk .mk-sec-dark,
+.mk .pg-sec-tint,
+.mk .pg-sec-dark {
+  background: none;
+  border: 0;
+}
+/* The footer is the one host whose band was ALSO the surface a browser would paint if the card
+   failed, and it is midnight. Its colour moves to the card, which already draws `--mk-deep`. */
+.mk .mk-footer { color: var(--mk-deep-prose); }
 
 /* The landing page's closing section is preceded by an `<hr class="pg-rule">`. A rule is how this
    design separated two things on a shared ground; there is no shared ground any more, and the two
@@ -408,6 +526,18 @@
 .mk .mk-steps2-n { background: var(--mk-raise); }
 .mk .mk-callout { background: var(--mk-raise); }
 .mk .mk-meta { background: var(--mk-raise); }
+
+/* THE GROUPS OF PANELS. `.mk-recs` is a 1px grid of silver hairlines with a border and a radius of
+   its own — a table pretending to be a set of cards. On the old band that read as one object; on a
+   card it is a second card drawn inside the first, which is one frame too many. The panels inside
+   keep their own silver and the frame goes. */
+.mk .mk-recs {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  gap: var(--card-gap);
+  overflow: visible;
+}
 
 /* THE INK ON THE SILVER PANELS. This is the one place the client's palette needs a second value,
    and it is arithmetic rather than taste.
