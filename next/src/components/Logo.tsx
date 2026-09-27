@@ -89,16 +89,18 @@ export function Logo({
  * badge — a lens, a survey mark on a sheet — rather than as a patch. It is the shape the buyer
  * proposed, and it is the only one that keeps the mark's own colours on a dark bar.
  *
- * THE DISC SCALES WITH THE MARK. Its diameter is 1.75x the mark's height, which is the ratio at
- * which the artwork's diagonal (the mark is 578x429, so wider than tall) still clears the circle
- * with room to breathe. The wordmark stays OUTSIDE the disc: it is white type and belongs on the
- * bar, not on the badge.
+ * THE DISC SCALES WITH THE MARK. Measured on the first render: at 1.75x the disc came out 46px
+ * inside a 67px nav bar — 69% of the bar's height — and 2.27x the wordmark beside it, which made
+ * the badge the heaviest thing in the chrome and pulled the eye off the page's own headline. At
+ * 1.6x it was still 42px and 2.08x. The ratio here is the correction: 1.45x puts the nav's disc
+ * at 38px (58% of the bar, under the 2:1 a lockup wants) and the footer's at 35px. The mark
+ * inside is 0.88 of the requested size, which keeps the artwork's diagonal inside the circle.
  */
 export function LogoLockup({ size = 26, className }: { size?: number; className?: string }) {
   return (
     <span className={`gf-lockup${className ? ` ${className}` : ''}`}>
-      <span className="gf-plate" style={{ width: size * 1.75, height: size * 1.75 }}>
-        <Logo size={size * 0.92} alt="" />
+      <span className="gf-plate" style={{ width: size * 1.45, height: size * 1.45 }}>
+        <Logo size={size * 0.88} alt="" />
       </span>
       <span className="gf-lockup-word">GeoFold</span>
     </span>
