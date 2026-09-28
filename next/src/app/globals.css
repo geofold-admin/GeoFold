@@ -518,6 +518,71 @@ a.rec.pending:hover { border-left-color: var(--ochre); }
   .stat:hover::after { opacity: 1; }
 }
 
+/* ---------- The map canvas: the brief's "Kanvas Netral" ----------
+   The client's document is explicit (5B.3): "Panel ini terpisah dari sidebar dengan latar netral
+   (#F3F4F6), membiarkan integrasi peta satelit mengambil alih visual secara dominan."
+
+   MEASURED BEFORE THIS RULE: the Leaflet container rendered rgb(221,221,221) — leaflet.css's own
+   `#ddd` default. This project has never carried a single `.leaflet-container` rule, and the two
+   greys are close enough that it reads as correct in a screenshot, which is why it survived.
+
+   IT BELONGS HERE AND NOT IN blueprint.css. The marketing layer is scoped to `.mk`, and the app
+   shell has no such class — it runs on the tokens above.
+
+   WHY IT IS `html .leaflet-container` AND NOT PLAIN `.leaflet-container`, measured rather than
+   guessed: `leaflet.css` is imported from inside MapView.tsx, so Next emits it into its own chunk
+   (0n8kzvw2z_6as.css here) which the browser appends to the head AFTER this file. Both selectors
+   are one class (0,1,0), so the later sheet wins and the ground stayed #ddd. Adding the `html`
+   type selector makes this (0,1,1) and it wins regardless of chunk order — the same fix, for the
+   same reason, as the `body:has()` rule in section 3 of blueprint.css.
+
+   The ground matters more here than anywhere else: tiles arrive asynchronously and panning
+   exposes the container between them, so this is what a surveyor sees while the imagery catches
+   up — and it sits under the orange survey pins.
+
+   MEASURED, and it corrects an earlier claim made in this very comment: #F35D19 against the
+   brief's #F3F4F6 is 2.99:1, and against Leaflet's #DDDDDD it is 2.42:1. Neither clears the 3:1
+   non-text threshold on its own, so the brief's grey is NOT a contrast fix — it is a small
+   improvement (2.99 vs 2.42) and, more importantly, the value the client asked for. What actually
+   identifies the pin is its own construction: a 14px orange disc inside a 2px white collar with a
+   dark ring, which is why it stays legible over satellite imagery of any tone. The ground only
+   has to be neutral and quiet behind that, and the brief's is. */
+html .leaflet-container {
+  background: var(--paper);
+  font-family: var(--font-body), system-ui, sans-serif;
+  border: 1px solid var(--line);
+  border-radius: 0;
+}
+/* Leaflet's controls, re-cut to the square technical language. The default is a rounded 30px
+   white pill with a 2px grey border — the most "social app" shape left on the page. Each of these
+   is scoped by the map container so it outranks leaflet.css for the same reason as above. */
+.leaflet-container .leaflet-bar,
+.leaflet-container .leaflet-bar a,
+.leaflet-container .leaflet-control-attribution,
+.leaflet-container .leaflet-popup-content-wrapper,
+.leaflet-container .leaflet-popup-tip { border-radius: 0; }
+.leaflet-container .leaflet-bar { border: 1px solid var(--line-strong); box-shadow: none; }
+.leaflet-container .leaflet-bar a { background: var(--surface); color: var(--ink); border-bottom-color: var(--line); }
+.leaflet-container .leaflet-bar a:hover { background: var(--accent-soft); color: var(--accent); }
+.leaflet-container .leaflet-control-attribution {
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  color: var(--ink-2);
+  /* 11px, matching `.mk .pg-micro` and `.mk-seal-rows dt`. This row contains a LINK, so it is
+     interactive text and takes the project's 11px floor rather than the 10px that non-interactive
+     legal smallprint gets. It was 10px for one revision, which was simply the wrong call. */
+  font-size: 11px;
+}
+.leaflet-container .leaflet-control-attribution a { color: var(--accent); }
+/* The popup shell. MapView already re-inks the popup's CONTENTS; this is the chrome around them,
+   which Leaflet draws with a 12px radius and a triangular tail. */
+.leaflet-container .leaflet-popup-content-wrapper,
+.leaflet-container .leaflet-popup-tip {
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  color: var(--ink);
+}
+.leaflet-container .leaflet-popup-content { margin: 12px 14px; }
+
 @media (prefers-reduced-motion: reduce) {
   .pcard::before, .stat::after, .list-row::before, .sub-row::before { display: none; }
 }

@@ -66,6 +66,9 @@ export function Motion() {
       let sparkCleanup: (() => void) | undefined
       /* Same for the glow cursor. */
       let glowCleanup: (() => void) | undefined
+      /* Same for the scroll-velocity skew: it owns a settle timer as well as the transforms, so it
+         has to be able to clear both. */
+      let skewCleanup: (() => void) | undefined
       /* Whether this device has a real pointer. Read once, here, rather than at each of the four
          places that need it: it is a media query, and querying it four times per route change
          both costs work and risks the four disagreeing if the device is a hybrid. */
@@ -553,34 +556,58 @@ export function Motion() {
         }
       }
 
-      /* ---------- 17. scroll velocity on the audience band ----------
-         Adapted from React Bits' ScrollVelocity: the band's rows lean with the speed of the
-         scroll and settle when it stops. The original drives this from a React scroll listener
-         with a spring; this reads the same number off GSAP's own ScrollTrigger, which is already
+      /* ---------- 17. scroll velocity ----------
+         Adapted from React Bits' ScrollVelocity: the surface leans with the speed of the scroll
+         and settles when it stops. The original drives this from a React scroll listener with a
+         spring; this reads the same number off GSAP's own ScrollTrigger, which is already
          computing it, and writes one transform.
 
-         CAPPED AT 3 DEGREES, and the reason is the same one the card tilt carries: more than
-         that reads as a toy, and the band holds words a reader is meant to read. The lean is
-         there to say "this list is moving", not to be the attraction. */
-      const marqueeEl = document.querySelector<HTMLElement>('[data-marquee]')
-      if (marqueeEl) {
-        const rows = Array.from(marqueeEl.querySelectorAll<HTMLElement>('.pg-marquee-row'))
-        if (rows.length > 0) {
-          const skewTo = rows.map((r) => gsap.quickTo(r, 'skewX', { duration: 0.5, ease: EASE_SOFT }))
-          ScrollTrigger.create({
-            trigger: marqueeEl,
-            start: 'top bottom',
-            end: 'bottom top',
-            onUpdate: (self) => {
-              /* `getVelocity()` is px/second and runs into the thousands on a flick, so it is
-                 normalised and clamped rather than used raw. */
-              const v = gsap.utils.clamp(-3, 3, self.getVelocity() / 420)
-              for (const s of skewTo) s(v)
-            },
-            onLeave: () => { for (const s of skewTo) s(0) },
-            onLeaveBack: () => { for (const s of skewTo) s(0) },
-          })
-        }
+         TWO SURFACES, TWO ANGLES, and the difference is deliberate. The brief asks for this effect
+         on the feature headings ("digunakan untuk heading fitur di marketing page"), and it was
+         only ever on the marquee band, which is not a heading. Both are here now:
+
+           the band  -> 3deg. It is words read in passing.
+           a heading -> 1.5deg, half as much. A section heading is the line that tells you what you
+                        are about to read, and you are reading it at the exact moment you are
+                        scrolling. The lean is a hint that the page moves with you; past that it
+                        fights the reading, which is the same argument the card tilt carries.
+
+         BOTH SETTLE TO 0, and that needs a timer rather than an event. `onUpdate` only fires while
+         the scroll position is changing, so on a hard stop — releasing a scrollbar drag, or hitting
+         the end of the page — the last velocity written would simply stay on screen and the page
+         would rest permanently skewed. The timer resets both to square 140ms after the last tick. */
+      const skewTargets = [
+        { els: Array.from(document.querySelectorAll<HTMLElement>('.pg-marquee-row')), cap: 3, div: 420, ms: 500 },
+        { els: Array.from(document.querySelectorAll<HTMLElement>('.pg-d2[data-anim="lines"]')), cap: 1.5, div: 700, ms: 550 },
+      ].filter((g) => g.els.length > 0)
+
+      if (skewTargets.length > 0) {
+        const groups = skewTargets.map((g) => ({
+          ...g,
+          write: g.els.map((el) => gsap.quickTo(el, 'skewX', { duration: g.ms / 1000, ease: EASE_SOFT })),
+        }))
+        let settle: ReturnType<typeof setTimeout> | undefined
+        const square = () => { for (const g of groups) for (const w of g.write) w(0) }
+
+        ScrollTrigger.create({
+          trigger: document.documentElement,
+          start: 'top top',
+          end: 'bottom bottom',
+          onUpdate: (self) => {
+            /* `getVelocity()` is px/second and runs into the thousands on a flick, so it is
+               normalised per group and clamped rather than used raw. */
+            const v = self.getVelocity()
+            for (const g of groups) {
+              const lean = gsap.utils.clamp(-g.cap, g.cap, v / g.div)
+              for (const w of g.write) w(lean)
+            }
+            clearTimeout(settle)
+            settle = setTimeout(square, 140)
+          },
+          onLeave: square,
+          onLeaveBack: square,
+        })
+        skewCleanup = () => { clearTimeout(settle); square() }
       }
 
       /* Fonts change line breaking, which changes every ScrollTrigger start position measured
@@ -595,6 +622,7 @@ export function Motion() {
         tiltCleanup?.()
         sparkCleanup?.()
         glowCleanup?.()
+        skewCleanup?.()
       }
     })
 
