@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/AuthContext'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import { DEMO_MODE } from '@/lib/demo'
 import { navItems } from './navItems'
+import { SyncStatus } from './SyncStatus'
 
 // Rendered on mobile only (CSS hides on desktop): a sticky top bar + a fixed bottom tab bar.
 export function MobileNav() {
@@ -33,6 +34,11 @@ export function MobileNav() {
           GeoFold
         </div>
         <div className="actions">
+          {/* The connection state, in the header, per the client's document: "Status ada/tidak ada
+              koneksi (Offline Mode) ditempatkan jelas di Header." It sits next to the account
+              controls rather than in the page body because it is a property of the app, not of
+              whichever screen is open. */}
+          <SyncStatus />
           <Link href="/subscription" aria-label="Subscription" className={`theme-toggle${pathname.startsWith('/subscription') ? ' active' : ''}`} style={{ display: 'grid', placeItems: 'center' }}><CreditCard size={16} /></Link>
           <button className="ghost" onClick={signOut} aria-label="Sign out" style={{ padding: '7px 10px' }}><LogOut size={16} /></button>
         </div>

@@ -4,9 +4,13 @@ import Link from 'next/link'
 import { FigAerial, FigCapture, FigExport, FigHero, FigMap, FigOffline } from './Figures'
 import { SurveyGlobe } from '@/components/SurveyGlobe'
 import SpecularEdge from '@/components/SpecularEdge'
+import { DitherVeil } from '@/components/DitherVeil'
+import { StarBorder } from '@/components/StarBorder'
+import { TechText } from '@/components/TechText'
 import type { Locale } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'
 import { pageMetadata } from '@/lib/seo'
+import { SITE_LOCATION } from '@/lib/business'
 import { FREE_STORAGE_LABEL, PREMIUM_DAYS, PREMIUM_PRICE_LABEL, PREMIUM_STORAGE_LABEL } from '@/lib/pricing'
 import { FREE_PROJECTS, FREE_PHOTOS_PER_PROJECT } from '@/lib/quota'
 import { PricingCheckoutButton } from '@/components/PricingCheckoutButton'
@@ -45,6 +49,10 @@ type Copy = {
   lede: string
   ctaStart: string
   ctaDownload: string
+  /* The hero's coordinate readout. `label` is what the numbers ARE, because an unlabelled
+     coordinate in a hero is a decoration; `note` says whose it is. */
+  coordLabel: string
+  coordNote: string
   stats: Array<{ label: string; unit: string }>
   capsMicro: string
   capsTitle: string
@@ -83,6 +91,8 @@ const copy: Record<Locale, Copy> = {
       'GeoFold mengubah ponsel lapangan menjadi alat ukur: satu foto berkoordinat, satu titik tercatat, langsung tersimpan di perangkat. Tidak ada sinyal bukan masalah: datanya menyusul sendiri begitu kembali online.',
     ctaStart: 'Mulai gratis',
     ctaDownload: 'Unduh aplikasi',
+    coordLabel: 'Posisi kami',
+    coordNote: 'Titik kerja lapangan pertama',
     stats: [
       { label: 'Proyek gratis', unit: 'selamanya' },
       { label: 'Foto per proyek', unit: 'paket gratis' },
@@ -213,6 +223,8 @@ const copy: Record<Locale, Copy> = {
       'GeoFold turns a field phone into a survey instrument: one geotagged photo, one recorded point, saved to the device immediately. No signal is not a problem: the data catches up on its own once you are back online.',
     ctaStart: 'Start free',
     ctaDownload: 'Download the app',
+    coordLabel: 'Our position',
+    coordNote: 'The first field site',
     stats: [
       { label: 'Free projects', unit: 'forever' },
       { label: 'Photos per project', unit: 'free plan' },
@@ -410,6 +422,25 @@ export default async function HomePage() {
                   {c.ctaDownload}
                 </Link>
               </div>
+
+              {/* THE COORDINATE READOUT.
+                  The brief asks for the decrypt effect on "animasi angka koordinat GPS", and a
+                  coordinate is the one number on this page that is a fact about the company
+                  rather than a claim about the product — so it earns the hero's second slot.
+                  It is read from SITE_LOCATION, the same constant the globe in the argument
+                  section marks, so the two cannot drift.
+
+                  `data-anim="up"` rather than the char split: the TechText component owns this
+                  element's text content, and a SplitText pass over the same node would fight it
+                  for the same children. */}
+              <p className="pg-coord" data-anim="up" data-anim-delay="0.55">
+                <span className="pg-coord-label">{c.coordLabel}</span>
+                <span className="pg-coord-sep" aria-hidden="true" />
+                <TechText text={SITE_LOCATION.dms.lat} delay={520} />
+                <TechText text={SITE_LOCATION.dms.lon} delay={680} />
+                <span className="pg-coord-sep" aria-hidden="true" />
+                <span className="pg-coord-note">{c.coordNote}</span>
+              </p>
             </div>
 
             {/* The hero's own figure, and it is NOT capability row 01's. Both used to be
@@ -477,7 +508,10 @@ export default async function HomePage() {
               is no hole in the grid and no cell is stretched to fill one. An earlier version made
               the last cell span 4 as well, which left two empty columns at the end of the second
               row; a bento is a packing problem and that one does not pack. */}
-          <div className="pg-bento">
+          {/* `data-glow-zone` is what arms the glow cursor. It is on the GRID rather than on each
+              cell, because the light is a property of the region: one zone, one light, and the
+              brief's own scoping ("area interaktif seperti Bento Grid fitur") is exactly this. */}
+          <div className="pg-bento" data-glow-zone>
             {c.caps.map((cap, i) => (
               <article
                 className={`pg-cell${i === 0 ? ' pg-cell--lead' : ''}`}
@@ -493,7 +527,14 @@ export default async function HomePage() {
                   <h3 className="pg-d3">{cap.title}</h3>
                   <p className="pg-body">{cap.body}</p>
                 </div>
-                <div className="pg-cell-art">{figs[i]}</div>
+                {/* The figure's frame carries the dither veil. It is drawn over the drawing
+                    rather than replacing it, it is pointer-events-none, and it only plays while
+                    the pointer is on the frame — so the drawing is always what the reader sees
+                    and the scan is what they get for looking closer. */}
+                <div className="pg-cell-art">
+                  {figs[i]}
+                  <DitherVeil />
+                </div>
               </article>
             ))}
           </div>
@@ -620,13 +661,21 @@ export default async function HomePage() {
                 ))}
               </ul>
               <div>
-                <PricingCheckoutButton
-                  label={c.premium.cta}
-                  className="pg-btn pg-btn-primary"
-                  offerLabel={PREMIUM_PRICE_LABEL}
-                  storageLabel={PREMIUM_STORAGE_LABEL}
-                  locale={locale}
-                />
+                {/* THE ONE STAR BORDER ON THE PAGE. The brief names it for the primary CTA and
+                    the Premium card; on this page those are the same object, so it goes here and
+                    nowhere else. It wraps the checkout button rather than replacing it — the
+                    button's own handler, its focus behaviour and its loading state are untouched,
+                    and the travelling light is a ::before on the wrapper that takes no pointer
+                    events. */}
+                <StarBorder>
+                  <PricingCheckoutButton
+                    label={c.premium.cta}
+                    className="pg-btn pg-btn-primary"
+                    offerLabel={PREMIUM_PRICE_LABEL}
+                    storageLabel={PREMIUM_STORAGE_LABEL}
+                    locale={locale}
+                  />
+                </StarBorder>
               </div>
             </div>
           </div>

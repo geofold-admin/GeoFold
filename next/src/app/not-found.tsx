@@ -4,6 +4,12 @@ import '@/styles/marketing.css'
 import '@/styles/home.css'
 import '@/styles/paper.css'
 import '@/styles/corporate.css'
+// Blueprint: the client's palette, four typefaces, 0px corners. This page is a `.mk-nf` shell —
+// one of the four that keep the dark ground — and blueprint.css restates that dark set for it
+// (see its section 11). Without this import the 404 keeps a 20px card radius while every other
+// panel on the site is square, which is exactly the kind of one-screen-out-of-step the client's
+// "sudut tajam untuk panel" instruction is about.
+import '@/styles/blueprint.css'
 import { LogoLockup } from '@/components/Logo'
 import { chrome } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'

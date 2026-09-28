@@ -71,6 +71,31 @@ export const BUSINESS = {
 } as const
 
 /**
+ * WHERE THE OPERATOR ACTUALLY WORKS, and the one place those coordinates are written.
+ *
+ * Used by two things that must never disagree: the hero's coordinate readout (which prints them
+ * in degrees/minutes/seconds under a label that says what they are) and the globe in the argument
+ * section (which marks the same point on the sphere). A coordinate in a marketing hero is a claim
+ * that this company works in coordinates; a coordinate that is not the company's own is a lie
+ * told in a monospace, and two coordinates on one page that differ is the same lie with a witness.
+ *
+ * Sintang, Kabupaten Sintang, West Kalimantan — the registered address in `address` above, which
+ * moved here from Pontianak on 2026-09-14. If the address moves again, this moves with it.
+ *
+ * `decimal` is what the projection maths wants; `dms` is what a surveyor reads off a handheld.
+ * Both are stated rather than derived at render time, because the conversion rounds and a rounded
+ * coordinate printed to a tenth of a second implies an accuracy this is not claiming.
+ */
+export const SITE_LOCATION = {
+  /** Decimal degrees, for the globe's projection. */
+  lat: 0.0756,
+  lon: 111.4954,
+  /** Degrees / minutes / seconds, as a field instrument would display them. */
+  dms: { lat: '0°04′32″ N', lon: '111°29′43″ E' },
+  place: { id: 'Sintang, Kalimantan Barat', en: 'Sintang, West Kalimantan' },
+} as const
+
+/**
  * The operator's OSS registration, printed in the marketing footer as a trust seal.
  *
  * WHY IT IS HERE AND NOT IN THE PAGE. The footer is the one block a payment gateway's

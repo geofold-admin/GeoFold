@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/AuthContext'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import { DEMO_MODE } from '@/lib/demo'
 import { navItems } from './navItems'
+import { SyncStatus } from './SyncStatus'
 
 export function Sidebar() {
   const pathname = usePathname()
@@ -44,6 +45,12 @@ export function Sidebar() {
         ))}
       </nav>
       <div className="side-foot">
+        {/* The same readout as the mobile header, because the question it answers does not
+            change with the viewport. On desktop it sits above the sign-out control: the two
+            things a user does at the end of a session are check the queue and leave. */}
+        <div className="side-foot-sync">
+          <SyncStatus />
+        </div>
         <button className="ghost" style={{ flex: 1, justifyContent: 'center' }} onClick={signOut}>
           <LogOut size={15} style={{ verticalAlign: -3, marginRight: 6 }} /> Sign out
         </button>

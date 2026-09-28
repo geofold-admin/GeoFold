@@ -7,8 +7,24 @@ import 'leaflet/dist/leaflet.css'
 import { api } from '@/lib/api-client'
 import type { SurveyDetail, SurveyFeatureCollection, SurveyProperties } from '@/lib/types'
 
-const SPRUCE = '#2c4a3b'
-const MEASURE = '#c0562f'
+/* THE SURVEY MARKER IS THE CLIENT'S ORANGE, and this is the one place in the product where
+   orange is not a choice. The brief is emphatic about it: "Marker atau Pin survei yang
+   ditambahkan pengguna MUTLAK harus berwarna GEOFOLD Orange (#F35D19) untuk kontras instan di
+   atas citra satelit yang berwarna hijau/coklat."
+ *
+ * That reasoning is sound and it is worth restating, because it is a different argument from the
+ * one the marketing site uses. On a satellite basemap the background is green and brown — the
+ * complement of orange — so an orange pin is the one hue that cannot be mistaken for terrain.
+ * The old spruce dot (#2c4a3b) was chosen when the map tiles were a light street style, and on a
+ * satellite layer it was a dark green dot on dark green ground.
+ *
+ * The ring is white, not navy: a pin is read against imagery whose brightness varies from a
+ * white cloud to a black shadow, and a white collar is what keeps the dot's own edge visible on
+ * both. Measured against the marker itself, white on #F35D19 is 3.29:1 — under AA for text, but
+ * this is a 2px ring around a filled shape, which WCAG 1.4.11 measures at 3:1, and it clears it.
+ */
+const MARKER = '#F35D19'
+const MEASURE = '#014AB5'
 
 type Feature = SurveyFeatureCollection['features'][number]
 
@@ -26,7 +42,7 @@ function parseDetails(json: string | null): [string, string][] {
 // a Marker can be dragged.
 const dotIcon = L.divIcon({
   className: 'survey-dot',
-  html: `<span style="display:block;width:14px;height:14px;border-radius:50%;background:${SPRUCE};border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,0.35)"></span>`,
+  html: `<span style="display:block;width:14px;height:14px;border-radius:50%;background:${MARKER};border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,0.35)"></span>`,
   iconSize: [14, 14],
   iconAnchor: [7, 7],
 })
@@ -103,48 +119,51 @@ function SurveyMarker({
           {photoUrl ? (
             <img src={photoUrl} alt="Survey" style={{ width: '100%', borderRadius: 6, marginBottom: 6 }} />
           ) : (
-            <div style={{ fontSize: 12, color: '#666', padding: '18px 0', textAlign: 'center', background: '#eef1ea', borderRadius: 6, marginBottom: 6 }}>
+            <div style={{ fontSize: 12, color: 'var(--ink-2)', padding: '18px 0', textAlign: 'center', background: 'var(--paper)', borderRadius: 0, marginBottom: 6 }}>
               {state === 'loading' && 'Loading photo…'}{state === 'error' && 'Photo unavailable'}{state === 'none' && 'No photo'}{state === 'idle' && !photoUrl && 'Open to load photo'}
             </div>
           )}
           <div style={{ fontWeight: 600, textTransform: 'capitalize' }}>{props.status}</div>
-          <div style={{ fontSize: 12, color: '#666', fontFamily: 'monospace' }}>{lat.toFixed(5)}, {lng.toFixed(5)}</div>
-          <div style={{ fontSize: 12, color: '#666' }}>{new Date(props.capturedAtUtc).toLocaleString()}</div>
+          {/* The coordinate readout takes the monospaced face and the brand blue: it is the one
+              line in this popup that is a measurement rather than a description, and the brief
+              assigns both the face and the colour to exactly that role. */}
+          <div style={{ fontSize: 12, color: 'var(--accent)', fontFamily: 'var(--font-mono), ui-monospace, monospace' }}>{lat.toFixed(5)}, {lng.toFixed(5)}</div>
+          <div style={{ fontSize: 12, color: 'var(--ink-2)' }}>{new Date(props.capturedAtUtc).toLocaleString()}</div>
           {details.length > 0 && (
             <table style={{ marginTop: 6, fontSize: 12, borderCollapse: 'collapse' }}>
-              <tbody>{details.map(([k, v]) => <tr key={k}><td style={{ color: '#666', paddingRight: 8, verticalAlign: 'top' }}>{k}</td><td>{v}</td></tr>)}</tbody>
+              <tbody>{details.map(([k, v]) => <tr key={k}><td style={{ color: 'var(--ink-3)', paddingRight: 8, verticalAlign: 'top' }}>{k}</td><td>{v}</td></tr>)}</tbody>
             </table>
           )}
 
           {editing ? (
-            <div style={{ marginTop: 8, borderTop: '1px solid #ddd', paddingTop: 8 }}>
+            <div style={{ marginTop: 8, borderTop: '1px solid var(--line)', paddingTop: 8 }}>
               <div style={{ display: 'flex', gap: 6 }}>
                 <input inputMode="decimal" value={editLat} onChange={(e) => setEditLat(e.target.value)} placeholder="lat"
-                  style={{ width: '50%', fontSize: 12, padding: '4px 6px', fontFamily: 'monospace' }} />
+                  style={{ width: '50%', fontSize: 12, padding: '4px 6px', fontFamily: 'var(--font-mono), ui-monospace, monospace' }} />
                 <input inputMode="decimal" value={editLng} onChange={(e) => setEditLng(e.target.value)} placeholder="lng"
-                  style={{ width: '50%', fontSize: 12, padding: '4px 6px', fontFamily: 'monospace' }} />
+                  style={{ width: '50%', fontSize: 12, padding: '4px 6px', fontFamily: 'var(--font-mono), ui-monospace, monospace' }} />
               </div>
               <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
                 <button
                   type="button"
                   disabled={!parsedEdit}
                   onClick={() => { if (parsedEdit) { onMove(props.id, parsedEdit.lat, parsedEdit.lng); setEditing(false) } }}
-                  style={{ flex: 1, fontSize: 12, padding: '5px 8px', background: SPRUCE, color: '#fff', border: 0, cursor: parsedEdit ? 'pointer' : 'not-allowed', opacity: parsedEdit ? 1 : 0.5 }}
+                  style={{ flex: 1, fontSize: 12, padding: '5px 8px', background: 'var(--accent)', color: '#fff', border: 0, cursor: parsedEdit ? 'pointer' : 'not-allowed', opacity: parsedEdit ? 1 : 0.5 }}
                 >Save</button>
                 <button type="button" onClick={() => setEditing(false)}
-                  style={{ fontSize: 12, padding: '5px 8px', background: '#eee', border: 0, cursor: 'pointer' }}>Cancel</button>
+                  style={{ fontSize: 12, padding: '5px 8px', background: 'var(--surface-2)', border: '1px solid var(--line)', cursor: 'pointer' }}>Cancel</button>
               </div>
               {!parsedEdit && (editLat || editLng) && (
-                <div style={{ fontSize: 11, color: '#c0562f', marginTop: 4 }}>lat -90..90, lng -180..180</div>
+                <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 4 }}>lat -90..90, lng -180..180</div>
               )}
             </div>
           ) : (
             <button type="button" onClick={beginEdit}
-              style={{ marginTop: 8, fontSize: 12, padding: '5px 8px', background: 'transparent', border: '1px solid #ccc', cursor: 'pointer' }}>
+              style={{ marginTop: 8, fontSize: 12, padding: '5px 8px', background: 'transparent', border: '1px solid var(--line-strong)', cursor: 'pointer' }}>
               Edit coordinates
             </button>
           )}
-          <div style={{ fontSize: 11, color: '#999', marginTop: 6 }}>Tip: drag the pin to move it.</div>
+          <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 6 }}>Tip: drag the pin to move it.</div>
         </div>
       </Popup>
     </Marker>

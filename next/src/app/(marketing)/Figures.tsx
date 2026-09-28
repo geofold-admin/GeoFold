@@ -99,7 +99,13 @@ export function FigHero({ locale }: FigProps) {
         <path key={d} d={d} className="pg-fig-accent" strokeWidth="1.3" />
       ))}
       <circle cx="69" cy="100" r="2.5" className="pg-fig-fill" />
-      {/* the shutter, and the home rule below the screen */}
+      {/* the shutter, and the baseline the handset rests on.
+          The second element is a GROUND LINE, not a home indicator: it is centred under the
+          handset at y=210 while the body ends at y=198, so it sits 12 units clear of the outline
+          — the standard illustration convention for making a floating object read as resting on
+          a surface. It was commented as a "home rule below the screen", which described something
+          inside the phone; measured against the geometry it is not, and the drawing is the thing
+          that reads correctly, so the comment was the part to fix. */}
       <circle cx="69" cy="182" r="7" className="pg-fig-accent" strokeWidth="1.3" />
       <path d="M54 210h30" className="pg-fig-line" />
 

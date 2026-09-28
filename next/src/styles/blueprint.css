@@ -1,0 +1,1048 @@
+/* =====================================================================================
+   GeoFold — "BLUEPRINT". 2026-09-29.
+
+   The light technical ground. This is the layer the client's UI/UX proposal asks for, and it
+   supersedes the "Midnight" skin in corporate.css the same way that one superseded "Paper" and
+   that one superseded "Topographic": it is loaded LAST, it re-points the token layer, and it
+   answers only what the brief actually changes. Reverting is one import line in
+   (marketing)/layout.tsx.
+
+   THE BRIEF, in the client's words: "Steel-Blue on Technical Ground" — a survey instrument, not
+   a social app. Concretely:
+
+     1. THE GROUND IS LIGHT. #F3F4F6 ("Kanvas Netral") is the page; #FFFFFF ("Panel Utama") is
+        every card on it. The previous skin was dark-dominant, which the brief reverses: this is
+        a daylight instrument, and the map and the data have to be the brightest things on screen.
+     2. THE HERO IS THE ONE DARK PLATE. #0A192F ("Blue Deep") is the client's own value for
+        "latar Banner utama saat web baru dibuka" — so the hero keeps the midnight ground and the
+        rest of the page does not. One dark object on a light field is a focal point; a dark page
+        is a mood.
+     3. SQUARE CORNERS, 0px, EVERYWHERE. "mempertahankan sudut tajam (0px radius) untuk panel,
+        tombol, dan gambar, memberikan kesan seperti sebuah Blueprint atau instrumen teknis yang
+        akurat." A blueprint does not have rounded corners. `--card-radius` and the hardcoded
+        radii that predate that token are both zeroed below.
+     4. REGISTRATION MARKS. A hairline "+" at the corners of framed objects, which is what a
+        printed technical sheet uses to align its own layers. The section cards already had them
+        (corporate.css section 2); they now also sit on every figure frame, so the drawings read
+        as plates on a survey sheet rather than as pictures in boxes.
+     5. THE ACCENT IS RATIONED. #F35D19 is the client's conversion colour: the ONE primary
+        control per screen, plus the product's own survey markers. Nothing else. Everything that
+        merely wants attention takes the brand blue.
+
+   THE PALETTE IS THE CLIENT'S OWN, role for role — the mapping the portal already uses in
+   globals.css, now applied to the marketing site so the two halves of the product share one
+   palette instead of two:
+
+     #FFFFFF  Panel Utama      → --mk-panel   the sidebar, cards, pop-ups
+     #F3F4F6  Kanvas Netral    → --mk-bg      the canvas the panels sit on
+     #E5E7EB  Garis & Border   → --mk-line    panel dividers, table rules
+     #111827  Teks Presisi     → --mk-ink     coordinates, headings, figures
+     #6B7280  Teks Atribut     → --mk-muted   labels, descriptions, metadata
+     #014AB5  GEOFOLD Blue     → --mk-green   active state, links, the one CTA's sibling
+     #F35D19  GEOFOLD Orange   → --mk-marker  the survey pin and the ONE primary control
+     #0A192F  Blue Deep        → --mk-deep    the hero plate and the footer
+
+   THE TWO VALUES THAT HAD TO MOVE, and why — measured, not guessed:
+
+     --mk-muted is #5E6A7B, not the document's #6B7280. The document's grey measures 4.39:1 on
+     the #F3F4F6 ground, which FAILS the AA floor of 4.5:1 that the same document promises in its
+     own accessibility section ("Untuk menjaga tingkat kontras yang lolos standar WCAG AA"). The
+     value is legal on a white card (4.83:1) and illegal on the canvas, and the canvas is where
+     most of this type lands. #5E6A7B is one step deeper and measures 5.49:1 on white / 4.99:1 on
+     the canvas, so ONE token is correct on both surfaces and no rule has to know which it is on.
+
+     --mk-faint takes the same value rather than the document's #9CA3AF. That grey is 2.54:1 on
+     white — a hint colour, in the sense that the reader has to guess. This file's predecessor
+     already established the rule ("micro-labels get body-text contrast, never less") and it
+     still holds: a micro-label is small, which is an argument for MORE contrast, not less.
+
+   THE BLUE SPLITS BY ROLE, and on this ground the split finally collapses. #014AB5 measures
+   7.93:1 on white and 7.21:1 on the canvas, so it is legal as INK and as a FILL at the same
+   time. The two tokens are kept (`--mk-green` for ink, `--mk-blue-fill` for fills) because forty
+   rules already read one or the other and renaming them would be churn for no pixel. They now
+   hold the same value, which is what "the blue works here" looks like.
+
+   THE ORANGE RULE, unchanged and still the palette's one trap. #F35D19 measures 3.29:1 on white
+   and 2.99:1 on the canvas: it is NEVER text on a light surface. As a fill its label is midnight
+   navy (--mk-on-marker, 5.36:1) and never white (3.29:1, fails). Where orange must be READ as
+   text it takes --mk-amber (#C2410C, 4.71:1 on the canvas).
+
+   THE DARK PLATE KEEPS ITS OWN LADDER. The hero and the footer are still #0A192F, so the
+   --mk-deep-* tokens (ink, prose, accent, line) are unchanged from the previous skin — they were
+   measured against that exact surface and there is no reason to re-derive them. Everything else
+   re-points.
+
+   WHAT IS DELIBERATELY NOT TOUCHED. /login, /onboarding, /reset and the 404 sit outside the
+   (marketing) layout and keep the dark ground; this file does not load on those routes, and it
+   re-declares the dark set on their shells anyway as a guard (section 11). The checkout dialog
+   carries its own literal palette (it is portaled out of `.mk`) and is re-pointed in
+   checkout.css, not here.
+   ===================================================================================== */
+
+/* =====================================================================================
+   1. THE TOKENS
+   ===================================================================================== */
+
+/* ---------------------------------------------------------------------------------
+   THE FOUR FACES, CAPTURED ON :root BEFORE THE SKINS RE-POINT THEM.
+
+   This block is load-bearing and it is not obvious. next/font puts six variables on <html>:
+   --font-sans (Archivo), --font-body (Barlow), --font-cond (Barlow Condensed),
+   --font-mono (Space Mono), --font-tight (Inter Tight) and --font-inter (Inter).
+
+   paper.css then RE-POINTS three of them on `.mk` — `--font-sans: var(--font-inter)`,
+   `--font-cond: var(--font-tight)`, `--font-mono: var(--font-inter)` — which is correct for
+   that skin (it is an Inter design) and fatal for this one, because the brief asks for the
+   original four back and two of the names it needs are the ones that were shadowed.
+
+   The fix is to read them where they are still themselves. A custom property's computed value
+   is resolved on the element that DECLARES it, and only the computed value is inherited — so
+   `--gf-display: var(--font-sans)` written on :root captures Archivo's family string right
+   there, and every descendant inherits the resolved string. Writing the same declaration on
+   `.mk` would not work: there `--font-sans` is already Inter, and a self-reference is a cycle
+   the browser drops outright.
+
+   Kept as aliases rather than by editing paper.css, so that reverting this file's import still
+   restores the previous design exactly.
+   --------------------------------------------------------------------------------- */
+:root {
+  --gf-display: var(--font-sans); /* Archivo          — headings, marketing display */
+  --gf-body: var(--font-body);    /* Barlow           — body copy and app chrome */
+  --gf-data: var(--font-cond);    /* Barlow Condensed — numbers, labels, column heads */
+  --gf-code: var(--font-mono);    /* Space Mono       — coordinates, system readouts */
+}
+
+.mk.mk {
+  /* ---- the light ground ---- */
+  --mk-bg: #F3F4F6;      /* Kanvas Netral — the page */
+  --mk-panel: #FFFFFF;   /* Panel Utama  — every card on it */
+  /* A panel INSIDE a card — a figure frame, a chip, an input. It takes the CANVAS colour
+     rather than a near-white step, and that is measured rather than preferred: #F9FAFB on a
+     white card is 1.05:1, which is not a plate, it is a rumour of one. #F3F4F6 is 1.10:1 and
+     reads as an inset. The same grey therefore means "the field the panels sit on" at page
+     level and "the inset plate inside a panel" one level in, which is the client's own
+     "Kanvas Netral" doing both jobs. */
+  --mk-raise: #F3F4F6;
+
+  /* THE TWO HAIRLINES. `--mk-line` is a divider and is deliberately faint — measured 1.10:1 on
+     the canvas, which is right for a rule between two rows and wrong for the edge of a button.
+     `--mk-control-line` is a control BOUNDARY, and WCAG 1.4.11 wants 3:1 for the visual
+     information that identifies a control. #7A8CA6 measures 3.43:1 on white and 3.11:1 on the
+     canvas, so one value clears the floor on both surfaces. Getting these two the wrong way
+     round either makes the page look dirty or leaves controls that fail AA. */
+  --mk-line: #E5E7EB;         /* Garis & Border */
+  --mk-control-line: #7A8CA6;
+
+  /* Form fields. On a light ground a field is a WELL: it takes the raised step so it reads as
+     inset against the card, and a control-strength border so it is findable by its edge. */
+  --mk-field-bg: #FFFFFF;
+  --mk-field-ink: #111827;
+  --mk-field-hint: #5E6A7B;
+  --mk-input-line: #7A8CA6;
+
+  /* ---- the ink ladder, every step measured on BOTH surfaces ---- */
+  --mk-ink: #111827;    /* 17.74:1 white / 16.12:1 canvas — headings, figures, names */
+  --mk-prose: #4B5563;  /*  7.56:1 / 6.87 — long-form: terms, FAQ answers, card body */
+  --mk-muted: #5E6A7B;  /*  5.49:1 / 4.99 — ledes, labels, metadata */
+  --mk-faint: #5E6A7B;  /*  5.49:1 / 4.99 — micro-labels get body contrast, never less */
+
+  /* ---- the blue: legal as ink AND as fill on this ground ---- */
+  --mk-green: #014AB5;      /* GEOFOLD Blue as INK — 7.93:1 white, 7.21:1 canvas */
+  --mk-green-2: #013A8F;    /* hover. DARKER, not lighter: on a light ground a lighter blue
+                               walks toward the page and stops reading as a response. */
+  --mk-green-line: #C7D7EE; /* the blue as a HAIRLINE — a line, never type */
+  --mk-on-green: #FFFFFF;   /*  7.93:1 on the blue */
+  --mk-on-green-dim: #EFF5FF; /* Blue Soft, for ink on a blue fill at small sizes */
+  --mk-blue-fill: #014AB5;  /* the blue as a FILL — 7.93:1 behind white */
+  --mk-blue-fill-2: #013A8F;
+  --mk-on-blue-fill: #FFFFFF;
+
+  /* ---- the conversion orange, and its one rule ---- */
+  --mk-marker: #F35D19;   /* the survey pin, and the ONE primary control per screen */
+  --mk-on-marker: #0A192F; /* 5.36:1 on the orange. White measures 3.29:1 and FAILS AA. */
+  --mk-amber: #C2410C;    /* 4.71:1 on the canvas — the orange that has to be READ */
+
+  /* ---- the deep plate. Unchanged from the previous skin: these were measured against
+     #0A192F and that surface has not moved, it has only shrunk to the hero and the footer. ---- */
+  --mk-deep: #0A192F;
+  --mk-deep-line: #1B2F52;
+  --mk-deep-ink: #FFFFFF;    /* 17.60:1 */
+  --mk-deep-prose: #C3CEDC;  /* 11.05:1 */
+  --mk-deep-accent: #7FA8E8; /*  7.27:1 */
+
+  /* ---- elevation. A light card lifts with a shadow, not with a colour step: the two-part
+     shadow (a tight contact shadow plus a wide soft one) is what makes it read as an object
+     placed on the canvas. Kept shallow — this is a working instrument, not a brochure. ---- */
+  --mk-shadow: 0 1px 2px rgba(17, 24, 39, .05), 0 8px 24px -12px rgba(17, 24, 39, .16);
+  --mk-shadow-lg: 0 2px 4px rgba(17, 24, 39, .06), 0 18px 44px -18px rgba(17, 24, 39, .22);
+
+  /* The top-edge lip reverses meaning on a light ground: on dark it was a white hairline
+     catching the light, here it is nothing. Declared as a transparent shadow rather than
+     `none`, because `none` is not a legal member of a shadow LIST and would drop the whole
+     `box-shadow: var(--mk-shadow), var(--card-lip)` declaration that every card uses. */
+  --card-lip: 0 0 0 0 rgba(0, 0, 0, 0);
+
+  /* THE BLUEPRINT CORNERS. Zero, at the token, so every rule that already reads
+     `var(--card-radius)` follows without being touched. */
+  --card-radius: 0px;
+
+  /* The corner crosshair. Measured 1.61:1 on a white card: present as structure, never as a
+     mark the eye has to resolve. A registration mark that shouts is a smudge. */
+  --mk-mark-line: rgba(17, 24, 39, .22);
+
+  /* The contour field's own line colour. The shader draws it at 42% alpha, so the value here is
+     the PIGMENT and the blend is what lands on the page: #A7BBD0 at .42 over #F3F4F6 resolves to
+     #D3DCE6, which is 1.26:1 — texture, never content. The index contours (every fifth line,
+     drawn heavier and mixed 45% toward --mk-green) come out around 1.5:1, which is the exact
+     figure the previous skin documented as the target for this layer. */
+  --mk-line-field: #A7BBD0;
+
+  /* ---- the faces, re-pointed to the brief's four ---- */
+  --font-sans: var(--gf-display); /* Archivo          — headings */
+  --font-cond: var(--gf-data);    /* Barlow Condensed — data, numbers, labels */
+  --font-mono: var(--gf-code);    /* Space Mono       — coordinates, system readouts */
+  --font-body: var(--gf-body);    /* Barlow           — body copy (already correct; restated) */
+
+  background: var(--mk-bg);
+  color: var(--mk-ink);
+  font-family: var(--gf-body), system-ui, sans-serif;
+  font-synthesis-weight: none;
+}
+
+/* =====================================================================================
+   2. THE TYPE
+   =====================================================================================
+   Four faces, four jobs, and the job decides the face — the brief's own assignment:
+
+     Archivo          headings. "Tegas, kuat, dan terlihat profesional pada ukuran besar."
+     Barlow           body. "Terbaca sangat jelas, bahkan di resolusi layar kecil."
+     Barlow Condensed data. "Sempurna untuk tabel data padat dan koordinat."
+     Space Mono       system readouts. "log sistem atau detail presisi tinggi."
+
+   THE DISPLAY WEIGHT IS 600, NOT 300. The previous skin ran Inter Tight at 300, which is the
+   right weight for a neutral grotesque at 88px and the wrong one for Archivo: Archivo is a
+   signmaker's face with a tight aperture and a large x-height, and at 300 it goes limp rather
+   than light. 600 with -0.035em tracking is what "tegas, kuat" actually looks like at this size.
+   ===================================================================================== */
+
+.mk.mk h1, .mk.mk h2, .mk.mk h3, .mk.mk h4 {
+  font-family: var(--gf-display), system-ui, sans-serif;
+  text-transform: none;
+}
+
+.mk.mk .pg-d1 {
+  font-family: var(--gf-display), system-ui, sans-serif;
+  font-weight: 600; letter-spacing: -.035em; line-height: .98; margin: 0;
+}
+.mk.mk .pg-d2 {
+  font-family: var(--gf-display), system-ui, sans-serif;
+  font-weight: 600; letter-spacing: -.03em; line-height: 1.04; margin: 0;
+}
+.mk.mk .pg-d3 {
+  font-family: var(--gf-display), system-ui, sans-serif;
+  font-weight: 600; letter-spacing: -.015em; line-height: 1.2; margin: 0;
+}
+.mk.mk .pg-lede, .mk.mk .pg-body, .mk.mk .pg-cell-copy p, .mk.mk .pg-quote-body p {
+  font-family: var(--gf-body), system-ui, sans-serif;
+}
+.mk.mk .pg-micro {
+  font-family: var(--gf-data), system-ui, sans-serif;
+  font-size: 12px; font-weight: 600; letter-spacing: .16em;
+}
+/* The micro-label is condensed, so it can carry the letterspacing without running long: at 12px
+   Barlow Condensed, `.16em` is the same optical rhythm the previous skin got from 11px Inter. */
+
+/* EVERY NUMBER IS BARLOW CONDENSED AND TABULAR. This is the brief's own assignment for the
+   face, and it is also the honest one: a readout whose digits change width while a counter
+   animates is a readout that shudders. `tabular-nums` is what stops that. */
+.mk.mk .pg-num {
+  font-family: var(--gf-data), system-ui, sans-serif;
+  font-variant-numeric: tabular-nums; font-feature-settings: 'tnum' 1;
+}
+
+/* =====================================================================================
+   3. THE GROUND
+   =====================================================================================
+   SiteGround is unchanged as a component — the brief explicitly keeps it ("Background:
+   Menggunakan 'SiteGround' global yang sudah sangat bagus"). Only its two pigments move, and
+   they are re-pointed in the token block above: `--mk-line-field` for the contour pigment and
+   `--mk-green` for the high-ground tint.
+
+   The one thing that had to be stated rather than inherited is the document ground itself:
+   corporate.css paints `html:has(.mk)` and `body:has(.mk)` with the midnight value so a phone's
+   overscroll bounce does not flash a light band around a dark page. That rule is still correct
+   and now has the wrong colour, and it must NOT be re-pointed for the auth shells — which are
+   the pages it also matches. So the light ground is scoped to the marketing subtree by name
+   (`.mk-site`, added to the layout's wrapper) and the shells keep the dark one.
+   ===================================================================================== */
+
+/* THE DOCUMENT GROUND, and the one rule in this file that cannot rely on being loaded last.
+
+   WHY IT IS WRITTEN THIS WAY. corporate.css paints `:is(html:has(.mk), body:has(.mk))` with the
+   midnight value so a phone's overscroll bounce does not flash a light band around a dark page.
+   That rule is still correct in intent and now has the wrong colour for the marketing site — but
+   it must NOT be re-pointed for the auth shells, which are the pages it also matches.
+
+   The first attempt scoped the fix by name (`body:has(.mk-site)`) and MEASURED AS BROKEN: the
+   Next.js bundler emitted this file into chunk `0e2dgwl1l2xq9` — the chunk it shares with the
+   Work Sans @font-face declarations — and that chunk is linked BEFORE corporate's. Same
+   specificity, loaded earlier, so corporate won and the marketing page kept a #0A192F body. The
+   symptom was invisible in the CSS source and obvious in the browser: `document.body` computed
+   `rgb(10, 25, 47)` on a page whose every section was white.
+
+   This project has hit the same shape of bug twice before (see the note on the featured CTA in
+   corporate.css and on the band paints above), and the fix that has held both times is to raise
+   SPECIFICITY rather than to hope for an order. `:is(html:has(.mk-site), body:has(.mk-site))` is
+   still (0,1,1) — `:has()` and `:is()` both take the specificity of their most specific argument,
+   and an element selector contributes zero. `:where()` is worse still, at (0,0,0).
+
+   So the selector is anchored on the two things that are always true and always specific: the
+   `html` element with `.mk-site` inside it, and the `body` that is its child. `html:has(.mk-site)
+   body` is (0,2,1) — the class and the pseudo-class, over the element — which outranks
+   corporate's (0,1,1) no matter which chunk lands first. The `html` half keeps the scrollbar
+   colour, where there is no competition to lose. */
+html:has(.mk-site) body,
+html:has(.mk-site) { background: #F3F4F6; }
+html:has(.mk-site) { scrollbar-color: #C9D4E2 #F3F4F6; }
+
+/* =====================================================================================
+   4. THE CARDS — square, white, marked
+   =====================================================================================
+   The card recipe itself (the absolutely positioned `::before`, the `--card-inset`
+   arithmetic) is unchanged and is documented in corporate.css section 2. What changes is what
+   it DRAWS: `--mk-panel` is white now and `--card-radius` is zero, both of which it reads from
+   the token layer, so the plate follows without a rule being touched.
+
+   The registration marks need one addition. They currently sit on `.mk-sec` / `.mk-section`
+   only, which means the sheet's outer cards carry them and the figure frames inside them do
+   not — so the drawings read as pictures in boxes rather than as plates on a technical sheet.
+   `.pg-cell-art` and `.pg-row-art` get their own set, at a tighter inset because the frames are
+   smaller. Drawn as eight linear-gradients on one `::after` rather than as four elements: the
+   frame has exactly one pseudo-element free and this is what it is for.
+   ===================================================================================== */
+
+.mk.mk .pg-cell-art,
+.mk.mk .pg-row-art { position: relative; }
+
+.mk.mk .pg-cell-art::after,
+.mk.mk .pg-row-art::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* Eight arms: 4 corners x (horizontal + vertical). Pure images, with size and position
+     listed separately — a gradient shorthand with its geometry baked in is not valid inside
+     `background-image` and Chrome drops the whole declaration. See corporate.css for the
+     first time this was learned. */
+  background-image:
+    linear-gradient(var(--mk-mark-line) 0 0), linear-gradient(var(--mk-mark-line) 0 0),
+    linear-gradient(var(--mk-mark-line) 0 0), linear-gradient(var(--mk-mark-line) 0 0),
+    linear-gradient(var(--mk-mark-line) 0 0), linear-gradient(var(--mk-mark-line) 0 0),
+    linear-gradient(var(--mk-mark-line) 0 0), linear-gradient(var(--mk-mark-line) 0 0);
+  background-size:
+    9px 1px, 1px 9px,
+    9px 1px, 1px 9px,
+    9px 1px, 1px 9px,
+    9px 1px, 1px 9px;
+  /* Each corner gets an arm each way that CROSS, not meet: a 9px arm centred on the corner
+     point starts 4.5px before it, so the two tiles are offset by half an arm in each
+     direction. Anchoring both to the same point draws an L-bracket, which is a crop mark —
+     a different symbol, and the wrong one here. */
+  background-position:
+    calc(10px - 4.5px) calc(10px - 0.5px), calc(10px - 0.5px) calc(10px - 4.5px),
+    calc(100% - 10px - 4.5px) calc(10px - 0.5px), calc(100% - 10px - 0.5px) calc(10px - 4.5px),
+    calc(10px - 4.5px) calc(100% - 10px - 0.5px), calc(10px - 0.5px) calc(100% - 10px - 4.5px),
+    calc(100% - 10px - 4.5px) calc(100% - 10px - 0.5px), calc(100% - 10px - 0.5px) calc(100% - 10px - 4.5px);
+  background-repeat: no-repeat;
+}
+
+/* =====================================================================================
+   5. THE CHROME — a white bar, a midnight band
+   =====================================================================================
+   THE HEADER IS WHITE NOW, and this is the one place the light ground changes a structural
+   decision rather than a colour. The previous skin had a glass midnight bar over a midnight
+   page, which read as one continuous sheet. On a light page a midnight bar is a foreign object
+   sitting on top of the content all the way down; a white bar with one hairline under it is the
+   edge of the sheet, which is what chrome is for. The dark object on this page is the hero, and
+   there is exactly one of it.
+
+   The bar keeps its full-bleed geometry, its condense-on-scroll behaviour and its `--mk-gutter`
+   padding — none of that was the problem.
+   ===================================================================================== */
+
+.mk.mk .mk-nav {
+  background: rgba(255, 255, 255, .92);
+  border-bottom-color: transparent;
+}
+.mk.mk .mk-nav.is-stuck {
+  background: #FFFFFF;
+  border-bottom-color: var(--mk-line);
+}
+@supports not (backdrop-filter: blur(10px)) {
+  .mk.mk .mk-nav { background: #FFFFFF; }
+}
+.mk.mk .mk-menu-panel { background: #FFFFFF; }
+
+/* THE WORDMARK'S STATUS PIP. It survives every re-skin because this is still a field tool and
+   it should still look powered on. On the light bar it takes the brand blue rather than the
+   pale ink-blue it used on midnight, which was 2.42:1 on white — a pip nobody could see. */
+.mk.mk .mk-wordmark::after { background: var(--mk-green); }
+.mk.mk .mk-wordmark { font-family: var(--gf-display), system-ui, sans-serif; font-weight: 600; }
+
+/* THE FOOTER STAYS MIDNIGHT, and that is the design rather than an oversight: the hero opens
+   the page on the deep plate and the footer closes it on the same one, so the sheet is
+   bookended. Every `--mk-deep-*` value it reads is unchanged, which is why this block is short. */
+.mk.mk .mk-footer { background: var(--mk-deep); border-top: 1px solid var(--mk-deep-line); }
+
+/* THE NAV PILL AND THE ACCOUNT CHIP take the light surfaces. */
+.mk.mk .mk-nav-pill { background: #F3F4F6; border-color: var(--mk-line); }
+.mk.mk .mk-acct-btn:hover { border-color: var(--mk-control-line); background: rgba(1, 74, 181, .05); }
+.mk.mk .mk-acct-btn[aria-expanded='true'] { border-color: var(--mk-control-line); background: rgba(1, 74, 181, .08); }
+.mk.mk .mk-acct-panel { background: #FFFFFF; border-color: var(--mk-line); }
+.mk.mk .mk-acct-all:hover { background: rgba(1, 74, 181, .06); }
+.mk.mk .mk-acct-out:hover { background: rgba(17, 24, 39, .05); }
+
+/* THE LEDGER PILLS. `is-pending` was #FF8F5C on a pale orange wash — 1.9:1, which is not a
+   state indicator, it is a smudge. The readable orange is the palette's own answer. */
+.mk.mk .mk-ledger-pill.is-settled { background: rgba(1, 74, 181, .10); color: var(--mk-green); }
+.mk.mk .mk-ledger-pill.is-pending { background: rgba(243, 93, 25, .12); color: var(--mk-amber); }
+.mk.mk .mk-ledger-pill.is-refunded { background: rgba(17, 24, 39, .06); color: var(--mk-muted); }
+
+/* =====================================================================================
+   6. THE CONTROLS
+   =====================================================================================
+   THE PRIMARY CONTROL IS ORANGE AND ITS LABEL IS NAVY. Unchanged rule, unchanged reason: white
+   on #F35D19 measures 3.29:1 and fails AA, navy on it measures 5.36:1 and passes — and a navy
+   label on orange is a deliberate pairing, while white on orange is what every template ships.
+
+   THE HOVER GOES DARKER NOW, and this is the one control value that reverses with the ground.
+   On midnight a darkened orange dropped toward the page and stopped reading as a control, so
+   the previous skin hovered to #FF7030. On a light page that is exactly backwards: a lighter
+   orange walks toward the white around it. #D6450A is deeper, keeps the navy label at 3.95:1,
+   and reads as the control being pressed rather than as it fading out.
+
+   The measured trade is stated because it is a real one: #D6450A is the deepest orange that
+   still holds the client's exact hue family, and it is the value the brief itself names for
+   this state ("Orange Hover: #D6450A (Untuk interaksi tombol CTA)"). Below it the orange stops
+   being the client's orange; above it the button stops reading as pressed.
+
+   THE SECONDARY CONTROL IS THE BLUE. #014AB5 as a FILL behind a white label is 7.93:1, so the
+   outline and solid variants finally share the ink token they always wanted to. */
+.mk.mk .pg-btn.pg-btn-primary,
+.mk.mk .mk-btn.mk-btn-primary,
+.mk.mk .mk-price-card.feat .mk-btn.mk-btn-primary,
+.mk.mk .pg-price-card.feat .pg-btn.pg-btn-primary {
+  background: var(--mk-marker);
+  border-color: var(--mk-marker);
+  color: var(--mk-on-marker);
+}
+.mk.mk .pg-btn.pg-btn-primary:hover,
+.mk.mk .mk-btn.mk-btn-primary:hover,
+.mk.mk .mk-price-card.feat .mk-btn.mk-btn-primary:hover,
+.mk.mk .pg-price-card.feat .pg-btn.pg-btn-primary:hover {
+  background: #D6450A;
+  border-color: #D6450A;
+  color: #FFFFFF;
+}
+
+.mk.mk .mk-submit,
+.mk.mk .mk-btn:not(.mk-btn-primary):not(.mk-btn-ghost):not(.mk-btn-outline) {
+  background: var(--mk-blue-fill);
+  border-color: var(--mk-blue-fill);
+  color: var(--mk-on-blue-fill);
+}
+.mk.mk .mk-submit:hover:not(:disabled),
+.mk.mk .mk-btn:not(.mk-btn-primary):not(.mk-btn-ghost):not(.mk-btn-outline):hover {
+  background: var(--mk-blue-fill-2);
+  border-color: var(--mk-blue-fill-2);
+}
+
+.mk.mk .mk-send {
+  background: var(--mk-marker);
+  border-color: var(--mk-marker);
+  color: var(--mk-on-marker);
+}
+.mk.mk .mk-send:hover:not(:disabled) { background: #D6450A; border-color: #D6450A; color: #FFFFFF; }
+
+/* THE OUTLINE BUTTON IS OPAQUE, which is inherited from the previous skin and is still right:
+   it sits over the hero's coordinate field on a phone, and a transparent ground let the field's
+   grid show straight through the control. On the light ground it takes the page colour. */
+.mk.mk .mk-btn-outline {
+  border-color: var(--mk-control-line);
+  color: var(--mk-ink);
+  background: var(--mk-bg);
+}
+.mk.mk .mk-btn-outline:hover { border-color: var(--mk-ink); background: #FFFFFF; }
+.mk.mk .mk-price-card .mk-btn-outline { border-color: var(--mk-control-line); }
+.mk.mk .mk-price-card .mk-btn-outline:hover { border-color: var(--mk-ink); }
+.mk.mk .mk-btn-ghost { color: var(--mk-green); border-color: transparent; background: transparent; }
+.mk.mk .mk-btn-ghost:hover { background: rgba(1, 74, 181, .06); color: var(--mk-green); }
+
+/* THE PORTAL BUTTON IS A BLUE FILL WITH WHITE TYPE, and this file had it backwards.
+
+   MEASURED, and it is the worst defect this re-skin produced: the rule here set
+   `color: var(--mk-ink)` — which on this ground is #111827 — while paper.css paints the control
+   with `background: var(--mk-blue-fill)` = #014AB5. Dark navy on brand blue is 2.2:1, so the nav's
+   most important control was very nearly unreadable, and it is the one element a returning user
+   looks for first.
+
+   The mistake was reading `--mk-ink` as "the text colour" when the button has its own pair:
+   `--mk-blue-fill` and `--mk-on-blue-fill` exist for exactly this fill, and paper.css says so in
+   its own comment. White on #014AB5 is 7.92:1.
+
+   The hover inverts to the dark ink fill with white type, which is what the base skin already did
+   and what reads correctly on this light ground. */
+.mk.mk .mk-portal {
+  background: var(--mk-blue-fill);
+  border-color: var(--mk-blue-fill);
+  color: var(--mk-on-blue-fill);
+  border-radius: 0;
+}
+.mk.mk .mk-portal:hover { background: var(--mk-ink); border-color: var(--mk-ink); color: #FFFFFF; }
+
+.mk.mk .mk-plan-cta { border-color: var(--mk-control-line); color: var(--mk-ink); }
+.mk.mk .mk-plan-cta.solid { background: var(--mk-raise); color: var(--mk-ink); border-color: var(--mk-raise); }
+.mk.mk .mk-plan.featured .mk-plan-cta { border-color: rgba(255, 255, 255, .7); color: var(--mk-on-blue-fill); }
+
+/* The specular edge on the hero CTA: a WebGL highlight whose two colours come from custom
+   properties. On an orange control the pale-blue pair no longer belongs to the button. */
+.mk.mk .pg-hero .pg-btn-primary { --spec-line: #FFD2B8; --spec-base: #F35D19; }
+
+/* =====================================================================================
+   7. THE HERO — the one dark plate
+   =====================================================================================
+   #0A192F is the client's own value for this role and it stays. The gradient is kept from the
+   previous skin, re-based on the client's exact hex: a hair of lift at the top so the plate has
+   a light direction, landing on #0A192F at the foot. The blue radial in the top-left corner is
+   the only gradient on the site and it does two jobs — it says "this is the front page" with no
+   extra element, and it lifts the largest type on the site off the plate.
+   ===================================================================================== */
+
+.mk.mk .pg-hero::before {
+  background:
+    radial-gradient(120% 90% at 10% 0%, rgba(30, 95, 191, .34), transparent 58%),
+    linear-gradient(178deg, #0E2445 0%, #0A192F 100%);
+  border-color: var(--mk-deep-line);
+  /* NO DROP SHADOW, and it was here until the detector asked the question.
+
+     The plate is #0A192F on a #F3F4F6 ground — 15.9:1 of value contrast already separates it from
+     the page by more than any shadow could. Measured against that, the 44px-blur shadow this rule
+     used to carry was painting a soft grey fringe under a shape that was never ambiguous, and
+     soft elevation is the one idiom the brief rules out: this is a "Blueprint", an "instrumen
+     teknis yang akurat", and an instrument is a defined edge rather than a floating card. The
+     hairline border stays, because that IS the brief's language.
+
+     The `--mk-shadow-lg` token itself is untouched — the cards that genuinely sit above the
+     canvas still use it, where a lift is doing real work. */
+}
+
+.mk.mk .pg-hero .pg-d1 { color: var(--mk-deep-ink); }
+.mk.mk .pg-hero .pg-lede { color: var(--mk-deep-prose); }
+.mk.mk .pg-hero .pg-micro { color: var(--mk-deep-accent); }
+.mk.mk .pg-hero .pg-stats { border-top-color: var(--mk-deep-line); }
+.mk.mk .pg-hero .pg-stat dt { color: var(--mk-deep-accent); }
+.mk.mk .pg-hero .pg-stat dd { color: var(--mk-deep-ink); }
+.mk.mk .pg-hero .pg-stat dd small { color: var(--mk-deep-prose); }
+/* The figure's frame on the dark plate. `--mk-line` is now a LIGHT hairline (#E5E7EB), which
+   on this plate measures 14.22:1 — a bright white frame around the drawing, which is the
+   opposite of the quiet window this is meant to be. It takes the plate's own line token. */
+.mk.mk .pg-hero .pg-row-art { background: rgba(127, 168, 232, .07); border-color: var(--mk-deep-line); }
+.mk.mk .pg-hero .pg-cell-art::after,
+.mk.mk .pg-hero .pg-row-art::after { --mk-mark-line: rgba(157, 180, 204, .34); }
+.mk.mk .pg-hero .pg-fig { color: var(--mk-deep-ink); }
+.mk.mk .pg-hero .pg-fig-line { opacity: .42; }
+.mk.mk .pg-hero .pg-fig-accent { stroke: var(--mk-deep-accent); }
+.mk.mk .pg-hero .pg-fig-fill { fill: var(--mk-deep-accent); }
+.mk.mk .pg-hero .pg-fig-label { fill: var(--mk-deep-prose); }
+.mk.mk .pg-hero .pg-fig-soft { fill: var(--mk-deep-ink); opacity: .10; }
+
+/* THE COORDINATE READOUT — the hero's one new element, and it is information rather than
+   decoration. It prints the operator's real location in degrees/minutes/seconds, in the
+   monospaced face the brief reserves for system readouts, under a label that says what it is.
+   A coordinate in a hero is a claim that this company works in coordinates; a coordinate that
+   is not the company's own is a lie told in a monospace. See TechText for the decrypt. */
+.mk.mk .pg-coord {
+  display: inline-flex; flex-wrap: wrap; align-items: center; gap: 10px 14px;
+  margin-top: 26px; padding: 9px 14px;
+  border: 1px solid var(--mk-deep-line);
+  background: rgba(127, 168, 232, .06);
+  font-family: var(--gf-code), ui-monospace, monospace;
+  font-size: 12.5px; letter-spacing: .04em;
+  color: var(--mk-deep-ink);
+}
+/* 11px, NOT 10.5px, and the half-pixel was not a typographic choice — it was an accident that
+   the detector caught. paper.css already settles this exact question for this exact role:
+   ".mk .pg-micro { font-size: 11px }" carries a comment saying the three small uppercase column
+   heads on the site were 10px, 11px and 10px, and that one size was chosen so "the same visual
+   weight" stopped changing with the block it sat in. This label is a fourth instance of that
+   role, so it takes the same size. The wider tracking (.18em vs .14em) is what keeps it reading
+   as a coordinate annotation rather than as another eyebrow. */
+.mk.mk .pg-coord-label {
+  font-family: var(--gf-data), system-ui, sans-serif;
+  font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--mk-deep-accent);
+}
+.mk.mk .pg-coord-sep { width: 1px; align-self: stretch; background: var(--mk-deep-line); }
+.mk.mk .pg-coord-note { color: var(--mk-deep-prose); font-size: 12px; letter-spacing: .01em; }
+
+/* =====================================================================================
+   8. THE SECTIONS
+   ===================================================================================== */
+
+/* THE ARGUMENT BAND IS LIGHT NOW. It carried the deep plate in both previous skins. The brief
+   puts the globe beside "tipografi raksasa berwarna #111827" — giant ink-coloured type on the
+   left — which is a light section with dark type, so the band's own plate goes and its ink
+   follows the normal ladder. Its `::before` is neutralised at a specificity the older skins
+   cannot outrank, because corporate.css paints the same pseudo with a hardcoded gradient. */
+.mk.mk .pg-sec.pg-sec-dark::before,
+.mk.mk .mk-sec.mk-sec-dark::before {
+  background: var(--mk-panel);
+  border-color: var(--mk-line);
+  box-shadow: var(--mk-shadow), var(--card-lip);
+}
+.mk.mk .pg-sec.pg-sec-dark,
+.mk.mk .mk-sec.mk-sec-dark { color: var(--mk-ink); }
+.mk.mk .pg-sec-dark .pg-d2,
+.mk.mk .pg-sec-dark .pg-d3,
+.mk.mk .mk-sec-dark h2,
+.mk.mk .mk-sec-dark h3 { color: var(--mk-ink); }
+.mk.mk .pg-sec-dark .pg-micro,
+.mk.mk .pg-sec-dark .pg-head-top .pg-num-tag { color: var(--mk-green); }
+.mk.mk .pg-sec-dark .pg-head-top { border-bottom-color: var(--mk-line); }
+.mk.mk .pg-sec-dark .pg-quote-body p { color: var(--mk-prose); }
+.mk.mk .pg-sec-dark .pg-quote-body strong { color: var(--mk-ink); }
+.mk.mk .pg-sec-dark .pg-globe-cap strong { color: var(--mk-ink); }
+.mk.mk .pg-sec-dark .pg-globe-cap { color: var(--mk-prose); }
+.mk.mk .pg-sec-dark .pg-globe-sub { color: var(--mk-muted); }
+
+/* THE GLOBE, re-inked for a light ground. Its four pigments are read from the canvas at draw
+   time, so they are tokens rather than literals in the component; the two that were hardcoded
+   (the body disc and the atmosphere) are now tokens too, with the old dark values as their
+   defaults so the component cannot break if this block is ever missing.
+
+   #EFF5FF for the body is the brief's own "Blue Soft" — a barely-there disc that makes the far
+   meridians read as BEHIND the sphere instead of crossing in front of it, which is the whole
+   reason the disc exists. */
+.mk.mk .pg-globe-canvas {
+  --globe-accent: var(--mk-marker);   /* the survey pin, orange, in both themes */
+  --globe-line: #7A8CA6;              /* 3.43:1 on white — a wireframe that reads */
+  --globe-body: rgba(239, 245, 255, .9);
+  --globe-halo: rgba(1, 74, 181, .10);
+  --globe-pip: rgba(255, 255, 255, .95);
+}
+
+/* THE STEPS SECTION. `pg-sec-tint` was a raised band; on this ground it is a card like every
+   other, so it stops painting and its figure frames take the raised step instead. */
+.mk.mk .pg-sec.pg-sec-tint,
+.mk.mk .mk-sec.mk-sec-tint { background: none; border: 0; }
+.mk.mk .pg-sec-tint .pg-cell-art { background: var(--mk-raise); }
+
+/* THE BENTO. The cells are white plates with a control-strength edge, which is the same
+   relationship the section cards have to the canvas, one level in. The radius is zero at the
+   token; the art frames inside take the hairline and the registration marks. */
+.mk.mk .pg-cell.pg-cell {
+  border-color: var(--mk-line);
+  border-radius: 0;
+  background: var(--mk-panel);
+}
+.mk.mk .pg-cell.pg-cell:hover { border-color: var(--mk-control-line); }
+.mk.mk .pg-cell-n { font-family: var(--gf-code), ui-monospace, monospace; color: var(--mk-faint); font-size: 11px; }
+.mk.mk .pg-cell-art { border-radius: 0; border-color: var(--mk-line); background: var(--mk-raise); }
+.mk.mk .pg-row-art { border-radius: 0; }
+
+/* =====================================================================================
+   THE SQUARE CORNERS — the brief's most explicit instruction, and the one the previous
+   skins fight hardest.
+   =====================================================================================
+   "Desain ini mempertahankan sudut tajam (0px radius) untuk panel, tombol, dan gambar,
+   memberikan kesan seperti sebuah Blueprint atau instrumen teknis yang akurat (bukan
+   aplikasi media sosial yang serba bulat)."
+
+   WHY THIS BLOCK IS LONG. `--card-radius: 0px` (section 1) only reaches the rules that read
+   the token. Measured, 32 border-radius declarations in paper.css and 22 in corporate.css are
+   HARDCODED, and they are the ones on the objects the brief names by name:
+
+     .pg-btn        6px    the buttons            — "tombol"
+     .pg-price-card 10px   the plan cards         — "panel"
+     .mk-price-card 14px   /pricing's plan cards  — "panel"
+     .mk-card       8px    the auth/contact cards — "panel"
+     .mk-cap        14px   the capability cards   — "panel"
+     .pg-cell-art   8px    every figure frame     — "gambar"
+     .mk-recs       12px   the recommendation box — "panel"
+     .mk-build      10px   the build cards        — "panel"
+     .mk-compare    10px   the comparison table   — "panel"
+     .mk-step       8px    the numbered steps     — "panel"
+     .mk-faq-item   10px   the FAQ rows           — "panel"
+     .mk-acct-*     9/14px the whole account page — "panel"
+     .gf-ck         14px   the checkout dialog    — "panel"
+     .mk-phone-*    24/17/7px the Android mockup  — "gambar"
+
+   A single `border-radius: 0` sweep is the wrong tool: it would flatten the two shapes where
+   a radius is a DRAWING rather than a style — the 100px circles (avatar, status dots, the
+   seal mark, the marquee bullet) and the phone mockup's body, which is a picture of a phone
+   and would stop being one. So the block names the object classes the brief lists and leaves
+   the circles alone, which is the difference between "square design" and "everything is a
+   rectangle".
+
+   IT IS ALSO A REGRESSION GUARD. Every selector here is one the old skins set at (0,2,0) or
+   (0,3,0); these are (0,3,0)+ and land in the last-loaded sheet, so a future re-skin of
+   paper.css cannot quietly reintroduce a 6px button. The measured check in verify.mjs walks
+   every framed element on the rendered page and fails if any of them reports a radius. */
+
+.mk.mk .mk-btn, .mk.mk .pg-btn,
+.mk.mk .mk-submit, .mk.mk .mk-send, .mk.mk .mk-portal,
+.mk.mk .mk-oauth-btn, .mk.mk .mk-input, .mk.mk .mk-lang-seg,
+.mk.mk .mk-lang button, .mk.mk .mk-car-arrow, .mk.mk .mk-menu-btn,
+.mk.mk .mk-menu-panel, .mk.mk .mk-nav, .mk.mk .mk-nav-pill,
+.mk.mk .mk-card, .mk.mk .mk-aside, .mk.mk .mk-cap,
+.mk.mk .mk-price-card, .mk.mk .mk-plan, .mk.mk .mk-plan-flag,
+.mk.mk .mk-faq-item, .mk.mk .mk-tags li, .mk.mk .mk-eyebrow,
+.mk.mk .mk-h-eyebrow, .mk.mk .mk-callout, .mk.mk .mk-error,
+.mk.mk .mk-shot, .mk.mk .mk-slot, .mk.mk .mk-recs,
+.mk.mk .mk-build, .mk.mk .mk-compare table, .mk.mk .mk-step,
+.mk.mk .mk-ipaymu-test, .mk.mk .mk-seal-oss,
+.mk.mk .pg-cell, .mk.mk .pg-cell-art, .mk.mk .pg-row-art,
+.mk.mk .pg-price-card, .mk.mk .pg-step, .mk.mk .pg-marquee[data-marquee]::before,
+.mk.mk .pg-faq-item, .mk.mk .pg-input, .mk.mk .pg-select,
+.mk.mk .pg-card, .mk.mk .pg-shot, .mk.mk .pg-slot {
+  border-radius: 0;
+}
+/* The account page, the checkout dialog and the 404 all carry their own hardcoded radii and all
+   three are "panels" in the brief's sense, so they square up too — the account page by its own
+   prefix, the dialog and the 404 by their block classes. */
+.mk.mk .mk-acct-panel, .mk.mk .mk-acct-list a, .mk.mk .mk-acct-out,
+.mk.mk .mk-acctpage-stat, .mk.mk .mk-acctpage-callout, .mk.mk .mk-acctpage-cta,
+.mk.mk .mk-ledger, .mk.mk .mk-ledger-table tr, .mk.mk .mk-acctpage-empty,
+.mk.mk .gf-ck, .mk.mk .gf-ck input, .mk.mk .gf-ck-form input,
+.mk.mk .gf-ck-primary, .mk.mk .gf-ck-ghost, .mk.mk .gf-ck-oauth,
+.mk.mk .gf-ck-tabs, .mk.mk .gf-ck-tabs button, .mk.mk .gf-ck-account,
+.mk.mk .gf-ck-channel, .mk.mk .gf-ck-qr, .mk.mk .gf-ck-value,
+.mk.mk .gf-ck-value button, .mk.mk .gf-ck-waiting,
+.mk.mk .mk-nf-card {
+  border-radius: 0;
+}
+/* The phone mockup: the outer body stays a phone (that is what it depicts), but the screen
+   inside it is a panel and the inner tiles are panels. */
+.mk.mk .mk-phone-screen, .mk.mk .mk-scr-view, .mk.mk .mk-scr-canvas,
+.mk.mk .mk-scr-cell, .mk.mk .mk-scr-mini, .mk.mk .mk-steps2-n { border-radius: 0; }
+/* The hero figure's plate and the checkout dialog's own tick/cross discs are round because they
+   are marks, not panels — stated so the omission reads as a decision rather than an oversight. */
+
+/* THE FOOTER LINKS ARE THUMB TARGETS ON A PHONE, and measured, they were 28px tall with an 8px
+   gap — a 36px pitch, below the 44px this project holds itself to and well below what a thumb
+   hits reliably while walking. The fix is padding, not a larger font: the link's own box grows
+   to 44 while the TEXT stays 14px, and the column's `gap` drops to 0 because the padding now
+   provides the separation. Measured before: 11 links at 28px + 8px gaps. After: 44px boxes with
+   0 gaps, so the column is 11 x 44 = 484px against the 396px it was — 88px taller for a footer
+   that already ran past a phone screen, which is the honest cost of making the links hittable.
+
+   Scoped to the narrow viewports: on a desktop the pointer is a mouse and the tighter column is
+   the better typography. The breakpoint is 768px, the same one the app chrome uses. */
+@media (max-width: 768px) {
+  .mk.mk .mk-footer-col { gap: 0; }
+  .mk.mk .mk-footer-col a {
+    display: flex; align-items: center; min-height: 44px;
+    /* The visual line stays where it was; only the hit area grows. */
+    margin: -8px 0;
+  }
+  .mk.mk .mk-footer-col > span { margin-bottom: 6px; }
+  .mk.mk .mk-footer-bar a { display: inline-flex; align-items: center; min-height: 44px; }
+}
+
+/* The spotlight and its edge ring, re-inked. Both read `--mk-green`, which is the brand blue on
+   this ground, so they follow the token and only the alpha needs stating: at 52% the blue over
+   a white card is a pale wash rather than a lit edge. */
+@media (hover: hover) and (pointer: fine) {
+  .mk.mk [data-spotlight]::before {
+    background: radial-gradient(
+      420px circle at var(--mx, 0) var(--my, 0),
+      color-mix(in srgb, var(--mk-green) 7%, transparent),
+      transparent 62%
+    );
+  }
+  .mk.mk [data-spotlight]::after {
+    background: radial-gradient(
+      240px circle at var(--mx, 0) var(--my, 0),
+      color-mix(in srgb, var(--mk-green) 70%, transparent),
+      color-mix(in srgb, var(--mk-green) 16%, transparent) 55%,
+      transparent 78%
+    );
+  }
+}
+
+/* THE MARQUEE — the audience band. It takes the raised step on the canvas with two hairlines,
+   which is exactly the relationship it had before, re-pointed. */
+.mk.mk .pg-marquee {
+  background: var(--mk-panel);
+  border-block-color: var(--mk-line);
+}
+.mk.mk .pg-marquee-label { background: var(--mk-panel); border-right-color: var(--mk-line); }
+.mk.mk .pg-marquee-item { font-family: var(--gf-body), system-ui, sans-serif; color: var(--mk-ink); }
+.mk.mk .pg-marquee-item::after { border-color: var(--mk-green); background: radial-gradient(circle, var(--mk-green) 0 1.5px, transparent 1.6px); }
+
+/* THE PROGRESS HAIRLINE. It reads `--mk-green` and `--mk-green-2`, which are now the brand blue
+   and its hover — on a light ground that is a blue rule down a white page, which is the readout
+   this design wants. Stated here only so the intent is on the record. */
+.mk-progress > span { background: var(--mk-green); }
+
+/* =====================================================================================
+   9. THE PRICING CARDS
+   =====================================================================================
+   THE BRIEF'S OWN RULE, and it is the opposite of what the previous skin did: "Kartu 'Premium'
+   diberi border GEOFOLD Blue (#014AB5) untuk highlight, sedangkan kartu 'Gratis' tetap menyatu
+   dengan background."
+
+   So the featured card is NOT an inverted plate any more — it is a white card with a brand-blue
+   boundary. That reads as the recommended option on a light technical sheet, where an inverted
+   slab would read as a different component. Everything that was inked for the deep ground has
+   to come back to the light ladder with it, and that is most of this block.
+
+   THE SPECIFICITY IS DOUBLED ON EVERY SELECTOR, deliberately. paper.css and corporate.css both
+   carry rules for these cards at (0,3,0) and (0,3,1), and this project has already been burned
+   once by a bundle-order reshuffle flipping a control's colour (see the note on the featured
+   CTA in corporate.css). Repeating the class buys one step and makes the outcome independent of
+   which side of the bundle this file lands on.
+   ===================================================================================== */
+
+.mk.mk .pg-price-card.pg-price-card {
+  border-color: var(--mk-line);
+  border-radius: 0;
+  background: var(--mk-panel);
+}
+.mk.mk .pg-price-card.pg-price-card.feat {
+  background: var(--mk-panel);
+  border-color: var(--mk-green);
+  /* The highlight is the boundary plus a ring of the blue at low alpha, so the recommended
+     card is legible as such without a second surface colour. */
+  box-shadow: var(--mk-shadow), 0 0 0 1px var(--mk-green);
+}
+.mk.mk .pg-price-card.pg-price-card.feat .pg-micro { color: var(--mk-green); }
+.mk.mk .pg-price-card.pg-price-card.feat .pg-price-fig,
+.mk.mk .pg-price-card.pg-price-card.feat h3 { color: var(--mk-ink); }
+.mk.mk .pg-price-card.pg-price-card.feat p { color: var(--mk-prose); }
+.mk.mk .pg-price-card.pg-price-card.feat .pg-price-list li { color: var(--mk-prose); }
+.mk.mk .pg-price-card.pg-price-card.feat .pg-price-list li::before {
+  border-left-color: var(--mk-green);
+  border-bottom-color: var(--mk-green);
+}
+.mk.mk .pg-price-card.pg-price-card.feat .pg-price-fig small { color: var(--mk-muted); }
+
+.mk.mk .pg-price-fig { font-family: var(--gf-data), system-ui, sans-serif; font-weight: 600; }
+.mk.mk .pg-price-list li { font-family: var(--gf-body), system-ui, sans-serif; }
+.mk.mk .pg-price-note { color: var(--mk-muted); }
+.mk.mk .pg-price-note a { color: var(--mk-ink); }
+
+/* /pricing's own plan cards, the same decision in the other file's markup. */
+.mk.mk .mk-price-card.mk-price-card {
+  background: var(--mk-panel);
+  border-color: var(--mk-line);
+  border-radius: 0;
+}
+.mk.mk .mk-price-card.mk-price-card.feat {
+  background: var(--mk-panel);
+  border-color: var(--mk-green);
+  box-shadow: var(--mk-shadow), 0 0 0 1px var(--mk-green);
+}
+.mk.mk .mk-price-card.mk-price-card.feat .mk-price-name { color: var(--mk-green); }
+.mk.mk .mk-price-card.mk-price-card.feat p,
+.mk.mk .mk-price-card.mk-price-card.feat .mk-plan-list li,
+.mk.mk .mk-price-card.mk-price-card.feat .mk-rec-b,
+.mk.mk .mk-price-card.mk-price-card.feat .mk-plist li,
+.mk.mk .mk-price-card.mk-price-card.feat .mk-plist.on-dark li { color: var(--mk-prose); }
+.mk.mk .mk-price-card.mk-price-card.feat .mk-plan-list li::before { color: var(--mk-green); }
+.mk.mk .mk-plan.featured.mk-plan.featured { background: var(--mk-panel); border-color: var(--mk-green); }
+.mk.mk .mk-plan.featured.mk-plan.featured .mk-plan-cta { border-color: var(--mk-green); color: var(--mk-green); }
+
+/* =====================================================================================
+   10. THE EFFECTS
+   =====================================================================================
+   Three pieces of motion the brief asks for by name, all built without a new dependency — the
+   project already ships GSAP, and the rule this codebase follows is to match the EFFECT rather
+   than the implementation. See each component's header for what was taken and what was redrawn.
+   ===================================================================================== */
+
+/* ---- THE STAR BORDER (React Bits: StarBorder / Laser Flow) ----
+   A travelling light along a control's own edge, on ONE control per screen: the recommended
+   plan's call to action. It is drawn as a conic gradient cut to a 1px frame by a two-layer
+   mask, and the light's angle is animated through an @property registration so the browser can
+   interpolate it.
+
+   WHY @property AND WHAT HAPPENS WITHOUT IT. An unregistered custom property is not animatable,
+   so on a browser without @property the animation does nothing and the gradient simply sits at
+   its initial angle — a static highlight on the control's edge. That is a correct degradation
+   rather than a broken one: the control is still visibly the emphasised one.
+
+   The mask has three ways to fail silently and all three are handled the way this codebase
+   already learned them: the `mask` shorthand resets mask-composite, so the longhand comes after
+   it; `content-box` belongs on the first layer only; and the -webkit- pair is written FIRST
+   because Chromium treats the two as aliases, so a "fallback" written after would overwrite. */
+@property --gf-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.gf-star {
+  position: relative;
+  display: inline-flex;
+  isolation: isolate;
+}
+/* In a plan card the control is full width, so its wrapper has to be too — otherwise the light
+   runs along the width of the label while the button under it spans the card. */
+.mk.mk .pg-price-card .gf-star,
+.mk.mk .mk-price-card .gf-star { width: 100%; }
+.mk.mk .pg-price-card .gf-star > *,
+.mk.mk .mk-price-card .gf-star > * { width: 100%; }
+.gf-star::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--gf-angle),
+    transparent 0deg,
+    rgba(255, 255, 255, .85) 34deg,
+    #FFFFFF 62deg,
+    rgba(255, 255, 255, .35) 96deg,
+    transparent 148deg,
+    transparent 360deg
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  animation: gf-star-spin 3.6s linear infinite;
+}
+@keyframes gf-star-spin { to { --gf-angle: 360deg; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .gf-star::before { animation: none; }
+}
+
+/* ---- THE GLOW CURSOR (React Bits: Glow Cursor / Cursor Glow) ----
+   One fixed element for the whole page, moved by Motion.tsx with a single delegated listener.
+   It is visible ONLY while the pointer is inside a `[data-glow-zone]` — the brief scopes it to
+   the bento grid — so it reads as the instrument responding to a region rather than as a
+   novelty cursor that follows you everywhere.
+
+   It never takes a pointer event, it is hidden from the accessibility tree, and it is created
+   in JS rather than in the markup so a visitor without JavaScript never has a stray element. */
+.gf-glow {
+  position: fixed;
+  top: 0; left: 0;
+  width: 340px; height: 340px;
+  margin: -170px 0 0 -170px;
+  border-radius: 100px;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity .35s ease;
+  background: radial-gradient(
+    circle,
+    rgba(1, 74, 181, .13) 0%,
+    rgba(1, 74, 181, .07) 38%,
+    transparent 68%
+  );
+  will-change: transform;
+}
+.gf-glow[data-on] { opacity: 1; }
+
+@media (prefers-reduced-motion: reduce), (hover: none) {
+  .gf-glow { display: none; }
+}
+
+/* ---- THE DITHER VEIL (React Bits: Pixel Swap / Dither Veil) ----
+   The canvas that plays a scan over a figure on hover. It fills the frame it is dropped into;
+   the size comes from the component, because a canvas sized by CSS alone would be stretched
+   rather than sampled. */
+.gf-veil {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+.gf-veil canvas { display: block; width: 100%; height: 100%; }
+
+@media (prefers-reduced-motion: reduce) {
+  .gf-veil { display: none; }
+}
+
+/* ---- THE TECH TEXT (React Bits: Decrypted Text) ----
+   The coordinate readout's decrypt. It is monospaced and tabular so the string does not reflow
+   while the characters resolve — a scrambling readout that also changes WIDTH is unreadable at
+   exactly the moment it is meant to be impressive. */
+.gf-tech {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  white-space: nowrap;
+}
+
+/* =====================================================================================
+   11. THE INSULATED SHELLS
+   =====================================================================================
+   /login, /onboarding, /reset and the 404 are the four screens that keep the midnight ground.
+   They are outside the (marketing) layout, so this file does not load on their routes — but the
+   guard is here anyway, because the failure mode if it ever does is silent and total: a light
+   `--mk-ink` on a hardcoded `#0A192F` plate is white type turned near-black on near-black, and
+   the sign-in form would simply be blank.
+
+   The whole dark set is restated rather than only the ink, because the same argument applies to
+   every one of these values and a partial restatement is a bug waiting for the next token to be
+   added. This mirrors what marketing.css already does for these three pages, for exactly the
+   same reason and with the same comment.
+   ===================================================================================== */
+
+/* THE SELECTOR IS `.mk-nf.mk-nf`, NOT `.mk-nf`, and that is not belt-and-braces.
+
+   MEASURED: the 404 renders `<div class="mk mk-nf …">` — the shell class sits on the SAME element
+   as `.mk`. So the token block at the top of this file, `.mk.mk`, is (0,2,0) and it BEATS a bare
+   `.mk-nf` at (0,1,0) for every custom property both declare. The first version of this rule used
+   the bare class and the 404 came out white-on-white: `--mk-panel` resolved to the light #FFFFFF,
+   the card painted white on a white ground and its heading went #111827, so the page was a blank
+   sheet with a 404 heading nobody could see. The screenshot check caught it; the CSS read as
+   correct.
+
+   Repeating the class buys (0,2,0), which ties `.mk.mk` — and a tie is enough, because this rule
+   is the later one in the later sheet. The same fix the card rules above already use, for the
+   same reason. */
+.mk-nf.mk-nf,
+.mk-login-shell,
+.mk-auth-shell {
+  --mk-bg: #0A192F;
+  --mk-panel: #0F2440;
+  --mk-raise: #16305A;
+  --mk-line: #23406B;
+  --mk-input-line: #4A73AD;
+  --mk-control-line: #4A73AD;
+  --mk-field-bg: #0F2440;
+  --mk-field-ink: #FFFFFF;
+  --mk-field-hint: #93A5BF;
+  --mk-ink: #FFFFFF;
+  --mk-prose: #C3CEDC;
+  --mk-muted: #9DB0CC;
+  --mk-faint: #9DB0CC;
+  --mk-green: #7FA8E8;
+  --mk-green-2: #A9C6F2;
+  --mk-green-line: #2E4E80;
+  --mk-on-green: #0A192F;
+  --mk-on-green-dim: #C3CEDC;
+  --mk-blue-fill: #1E5FBF;
+  --mk-blue-fill-2: #2A72D8;
+  --mk-on-blue-fill: #FFFFFF;
+  --mk-marker: #F35D19;
+  --mk-on-marker: #0A192F;
+  --mk-amber: #FB923C;
+  --mk-shadow: 0 1px 2px rgba(0, 0, 0, .28), 0 10px 28px -14px rgba(0, 0, 0, .55);
+  --mk-shadow-lg: 0 2px 4px rgba(0, 0, 0, .32), 0 20px 48px -20px rgba(0, 0, 0, .68);
+  --card-lip: inset 0 1px 0 rgba(255, 255, 255, .045);
+  --mk-mark-line: rgba(157, 180, 204, .34);
+  --mk-line-field: #1E3457;
+  /* Zero, for the same reason as the light shell: these are panels, and the brief's instruction
+     is about the design language rather than about one ground. The previous value was a
+     `clamp(14px, 1.2vw, 22px)` — a size that changed with the viewport, which is the opposite of
+     an instrument's fixed edge. */
+  --card-radius: 0px;
+  background: #0A192F;
+  color: var(--mk-ink);
+}

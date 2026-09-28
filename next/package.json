@@ -5,7 +5,10 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "verify:ui": "node scripts/verify-ui.mjs",
+    "verify:app": "node scripts/verify-app.mjs",
+    "verify:all": "npm run verify:ui && npm run verify:app"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
@@ -32,6 +35,7 @@
     "@types/react-dom": "^19",
     "jsqr": "^1.4.0",
     "pngjs": "^7.0.0",
+    "puppeteer-core": "^25.12.0",
     "typescript": "^5"
   }
 }

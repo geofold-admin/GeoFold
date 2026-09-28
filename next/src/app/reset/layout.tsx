@@ -5,6 +5,9 @@ import '@/styles/marketing.css'
 // three pages sit outside the (marketing) layout, so without this they take marketing.css's
 // DARK tokens with no dark surface under them: white ink on the portal's light paper.
 import '@/styles/corporate.css'
+// Blueprint: the client's palette, four typefaces, 0px corners. Loaded last so it wins — see
+// login/layout.tsx for why these three out-of-layout pages need it at all.
+import '@/styles/blueprint.css'
 
 // Password reset shares the portal's marketing brand, not the app theme — same as /login.
 const workSans = Work_Sans({

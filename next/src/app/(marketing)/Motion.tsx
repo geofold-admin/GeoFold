@@ -64,6 +64,12 @@ export function Motion() {
       let tiltCleanup: (() => void) | undefined
       /* Same for the click-spark canvas. */
       let sparkCleanup: (() => void) | undefined
+      /* Same for the glow cursor. */
+      let glowCleanup: (() => void) | undefined
+      /* Whether this device has a real pointer. Read once, here, rather than at each of the four
+         places that need it: it is a media query, and querying it four times per route change
+         both costs work and risks the four disagreeing if the device is a hybrid. */
+      const finePointer = window.matchMedia('(pointer: fine)').matches
 
       /* ---------- 1. hero headline: per-character reveal ---------- */
       const splits: SplitText[] = []
@@ -412,7 +418,9 @@ export function Motion() {
          It draws to a canvas that is removed from hit-testing and from the accessibility tree, it
          stops as soon as the sparks die, and it is skipped entirely on touch and under
          reduced-motion (a click spark on a phone would fire on every scroll-stop tap). */
-      const finePointer = window.matchMedia('(pointer: fine)').matches
+      /* The click mark uses the shared `finePointer` read at the top of this branch, rather than
+         a second media query of its own: four queries for one fact is three too many, and on a
+         hybrid device they can disagree. */
       if (finePointer) {
         const canvas = document.createElement('canvas')
         canvas.className = 'pg-spark'
@@ -496,6 +504,85 @@ export function Motion() {
         }
       }
 
+      /* ---------- 16. the glow cursor ----------
+         Adapted from React Bits' GlowCursor. The original is a React component with its own
+         pointer state, which re-renders on every move. This is one fixed element for the whole
+         page, moved by a single delegated listener, so nothing re-renders and the compositor
+         does the work.
+
+         IT IS SCOPED TO A REGION, NOT TO THE PAGE. The brief asks for it "hanya aktif saat
+         pengguna mengarahkan mouse ke area interaktif seperti Bento Grid fitur" — only while the
+         pointer is over an interactive area. A light that follows the cursor everywhere is a
+         novelty; a light that appears when the cursor enters the capability grid says "this
+         region is live", which is a fact about the page rather than about the cursor.
+
+         Pointer-fine only, and never under reduced motion. On a phone there is no cursor, and
+         the whole effect is skipped rather than approximated. */
+      if (finePointer) {
+        const zones = Array.from(document.querySelectorAll<HTMLElement>('[data-glow-zone]'))
+        if (zones.length > 0) {
+          const glow = document.createElement('div')
+          glow.className = 'gf-glow'
+          glow.setAttribute('aria-hidden', 'true')
+          document.body.appendChild(glow)
+
+          const xTo = gsap.quickTo(glow, 'x', { duration: 0.45, ease: EASE_SOFT })
+          const yTo = gsap.quickTo(glow, 'y', { duration: 0.45, ease: EASE_SOFT })
+
+          const onMove = (e: MouseEvent) => {
+            const zone = (e.target as HTMLElement)?.closest?.('[data-glow-zone]')
+            if (zone) {
+              /* First entry: jump the light to the pointer before fading it in, so it does not
+                 slide in from wherever it was left last time. */
+              if (!glow.hasAttribute('data-on')) {
+                gsap.set(glow, { x: e.clientX, y: e.clientY })
+                glow.setAttribute('data-on', '')
+              }
+              xTo(e.clientX)
+              yTo(e.clientY)
+            } else if (glow.hasAttribute('data-on')) {
+              glow.removeAttribute('data-on')
+            }
+          }
+
+          document.addEventListener('mousemove', onMove, { passive: true })
+          glowCleanup = () => {
+            document.removeEventListener('mousemove', onMove)
+            glow.remove()
+          }
+        }
+      }
+
+      /* ---------- 17. scroll velocity on the audience band ----------
+         Adapted from React Bits' ScrollVelocity: the band's rows lean with the speed of the
+         scroll and settle when it stops. The original drives this from a React scroll listener
+         with a spring; this reads the same number off GSAP's own ScrollTrigger, which is already
+         computing it, and writes one transform.
+
+         CAPPED AT 3 DEGREES, and the reason is the same one the card tilt carries: more than
+         that reads as a toy, and the band holds words a reader is meant to read. The lean is
+         there to say "this list is moving", not to be the attraction. */
+      const marqueeEl = document.querySelector<HTMLElement>('[data-marquee]')
+      if (marqueeEl) {
+        const rows = Array.from(marqueeEl.querySelectorAll<HTMLElement>('.pg-marquee-row'))
+        if (rows.length > 0) {
+          const skewTo = rows.map((r) => gsap.quickTo(r, 'skewX', { duration: 0.5, ease: EASE_SOFT }))
+          ScrollTrigger.create({
+            trigger: marqueeEl,
+            start: 'top bottom',
+            end: 'bottom top',
+            onUpdate: (self) => {
+              /* `getVelocity()` is px/second and runs into the thousands on a flick, so it is
+                 normalised and clamped rather than used raw. */
+              const v = gsap.utils.clamp(-3, 3, self.getVelocity() / 420)
+              for (const s of skewTo) s(v)
+            },
+            onLeave: () => { for (const s of skewTo) s(0) },
+            onLeaveBack: () => { for (const s of skewTo) s(0) },
+          })
+        }
+      }
+
       /* Fonts change line breaking, which changes every ScrollTrigger start position measured
          before they landed. autoSplit handles the splits; this handles everything else. */
       document.fonts?.ready.then(() => ScrollTrigger.refresh())
@@ -507,6 +594,7 @@ export function Motion() {
         spotCleanup?.()
         tiltCleanup?.()
         sparkCleanup?.()
+        glowCleanup?.()
       }
     })
 

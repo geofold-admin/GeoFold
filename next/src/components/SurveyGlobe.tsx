@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { SITE_LOCATION } from '@/lib/business'
 
 /**
  * A wireframe globe with one lit marker, drawn in canvas 2D.
@@ -29,8 +30,9 @@ import { useEffect, useRef } from 'react'
  * cursor work on touch, and under `prefers-reduced-motion` draws exactly one static frame.
  */
 
-/** The place this marks. Sintang, Kabupaten Sintang, West Kalimantan. */
-const MARKER = { lat: 0.0756, lon: 111.4954, label: 'Sintang, Kalimantan Barat' }
+/** The place this marks. Read from the one source of truth in lib/business.ts, so the hero's
+ *  coordinate readout and this globe can never disagree about where the business works. */
+const MARKER = { lat: SITE_LOCATION.lat, lon: SITE_LOCATION.lon, label: SITE_LOCATION.place.id }
 
 const TILT_BASE = 0.38 // radians, the resting tilt that shows the marker's hemisphere
 const SPIN_IDLE = 0.0016 // radians per frame at rest
@@ -59,6 +61,14 @@ export function SurveyGlobe({ className }: { className?: string }) {
     const canHover = window.matchMedia('(hover: hover) and (pointer: fine)')
     const accent = getComputedStyle(canvas).getPropertyValue('--globe-accent').trim() || '#F35D19'
     const line = getComputedStyle(canvas).getPropertyValue('--globe-line').trim() || '#9DB4D4'
+    /* The two pigments that used to be literals. They were `rgba(127,168,232,…)` and
+       `rgba(10,25,47,.55)` — an atmosphere and a body disc tuned for a midnight band. On the
+       light ground this globe now sits on, the body disc would be a near-black ball under a grey
+       wireframe, so both are tokens with the old dark values kept as their defaults: the
+       component renders identically on the previous skin and correctly on this one. */
+    const body = getComputedStyle(canvas).getPropertyValue('--globe-body').trim() || 'rgba(10, 25, 47, .55)'
+    const haloInk = getComputedStyle(canvas).getPropertyValue('--globe-halo').trim() || 'rgba(127, 168, 232, .085)'
+    const pip = getComputedStyle(canvas).getPropertyValue('--globe-pip').trim() || 'rgba(255,255,255,.9)'
 
     let w = 0
     let h = 0
@@ -123,7 +133,7 @@ export function SurveyGlobe({ className }: { className?: string }) {
          against on the dark band, where thin blue lines on navy otherwise dissolve. */
       const halo = ctx.createRadialGradient(cx, cy, radius * 0.86, cx, cy, radius * 1.34)
       halo.addColorStop(0, 'rgba(127, 168, 232, 0)')
-      halo.addColorStop(0.62, 'rgba(127, 168, 232, .085)')
+      halo.addColorStop(0.62, haloInk)
       halo.addColorStop(1, 'rgba(127, 168, 232, 0)')
       ctx.beginPath()
       ctx.arc(cx, cy, radius * 1.34, 0, Math.PI * 2)
@@ -135,7 +145,7 @@ export function SurveyGlobe({ className }: { className?: string }) {
          near ones are the same navy and the ball flattens into a tangle. */
       ctx.beginPath()
       ctx.arc(cx, cy, radius, 0, Math.PI * 2)
-      ctx.fillStyle = 'rgba(10, 25, 47, .55)'
+      ctx.fillStyle = body
       ctx.fill()
 
       // Sphere silhouette, so the ball reads as a body even where no line falls.
@@ -268,7 +278,7 @@ export function SurveyGlobe({ className }: { className?: string }) {
         // A white pip inside the dot: at 3px on a navy field the orange alone is a smudge.
         ctx.beginPath()
         ctx.arc(mx - 0.9, my - 0.9, 1.15, 0, Math.PI * 2)
-        ctx.fillStyle = 'rgba(255,255,255,.9)'
+        ctx.fillStyle = pip
         ctx.fill()
       }
 

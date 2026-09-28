@@ -13,6 +13,18 @@ import '@/styles/paper.css'
 // The corporate layer: one contour ground, cards instead of bands, the new palette's CTA rule.
 // Loaded last so it wins against the skins above it. See the file header.
 import '@/styles/corporate.css'
+// ★ THE BLUEPRINT LAYER — 2026-09-29. The client's UI/UX proposal: a LIGHT technical ground,
+// the hero as the one dark plate, square corners at 0px, and the four faces the brief names
+// (Archivo / Barlow / Barlow Condensed / Space Mono) restored after the Inter re-skin.
+//
+// Loaded last so it re-points the token layer over every skin above it. It supersedes
+// corporate.css's "Midnight" the same way that superseded "Paper": this one line is the whole
+// switch, and commenting it out restores the previous design exactly.
+//
+// It also carries the `.mk-site` marker on the wrapper below, which is what scopes the light
+// document ground (the phone's overscroll bounce) to THIS subtree without touching /login,
+// /onboarding, /reset and the 404 — the four screens that keep the midnight ground.
+import '@/styles/blueprint.css'
 // The in-page checkout. Loaded here as well as in the app chrome because the pricing page is
 // reachable signed-out, and the modal opens on top of the marketing site.
 import '@/styles/checkout.css'
@@ -76,7 +88,7 @@ export default async function MarketingLayout({ children }: { children: ReactNod
      * reader to pronounce English UI with Indonesian phonetics. Scoping it here is valid HTML
      * and describes exactly the subtree that actually changes language.
      */
-    <div className={`mk ${workSans.variable}`} lang={locale}>
+    <div className={`mk mk-site ${workSans.variable}`} lang={locale}>
       {/* The Organization node. Emitted once per page, from the same constants the footer's trust
           panel renders, so the machine-readable facts and the printed ones cannot disagree.
           See lib/seo.ts for why there is no aggregateRating here. */}
