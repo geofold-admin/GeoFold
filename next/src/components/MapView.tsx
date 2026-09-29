@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline, Polygon, CircleMarker
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { api } from '@/lib/api-client'
+import { geodesicArea, ringPerimeter } from '@/lib/geo'
 import type { SurveyDetail, SurveyFeatureCollection, SurveyProperties } from '@/lib/types'
 
 /* THE SURVEY MARKER IS THE CLIENT'S ORANGE, and this is the one place in the product where
@@ -70,37 +71,9 @@ function fmtArea(m2: number): string {
   return m2 >= 10000 ? `${(m2 / 10000).toFixed(2)} ha` : `${Math.round(m2)} m²`
 }
 
-/* Geodesic area of a ring, by the spherical-excess formula Leaflet.draw and Turf both use. The
-   Earth radius is Leaflet core's L.CRS.Earth.R (6371000 m) — the same sphere L.LatLng.distanceTo
-   uses for the perimeter — so area and perimeter here share one Earth model instead of mixing
-   the mean radius with WGS84's equatorial one. The formula is antisymmetric in (lng2 - lng1), so
-   it is sign-correct for either winding and we take the magnitude at the end. */
-const EARTH_R = 6371000
-
-function geodesicArea(points: L.LatLng[]): number {
-  const n = points.length
-  if (n < 3) return 0
-  const rad = Math.PI / 180
-  let total = 0
-  for (let i = 0; i < n; i++) {
-    const p1 = points[i]
-    const p2 = points[(i + 1) % n]
-    total += (p2.lng - p1.lng) * rad * (2 + Math.sin(p1.lat * rad) + Math.sin(p2.lat * rad))
-  }
-  return Math.abs((total * EARTH_R * EARTH_R) / 2)
-}
-
-/* Closed-ring perimeter: the sum of the great-circle legs INCLUDING the leg that joins the last
-   vertex back to the first, because the shape the user is measuring is a polygon, not an open
-   path. Below three vertices there is no ring yet, so it falls back to the open path length. */
-function ringPerimeter(points: L.LatLng[]): number {
-  const n = points.length
-  if (n < 2) return 0
-  let total = 0
-  const legs = n >= 3 ? n : n - 1
-  for (let i = 0; i < legs; i++) total += points[i].distanceTo(points[(i + 1) % n])
-  return total
-}
+/* The ring maths lives in src/lib/geo.ts so it can be tested against the shipped code rather than
+   against a copy of it — see that file's header. The functions keep working on L.LatLng because
+   the GeoPoint type is structural: anything with a numeric lat and lng fits. */
 
 function SurveyMarker({
   feature,

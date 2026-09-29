@@ -304,27 +304,22 @@ function GoPremium({
         </>
       )}
 
-      <button type="button" onClick={startCheckout} style={{ width: '100%' }}>
-        {outstanding
-          ? `Lanjutkan pembayaran: ${formatIdr(outstanding.totalIdr)}`
-          : `Upgrade ke Premium: ${offer.priceLabel}`}
-      </button>
-      <p className="hint" style={{ marginTop: 8, marginBottom: 0, textAlign: 'center' }}>
-        {offer.days} hari, semua fitur, penyimpanan {offer.storageLabel}. Bisa QRIS, transfer bank / VA,
-        dompet digital, kartu, dan gerai ritel.
-      </p>
-
-      {/* THE OUTSTANDING INVOICE, WHEN THE BUYER STILL HOLDS ONE.
+      {/* THE OUTSTANDING INVOICE, WHEN THE BUYER STILL HOLDS ONE. IT SITS ABOVE THE BUTTON.
           Without this the subscription screen was the one place a live order went missing: the
           buyer pressed "Upgrade" here, the modal asked them to pick a channel again, and the order
           they had already created was never the one they ended up paying. The row comes from the
           same history endpoint the account ledger reads, so this screen and /account agree on
           which attempt is live — and the deadline is shown in WIB, the zone iPaymu reported it in,
-          rather than in whatever zone the browser happens to sit in. */}
+          rather than in whatever zone the browser happens to sit in.
+
+          It was BELOW the button until measurement settled the question: the callout's top sat
+          38.8px under the button's bottom, so the screen asked "Lanjutkan pembayaran?" before it
+          said why. Reason precedes action. */}
       {outstanding && (
         <div
           style={{
-            marginTop: 12,
+            marginTop: 14,
+            marginBottom: 10,
             padding: '10px 12px',
             border: '1px solid var(--line)',
             background: 'var(--accent-soft)',
@@ -337,6 +332,16 @@ function GoPremium({
           </p>
         </div>
       )}
+
+      <button type="button" onClick={startCheckout} style={{ width: '100%' }}>
+        {outstanding
+          ? `Lanjutkan pembayaran: ${formatIdr(outstanding.totalIdr)}`
+          : `Upgrade ke Premium: ${offer.priceLabel}`}
+      </button>
+      <p className="hint" style={{ marginTop: 8, marginBottom: 0, textAlign: 'center' }}>
+        {offer.days} hari, semua fitur, penyimpanan {offer.storageLabel}. Bisa QRIS, transfer bank / VA,
+        dompet digital, kartu, dan gerai ritel.
+      </p>
 
       {msg && (
         <p className={msg.ok ? undefined : 'error'} style={{ marginTop: 10, marginBottom: 0, color: msg.ok ? 'var(--spruce-ink)' : undefined }}>
