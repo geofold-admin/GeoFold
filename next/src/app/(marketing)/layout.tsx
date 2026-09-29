@@ -28,6 +28,19 @@ import '@/styles/blueprint.css'
 // The in-page checkout. Loaded here as well as in the app chrome because the pricing page is
 // reachable signed-out, and the modal opens on top of the marketing site.
 import '@/styles/checkout.css'
+// ★ THE NEOTOPOGRAPHY LAYER — 2026-09-29. The client's GEOFOLD_WEBSITE_REDESIGN_CONCEPT.md:
+// Deep Space ground, frosted glass surfaces, fluid 20px/50px corners, and the three AI-driven
+// keyframes (cyberBreathe, gradientShift) on the hero, the bento grid and the pricing cards.
+//
+// Loaded last, as the brief specifies, so it re-points the token layer over every skin above
+// it. This supersedes blueprint.css the same way that superseded corporate.css: this one line
+// is the whole switch, and commenting it out restores the Blueprint design exactly.
+//
+// It is scoped to `.mk.mk-site` — three classes — which is why the app shell and the four
+// insulated screens (/login, /onboarding, /reset, the 404) are untouched by it. The brief
+// requires that isolation ("tidak menyentuh/mengganggu aplikasi"); the class is how it is
+// enforced rather than merely intended. See the file header.
+import '@/styles/neotopography.css'
 import { ADDRESS_ONE_LINE, BUSINESS, LEGAL, OPERATOR } from '@/lib/business'
 import { chrome } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'

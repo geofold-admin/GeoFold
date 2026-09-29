@@ -26,16 +26,29 @@ const ROUTES = [
   ['product', '/product'],
 ]
 
-/* The reference colours, tagged by the brief's own 60-30-10 buckets. */
+/* The reference colours, tagged by the brief's own 60-30-10 buckets.
+ *
+ * UPDATED FOR NEOTOPOGRAPHY. The Blueprint palette this table used to describe (a light canvas,
+ * a brand blue and a conversion orange) is retired by the client's new document, and leaving the
+ * old references in place would have produced a meaningless report: every pixel of a Deep Space
+ * page would classify as "primary" because near-black is nearest to #0A192F in the old list.
+ *
+ * The new buckets, read the same way the previous ones were — the ground is the 60, the cyan/sky
+ * pair is the 30, emerald is the 10:
+ *   60  the Deep Space ground and the glass ladder above it
+ *   30  Cyber Cyan and the gradient's sky stop
+ *   10  Neon Emerald
+ */
 const REFS = [
-  /* neutrals — the 60 */
-  ['neutral', '#FFFFFF'], ['neutral', '#F3F4F6'], ['neutral', '#E5E7EB'],
-  ['neutral', '#F9FAFB'], ['neutral', '#D1D5DB'], ['neutral', '#FAFAFA'],
-  /* primary — the 30 */
-  ['primary', '#014AB5'], ['primary', '#013A8F'], ['primary', '#EFF5FF'],
-  ['primary', '#0A192F'], ['primary', '#0F2440'], ['primary', '#1B2F52'],
-  /* accent — the 10 */
-  ['accent', '#F35D19'], ['accent', '#D6450A'],
+  /* neutrals — the 60. Deep Space, the glass steps, the silver ink ladder, the hairlines. */
+  ['neutral', '#020617'], ['neutral', '#070D1F'], ['neutral', '#0B1224'], ['neutral', '#0D1427'],
+  ['neutral', '#0F172A'], ['neutral', '#1E293B'], ['neutral', '#202535'],
+  ['neutral', '#94A3B8'], ['neutral', '#CBD5E1'], ['neutral', '#F8FAFC'],
+  /* primary — the 30. The accent pair and its gradient. */
+  ['primary', '#00F2FE'], ['primary', '#4FACFE'], ['primary', '#6FF6FF'],
+  ['primary', '#7CC0FF'], ['primary', '#0E4A5C'], ['primary', '#0A3A52'],
+  /* accent — the 10. */
+  ['accent', '#00FF87'], ['accent', '#00CC6C'],
 ]
 const REF_RGB = REFS.map(([k, h]) => [k, [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]])
 
@@ -91,17 +104,29 @@ for (const [name, route] of ROUTES) {
   const pct = (n) => ((n / sampled) * 100).toFixed(1)
   rows.push({ name, route, docHeight: full, sampled, counts, pct })
   console.log(`\n=== ${name}  (${route})  doc ${full}px, ${sampled} pixels sampled ===`)
-  console.log(`  neutral (the 60) : ${pct(counts.neutral).padStart(5)}%`)
-  console.log(`  primary (the 30) : ${pct(counts.primary).padStart(5)}%`)
-  console.log(`  accent  (the 10) : ${pct(counts.accent).padStart(5)}%`)
+  console.log(`  ground+glass (the 60) : ${pct(counts.neutral).padStart(5)}%`)
+  console.log(`  cyan/sky     (the 30) : ${pct(counts.primary).padStart(5)}%`)
+  console.log(`  emerald      (the 10) : ${pct(counts.accent).padStart(5)}%`)
   await page.close()
 }
 
 console.log('\n\n================ SUMMARY ================')
-console.log('  page      neutral   primary   accent')
+console.log('  page      ground   cyan/sky   emerald')
 for (const r of rows) {
-  console.log(`  ${r.name.padEnd(9)} ${r.pct(r.counts.neutral).padStart(6)}% ${r.pct(r.counts.primary).padStart(8)}% ${r.pct(r.counts.accent).padStart(7)}%`)
+  console.log(`  ${r.name.padEnd(9)} ${r.pct(r.counts.neutral).padStart(6)}% ${r.pct(r.counts.primary).padStart(9)}% ${r.pct(r.counts.accent).padStart(8)}%`)
 }
-console.log('\n  the brief asks for roughly 60 / 30 / 10.')
+/* THE 60-30-10 NOTE IS DELIBERATE, and it is a correction. The Blueprint brief stated that split
+   explicitly and this script used to assert it. The Neo-Topography brief does NOT mention it
+   anywhere — no "60-30-10", no ratio of any kind. It describes a single AMOLED ground, one
+   accent pair and one conversion colour, and it asks for a page that reads as premium and dark.
+
+   So this report is descriptive, not a pass/fail gate, and that is the honest framing: a design
+   whose ground is a near-black that every other element composites ON TOP OF will always measure
+   as overwhelmingly neutral, and that is the intended look rather than a miss. What the numbers
+   are actually good for is catching the opposite failure — a cyan or emerald value that has
+   leaked out of its ration, which is the thing the brief DOES constrain:
+   "Digunakan khusus untuk penanda atau highlight konversi tinggi". */
+console.log('\n  the Neo-Topography brief specifies no ratio; the accent is meant to stay rare.')
+console.log('  what matters is that emerald stays near 0% and cyan stays in single digits.\n')
 
 await browser.close()

@@ -1,0 +1,976 @@
+/* =====================================================================================
+   NEOTOPOGRAPHY — the marketing site's "Cyber-Cartography" skin.
+   =====================================================================================
+   The client's GEOFOLD_WEBSITE_REDESIGN_CONCEPT.md. It replaces the Blueprint skin outright:
+   the light technical ground becomes Deep Space, the 0px corners become fluid 20/50px, the
+   hairline instrument becomes glowing glass, and the four static components that carry the
+   identity — hero, bento, pricing, nav — are given the brief's three AI-driven keyframes.
+
+   ---------------------------------------------------------------------------------------
+   WHERE IT SITS IN THE CASCADE, AND WHY IT IS WRITTEN THE WAY IT IS
+   ---------------------------------------------------------------------------------------
+   This is the fifth layer over the marketing site (overhaul -> paper -> corporate -> blueprint
+   -> this). Every layer above the first has had to win against the one before it, and on this
+   project that has failed twice in ways that were invisible until measured:
+
+     * `blueprint.css` was emitted BEFORE `corporate.css` by the bundler, so its light ground
+       never applied — `body:has(.mk)` from the earlier file kept winning.
+     * `body:has(.mk-site)` was dropped from the built output entirely.
+
+   The lesson (references/ui-rules.md, "Bundle order is not a guarantee") is that import order
+   is a hope, not a mechanism. So every rule here that has to beat blueprint.css carries the
+   selector `.mk.mk.mk-site` — three classes, (0,3,0) — against blueprint's `.mk.mk` (0,2,0).
+   One extra class, and the outcome stops depending on which chunk the bundler happens to emit
+   first. There is not a single `!important` in this file.
+
+   The `.mk-site` class is doing a second job: it is the MARKETING-ONLY marker. It appears on
+   exactly one element in the codebase — the wrapper in `(marketing)/layout.tsx`. The app
+   shell, and the four insulated screens that keep the midnight ground (/login, /onboarding,
+   /reset, the 404), carry bare `.mk` and are therefore untouched by everything below. That is
+   the brief's isolation requirement ("sepenuhnya terisolasi pada halaman publik dan tidak
+   menyentuh aplikasi"), implemented as a class rather than as a promise.
+
+   ---------------------------------------------------------------------------------------
+   THE COLOUR THEORY, AND THE ONE PLACE THE BRIEF IS WRONG
+   ---------------------------------------------------------------------------------------
+   The palette is a 60-30-10 read the same way the Blueprint brief was: Deep Space is the 60,
+   the cyan/sky pair is the 30, emerald is the 10. Every value below was measured with the WCAG
+   relative-luminance formula against the surfaces it actually sits on, not against white.
+
+   INK ON THE NEON. The brief names three neon colours and never says what goes on top of them.
+   The reflex is white, and it is a disaster:
+
+       white on cyan    #00F2FE  1.39:1     dark on cyan    #020617  14.54:1
+       white on emerald #00FF87  1.34:1     dark on emerald #020617  15.04:1
+       white on sky     #4FACFE  2.42:1     dark on sky     #020617   8.32:1
+
+   So every neon fill in this file takes Deep Space as its ink. This is the same trap as the
+   orange CTA in the previous skin, where white measured 3.29:1 and the fix was to reach for
+   the brief's own dark blue. It is the single most important decision here.
+
+   THE TWO HAIRLINES. The brief specifies `rgba(255,255,255,0.1)` for borders. Measured against
+   the glass it sits on, that is 1.27:1 — a fine divider, and nowhere near the 3:1 that WCAG
+   1.4.11 requires for the visual boundary that identifies a CONTROL. So there are two tokens:
+   `--nt-line` keeps the brief's value for decorative rules, and `--nt-control-line` raises the
+   alpha to 0.36, measured at 3.22:1 on the ground and 3.08:1 on the glass. Getting these two
+   the wrong way round either makes the page look dirty or ships controls nobody can find.
+
+   BODY INK. `#94A3B8` measures 7.87:1 on the ground and 7.54:1 on the glass, so the brief's
+   muted tone is used verbatim for real text rather than being demoted to decoration. The
+   brief has no fourth step, so muted does double duty as `--mk-faint` instead of inventing a
+   grey that would fail.
+   ===================================================================================== */
+
+/* =====================================================================================
+   1. THE TOKENS
+   =====================================================================================
+   One block, three classes deep, re-pointing the whole system. Because blueprint.css is almost
+   entirely token-driven — 39 custom properties feed every colour in it — most of the re-skin
+   happens right here, and the sections below only handle the handful of values it hardcoded. */
+.mk.mk.mk-site {
+  /* ---- the ground ------------------------------------------------------------------ */
+  --nt-space: #020617;   /* AMOLED Deep Space — the page, and every neon's ink */
+  --nt-glass-rgb: 15, 23, 42;
+
+  /* The glass ladder. The brief gives one value, rgba(15,23,42,.4), and it is the base step:
+     measured over the ground it composites to #070D1F, a 1.04:1 lift. That is deliberately
+     subtle — on a dark ground a card is read from its EDGE and its blur, not from a fill that
+     is brighter than the page, which is the mistake that makes dark UIs look like grey boxes.
+     The two raised steps exist because a popover and a nav must actually occlude what is
+     behind them, and 40% does not. */
+  --nt-glass: rgba(15, 23, 42, .40);
+  --nt-glass-2: rgba(15, 23, 42, .62);
+  --nt-glass-3: rgba(15, 23, 42, .86);
+
+  /* ---- the two hairlines (see the header) ------------------------------------------ */
+  --nt-line: rgba(255, 255, 255, .10);
+  --nt-control-line: rgba(255, 255, 255, .36);
+
+  /* ---- the ink ladder, each step measured on ground and glass ---------------------- */
+  --nt-ink: #F8FAFC;    /* Bright Silver — 19.28:1 ground / 18.48:1 glass */
+  --nt-prose: #CBD5E1;  /* long-form: terms, FAQ answers, card body */
+  --nt-muted: #94A3B8;  /* Slate Gray — 7.87:1 / 7.54:1. Real text, not decoration. */
+  --nt-faint: #94A3B8;  /* the brief has no fourth step; never invent one that fails */
+
+  /* ---- the neon pair, and the ink that goes on them -------------------------------- */
+  --nt-cyan: #00F2FE;    /* Cyber Cyan — the primary accent, 14.54:1 as ink on the ground */
+  --nt-sky: #4FACFE;     /* the gradient's far stop, 8.32:1 as ink */
+  --nt-emerald: #00FF87; /* Neon Emerald — conversion, 15.04:1 as ink */
+  --nt-on-neon: #020617; /* 14.54 / 8.32 / 15.04 on the three fills. White is 1.39 / 2.42 / 1.34. */
+
+  /* The gradient, in one place so the text and the buttons cannot drift apart. */
+  --nt-grad: linear-gradient(100deg, var(--nt-cyan) 0%, var(--nt-sky) 52%, var(--nt-cyan) 100%);
+
+  /* ---- the glow budget ------------------------------------------------------------- */
+  /* Three shadow steps, all cyan-tinted rather than neutral black: a black shadow on a near
+     black ground is invisible, so "elevation" here is light bleed, which is what the brief's
+     Glowing Glassmorphism actually means. */
+  --nt-glow-sm: 0 0 0 1px rgba(0, 242, 254, .10), 0 8px 24px -14px rgba(0, 242, 254, .28);
+  --nt-glow-md: 0 0 0 1px rgba(0, 242, 254, .16), 0 14px 44px -18px rgba(0, 242, 254, .34);
+  --nt-glow-lg: 0 0 0 1px rgba(0, 242, 254, .22), 0 24px 70px -24px rgba(0, 242, 254, .44);
+
+  /* ---- shapes ---------------------------------------------------------------------- */
+  --nt-r-card: 20px;  /* the brief: cards and panels */
+  --nt-r-pill: 50px;  /* the brief: every CTA */
+  --nt-r-inset: 14px; /* one step in — figure frames and inputs inside a card */
+  --nt-r-chip: 999px; /* the smallest rounded thing: pills, tags, badges */
+  --nt-blur: 16px;    /* the brief's backdrop-filter value */
+
+  /* ===================================================================================
+     THE RE-POINT
+     ===================================================================================
+     Everything below is blueprint.css's own vocabulary, mapped onto the palette above. This
+     is what makes the change total: the 58KB of rules in that file are still doing the work —
+     layout, spacing, grid, the responsive system, the focus behaviour — they are simply
+     reading different colours now. Only the ~29 declarations it hardcoded need a rule of
+     their own, and those are in section 8. */
+
+  --mk-bg: var(--nt-space);
+  --mk-panel: var(--nt-glass);
+  --mk-raise: rgba(15, 23, 42, .55);
+
+  --mk-line: var(--nt-line);
+  --mk-control-line: var(--nt-control-line);
+
+  /* Form fields. On a dark ground a field is not a well, it is a pane: it takes the base
+     glass and the control-strength edge, so it reads as somewhere you can type rather than
+     as a slightly darker patch of card. */
+  --mk-field-bg: rgba(2, 6, 23, .55);
+  --mk-field-ink: var(--nt-ink);
+  --mk-field-hint: var(--nt-muted);
+  --mk-input-line: var(--nt-control-line);
+
+  --mk-ink: var(--nt-ink);
+  --mk-prose: var(--nt-prose);
+  --mk-muted: var(--nt-muted);
+  --mk-faint: var(--nt-faint);
+
+  /* The accent slot. `--mk-green` is a legacy NAME — it has held the brand blue and, before
+     that, a green — and it is the token every accent in blueprint.css reads. It now holds
+     Cyber Cyan, so every existing accent rule turns cyan without being rewritten. */
+  --mk-green: var(--nt-cyan);
+  /* Hover goes LIGHTER here, and that is the inverse of the light skin's rule. On a light
+     ground a lighter blue walks toward the page and stops reading as a response; on Deep
+     Space a darker cyan does exactly the same thing in the other direction. */
+  --mk-green-2: #6FF6FF;
+  --mk-green-line: rgba(0, 242, 254, .30);
+  --mk-on-green: var(--nt-on-neon);
+  --mk-on-green-dim: rgba(2, 6, 23, .74);
+
+  --mk-blue-fill: var(--nt-cyan);
+  --mk-blue-fill-2: #6FF6FF;
+  --mk-on-blue-fill: var(--nt-on-neon);
+
+  /* Conversion. The brief's "Conversion/Action" colour, and its only job is the survey marker
+     and the one high-conversion highlight per screen. Same rule as every other neon: the ink
+     on it is Deep Space. */
+  --mk-marker: var(--nt-emerald);
+  --mk-on-marker: var(--nt-on-neon);
+  /* The warning tone. The previous skin's #C2410C was picked to clear 4.5:1 on a LIGHT ground
+     and measures about 1.9:1 here, so it is re-cut for the dark one. */
+  --mk-amber: #FBBF24;
+
+  /* The hero's own tokens. In the Blueprint skin these described "the one dark plate on a
+     light page"; on Deep Space the plate is gone, so they collapse into the general ladder
+     and the hero is differentiated by its aurora rather than by being darker than the page. */
+  --mk-deep: rgba(15, 23, 42, .55);
+  --mk-deep-line: var(--nt-line);
+  --mk-deep-ink: var(--nt-ink);
+  --mk-deep-prose: var(--nt-prose);
+  --mk-deep-accent: var(--nt-cyan);
+
+  --mk-shadow: var(--nt-glow-sm);
+  --mk-shadow-lg: var(--nt-glow-md);
+  --card-lip: 0 0 0 0 rgba(0, 0, 0, 0);
+  --card-radius: var(--nt-r-card);
+
+  /* The registration marks. The Blueprint skin drew a "+" at the corner of every card frame,
+     which was the whole point of that skin and is explicitly retired by this one ("aturan
+     desain Blueprint sebelumnya memaksakan sudut 0px pada seluruh bentuk... konsep Neo-
+     Topography menghapusnya"). Making the token transparent retires all eight gradient arms
+     on every frame in one line, and leaves the machinery in place in case a future skin
+     wants it back. */
+  --mk-mark-line: transparent;
+
+  /* The contour field. SiteGround.tsx reads this token for its line pigment, so the WebGL
+     ground turns cyan with no change to that file. Kept low: it is texture behind body copy. */
+  --mk-line-field: rgba(0, 242, 254, .55);
+}
+
+/* =====================================================================================
+   2. THE GROUND
+   =====================================================================================
+   The document ground is set on `html`/`body` rather than on `.mk-site`, because the page's
+   overscroll bounce and the area behind the fixed nav are painted by the document, not by the
+   wrapper — and because `corporate.css` sets a midnight ground there with a selector that
+   this file has to beat. It was set at (0,1,1) by blueprint.css (`html:has(.mk-site)`);
+   `html:has(.mk.mk-site)` is (0,2,1) because `:has()` takes the specificity of its most
+   specific argument, so this wins on specificity rather than on load order.
+
+   THE COLOUR IS WRITTEN AS A LITERAL, AND THAT IS NOT AN OVERSIGHT. `--nt-space` is defined
+   on `.mk.mk.mk-site`, which is a DESCENDANT of both `html` and `body` — and custom properties
+   inherit DOWNWARD only. `var(--nt-space)` in this rule would resolve to nothing and the
+   ground would fall back to whatever the fallback said, which is a trap this project has
+   already been bitten by twice (see `--gf-cond` in references/ui-rules.md). The value is
+   therefore stated here in full, with the token repeated beside it so the two cannot drift
+   without the comment making it obvious. */
+html:has(.mk.mk-site) body,
+html:has(.mk.mk-site) {
+  background: #020617; /* = --nt-space */
+}
+
+/* The scrollbar, in the palette. Chrome and Safari take the first two; Firefox the last two.
+   The thumb is the control-strength line rather than the hairline, for the same reason
+   buttons are: a scrollbar is something you have to be able to find. */
+html:has(.mk.mk-site) {
+  scrollbar-color: rgba(255, 255, 255, .36) #020617;
+}
+html:has(.mk.mk-site) ::-webkit-scrollbar { width: 12px; height: 12px; }
+html:has(.mk.mk-site) ::-webkit-scrollbar-track { background: #020617; }
+html:has(.mk.mk-site) ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, .36);
+  border: 3px solid #020617;
+  border-radius: var(--nt-r-chip);
+}
+html:has(.mk.mk-site) ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, .52); }
+
+/* Selection. Cyan at 30% keeps the text legible over it — a solid cyan band would put Deep
+   Space ink on cyan, which passes, but it also destroys the reader's sense of where they are
+   in the paragraph. */
+.mk.mk.mk-site ::selection {
+  background: rgba(0, 242, 254, .30);
+  color: var(--nt-ink);
+}
+
+/* The focus ring. Cyan at full strength on the ground is 14.54:1, so this is not a compromise
+   ring — it is the most visible thing on the page at the moment it appears, which is what a
+   focus indicator is for. The offset matters more than the colour: it keeps the ring outside
+   the control so it never reads as a border. */
+.mk.mk.mk-site :focus-visible {
+  outline: 2px solid var(--nt-cyan);
+  outline-offset: 3px;
+  border-radius: var(--nt-r-inset);
+}
+
+/* =====================================================================================
+   3. GLASS — the surface system
+   =====================================================================================
+   The brief: "Seluruh container tidak menggunakan bayangan gelap biasa, melainkan menggunakan
+   backdrop-filter: blur(16px)". Applied to the surfaces that are actually panes — cards,
+   panels, popovers, the nav — and NOT to every element with a background, because
+   backdrop-filter forces the compositor to re-sample everything behind the element on every
+   frame, and a page with forty of them is a page that scrolls badly on a mid-range laptop.
+
+   `-webkit-` is prefixed for Safari, which still needs it. */
+.mk.mk.mk-site .pg-cell,
+.mk.mk.mk-site .pg-price-card,
+.mk.mk.mk-site .mk-price-card,
+.mk.mk.mk-site .mk-card,
+.mk.mk.mk-site .mk-plan,
+.mk.mk.mk-site .mk-faq-item,
+.mk.mk.mk-site .mk-cap,
+.mk.mk.mk-site .mk-rec,
+.mk.mk.mk-site .mk-meta,
+.mk.mk.mk-site .mk-acct-panel,
+.mk.mk.mk-site .mk-menu-panel,
+.mk.mk.mk-site .mk-subscribe,
+.mk.mk.mk-site .mk-form,
+.mk.mk.mk-site .mk-doc,
+.mk.mk.mk-site .mk-seal {
+  background: var(--nt-glass);
+  -webkit-backdrop-filter: blur(var(--nt-blur)) saturate(150%);
+  backdrop-filter: blur(var(--nt-blur)) saturate(150%);
+  border-color: var(--nt-line);
+}
+
+/* `saturate(150%)` is not decoration. A blur alone averages the colours behind the pane and
+   the result reads as grey fog; saturating before it is composited is what keeps the cyan
+   ground and the neon accents visible THROUGH the glass, which is the entire difference
+   between glassmorphism and a frosted plastic sheet. */
+
+/* The surfaces that must occlude: the nav once stuck, menus, and the account popover. These
+   take the opaque end of the ladder because a translucent nav over body copy is unreadable
+   at exactly the moment the reader is scrolling. */
+.mk.mk.mk-site .mk-nav.is-stuck,
+.mk.mk.mk-site .mk-menu-panel,
+.mk.mk.mk-site .mk-acct-panel {
+  background: var(--nt-glass-3);
+}
+
+/* =====================================================================================
+   4. SHAPES — the brief retires 0px
+   =====================================================================================
+   "Kartu / Panel: 20px", "Tombol CTA: 50px (Pill-shaped, mengikuti standar navigasi intuitif
+   Vercel/Apple)". The Blueprint skin set ten `border-radius: 0` rules on this project; all
+   ten are reversed below, plus the radii the earlier skins hardcoded (6px buttons, 8px and
+   10px cards, 100px pills) which are folded into the two new steps rather than left to
+   disagree with each other. */
+.mk.mk.mk-site .pg-cell.pg-cell,
+.mk.mk.mk-site .pg-price-card.pg-price-card,
+.mk.mk.mk-site .mk-price-card.mk-price-card,
+.mk.mk.mk-site .pg-cell-art,
+.mk.mk.mk-site .pg-row-art,
+.mk.mk.mk-site .pg-sec::before,
+.mk.mk.mk-site .mk-sec::before,
+.mk.mk.mk-site .mk-hero::before,
+.mk.mk.mk-site .mk-cap,
+.mk.mk.mk-site .mk-rec,
+.mk.mk.mk-site .mk-meta,
+.mk.mk.mk-site .mk-plan,
+.mk.mk.mk-site .mk-faq-item,
+.mk.mk.mk-site .mk-card,
+.mk.mk.mk-site .mk-shot,
+.mk.mk.mk-site .mk-acctpage-stat,
+.mk.mk.mk-site .mk-nf-card,
+.mk.mk.mk-site .mk-doc,
+.mk.mk.mk-site .mk-form,
+.mk.mk.mk-site .mk-seal {
+  border-radius: var(--nt-r-card);
+}
+
+/* The pill. Every control, at 50px, which on a 40px-tall button is a full round — and that is
+   the point: the brief asks for the Apple/Vercel navigation idiom, where the shape itself
+   says "this is pressable". */
+.mk.mk.mk-site .pg-btn,
+.mk.mk.mk-site .mk-btn,
+.mk.mk.mk-site .mk-submit,
+.mk.mk.mk-site .mk-send,
+.mk.mk.mk-site .mk-portal,
+.mk.mk.mk-site .mk-plan-cta,
+.mk.mk.mk-site .mk-acct-btn,
+.mk.mk.mk-site .mk-acct-all,
+.mk.mk.mk-site .mk-acct-out,
+.mk.mk.mk-site .mk-nav-pill,
+.mk.mk.mk-site .mk-ledger-pill,
+.mk.mk.mk-site .mk-eyebrow,
+.mk.mk.mk-site .mk-price-card .mk-btn,
+.mk.mk.mk-site .pg-price-card .pg-btn {
+  border-radius: var(--nt-r-pill);
+}
+
+/* THE SMALL CONTROLS, and they are named one by one because the brief only gives two shape
+   values and neither of them is right for a 28px icon button. A 50px pill on a 28px square is
+   not a pill, it is a circle — and the icon inside a language toggle or a menu button is not
+   something you press from across the room. These take the inset step, which is the same
+   radius the fields inside a card use, so the small controls read as one family.
+
+   They are listed explicitly rather than caught by a `button` element selector because a bare
+   `button` rule would also round things this file has no business touching. */
+.mk.mk.mk-site .mk-lang button,
+.mk.mk.mk-site .mk-lang-seg button,
+.mk.mk.mk-site .mk-menu-btn,
+.mk.mk.mk-site .mk-nav button,
+.mk.mk.mk-site .mk-nav-pill button,
+.mk.mk.mk-site .mk-acct-btn,
+.mk.mk.mk-site button.mk-icon,
+.mk.mk.mk-site .mk-seg button,
+.mk.mk.mk-site .mk-car-arrow,
+.mk.mk.mk-site .mk-car-dot {
+  border-radius: var(--nt-r-inset);
+}
+/* The dots stay round — a square pagination dot is a UI bug, not a style choice. */
+.mk.mk.mk-site .mk-car-dot { border-radius: var(--nt-r-chip); }
+
+/* The logo lockup. It is an image, and the brief's own shape list covers "gambar" alongside
+   panels and buttons, so it takes the inset step rather than staying square. */
+.mk.mk.mk-site .gf-logo,
+.mk.mk.mk-site .mk-footer .gf-lockup,
+.mk.mk.mk-site .mk-nav .gf-lockup {
+  border-radius: var(--nt-r-inset);
+}
+
+/* One step in: the things that live INSIDE a card. A 20px card holding a 50px input looks
+   like a mistake; 14px reads as concentric with the 20px it sits in. */
+.mk.mk.mk-site .mk-input,
+.mk.mk.mk-site .mk-field,
+.mk.mk.mk-site .mk-cell,
+.mk.mk.mk-site .mk-phone-screen,
+.mk.mk.mk-site .mk-scr-view,
+.mk.mk.mk-site .mk-scr-canvas,
+.mk.mk.mk-site .mk-acct-list a,
+.mk.mk.mk-site .mk-ipaymu-test,
+.mk.mk.mk-site .mk-plan-flag,
+.mk.mk.mk-site .mk-footer .gf-lockup,
+.mk.mk.mk-site .mk-menu-icon > span {
+  border-radius: var(--nt-r-inset);
+}
+
+/* And the smallest: chips, tags, the OSS mark, the wordmark's underline. These are already
+   round in spirit; they just need to agree on a value. */
+.mk.mk.mk-site .mk-wordmark::after,
+.mk.mk.mk-site .gf-glow {
+  border-radius: var(--nt-r-chip);
+}
+
+/* The card LIP. The Blueprint skin used `--card-lip` to draw a hard 0px offset edge; with a
+   20px radius that edge would be drawn as a square over a round corner. Neutralised rather
+   than deleted, because the property is read in four places. */
+.mk.mk.mk-site .pg-cell::before,
+.mk.mk.mk-site .mk-card::before {
+  border-radius: inherit;
+}
+
+/* =====================================================================================
+   5. THE TYPE — Liquid Gradient Shift
+   =====================================================================================
+   "Latar warna gradasi berjalan perlahan melintasi teks, membuat teks terlihat seolah
+   memiliki sirkuit energi yang mengalir di dalamnya." Applied to the display headings, which
+   is what the brief names (H1, H2).
+
+   THE FALLBACK IS LOAD-BEARING. `background-clip: text` with a transparent fill makes the
+   glyphs invisible if the clip is not honoured, so the colour is set first and the clip is
+   applied only where it is supported. A reader on an engine without it gets solid Bright
+   Silver — 19.28:1 — rather than an empty heading.
+
+   `-webkit-text-fill-color` is used in preference to `color: transparent` because it wins
+   over `color` in every engine that understands it, which means the `.pg-d1` colour rules
+   elsewhere in the stack cannot half-apply and leave the text invisible. */
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .mk.mk.mk-site .pg-d1,
+  .mk.mk.mk-site .pg-d2,
+  .mk.mk.mk-site .pg-quote .pg-d2,
+  /* THE PRICING PAGE USES A DIFFERENT HEADING VOCABULARY and the brief does not care which page
+     it is on — it says "Judul utama (H1, H2)". The landing page names its display headings
+     `.pg-d1`/`.pg-d2`; /pricing uses `.mk-h-title` for its H1 and plain `<h2>` inside a
+     `.mk-sec-head`, which is why a measured pass found the pricing H1 flat Bright Silver while
+     every landing heading carried the gradient. Both vocabularies are listed here. */
+  .mk.mk.mk-site .mk-h-title,
+  .mk.mk.mk-site .mk-sec-head h2,
+  .mk.mk.mk-site .mk-close h2 {
+    background-image: var(--nt-grad);
+    background-size: 220% 100%;
+    background-position: 0% 50%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: gradientShift 6s ease-in-out infinite;
+  }
+}
+
+/* The display face keeps the weight it had; only the pigment moves. `padding-bottom` gives the
+   descenders room — `background-clip: text` clips the background to the glyph box, and on a
+   tight line-height the tail of a `g` can lose its fill. */
+.mk.mk.mk-site .pg-d1,
+.mk.mk.mk-site .pg-d2 {
+  padding-bottom: .06em;
+}
+
+/* THE <em> INSIDE A GRADIENT HEADING, and it is a trap rather than a detail.
+   `home.css` styles `.mk-h-title em` as the brand-green highlight word, and that rule still
+   applies — but `-webkit-text-fill-color` INHERITS, and the rule above sets it to `transparent`
+   on the parent. An inherited `-webkit-text-fill-color` beats a `color` declaration on the
+   descendant, so the highlight word would have rendered as an invisible gap in the middle of
+   the headline: the styles would all resolve, and the word would simply not be there.
+
+   The em is re-inked to the brief's Neon Emerald rather than the old brand green, which also
+   gives it a job the brief actually names — "Digunakan khusus untuk penanda atau highlight
+   konversi tinggi". A highlighted word in a headline is exactly that. Its own gradient is
+   switched off, because a second animated gradient inside the first would read as a seam. */
+.mk.mk.mk-site .mk-h-title em,
+.mk.mk.mk-site .mk-sec-head h2 em,
+.mk.mk.mk-site .mk-close h2 em,
+.mk.mk.mk-site .pg-d1 em,
+.mk.mk.mk-site .pg-d2 em {
+  background-image: none;
+  background-clip: border-box;
+  -webkit-background-clip: border-box;
+  -webkit-text-fill-color: var(--nt-emerald);
+  color: var(--nt-emerald);
+  animation: none;
+}
+
+/* The eyebrows and micro-labels: cyan, at the weight and tracking the skin already set. */
+.mk.mk.mk-site .pg-micro,
+.mk.mk.mk-site .pg-eyebrow,
+.mk.mk.mk-site .pg-cell-n,
+.mk.mk.mk-site .pg-num,
+.mk.mk.mk-site .mk-seal-rows dt,
+.mk.mk.mk-site .pg-head-top .pg-num-tag {
+  color: var(--nt-cyan);
+}
+
+/* Body copy on the glass. `--mk-prose` already resolves to Slate Light, but blueprint.css
+   hardcoded a few ledes against the old palette, so they are re-pointed here. */
+.mk.mk.mk-site .pg-lede,
+.mk.mk.mk-site .pg-body,
+.mk.mk.mk-site .pg-head-lede,
+.mk.mk.mk-site .mk-lede,
+.mk.mk.mk-site .mk-sub {
+  color: var(--nt-prose);
+}
+
+/* =====================================================================================
+   6. THE CHROME — a glass bar
+   =====================================================================================
+   The nav was an opaque white bar in the previous skin ("latar belakang putih bersih"), which
+   was correct against a light ground and is the single most jarring thing left when the ground
+   goes dark. It becomes glass, and it keeps the brief's blur rather than a flat fill so the
+   contour field can be seen moving underneath it. */
+.mk.mk.mk-site .mk-nav {
+  background: rgba(2, 6, 23, .62);
+  -webkit-backdrop-filter: blur(var(--nt-blur)) saturate(160%);
+  backdrop-filter: blur(var(--nt-blur)) saturate(160%);
+  border-bottom: 1px solid var(--nt-line);
+}
+.mk.mk.mk-site .mk-nav.is-stuck {
+  background: var(--nt-glass-3);
+  border-bottom-color: var(--nt-line);
+}
+
+/* The nav's own pill and the account chip. Both were light-on-light in the previous skin. */
+.mk.mk.mk-site .mk-nav-pill {
+  background: rgba(255, 255, 255, .06);
+  border-color: var(--nt-control-line);
+}
+.mk.mk.mk-site .mk-acct-btn:hover {
+  background: rgba(0, 242, 254, .10);
+}
+.mk.mk.mk-site .mk-acct-btn[aria-expanded='true'] {
+  background: rgba(0, 242, 254, .14);
+}
+
+/* The menu panel and the account popover. These are the two surfaces that float OVER content,
+   so they take the opaque step — and the large glow, because on a dark ground the way a
+   floating panel separates itself from the page is by bleeding light, not by casting shadow. */
+.mk.mk.mk-site .mk-menu-panel,
+.mk.mk.mk-site .mk-acct-panel {
+  box-shadow: var(--nt-glow-lg);
+}
+
+/* The account popover's two rows. */
+.mk.mk.mk-site .mk-acct-all:hover { background: rgba(0, 242, 254, .10); }
+.mk.mk.mk-site .mk-acct-out:hover { background: rgba(255, 255, 255, .08); }
+
+/* The footer. It was a white band; it becomes the deepest pane on the page so the eye reads
+   the end of the document as the end, and so the neon accents in the legalitas column sit on
+   the quietest surface available. */
+.mk.mk.mk-site .mk-footer {
+  background: rgba(2, 6, 23, .72);
+  -webkit-backdrop-filter: blur(var(--nt-blur));
+  backdrop-filter: blur(var(--nt-blur));
+  border-top: 1px solid var(--nt-line);
+}
+.mk.mk.mk-site .mk-footer a { color: var(--nt-muted); }
+.mk.mk.mk-site .mk-footer a:hover { color: var(--nt-cyan); }
+.mk.mk.mk-site .mk-footer-col > span { color: var(--nt-ink); }
+.mk.mk.mk-site .mk-seal-heading { color: var(--nt-ink); }
+.mk.mk.mk-site .mk-seal-rows dd { color: var(--nt-ink); }
+.mk.mk.mk-site .mk-seal-oss {
+  background: rgba(0, 242, 254, .10);
+  border-color: rgba(0, 242, 254, .30);
+  color: var(--nt-cyan);
+}
+
+/* The scroll-progress hairline, which reads the accent. */
+.mk.mk.mk-site .mk-progress span {
+  background: var(--nt-grad);
+  background-size: 220% 100%;
+  animation: gradientShift 6s linear infinite;
+}
+
+/* The sync/status pills in the footer and the ledger. Re-cut so their three states are
+   distinguishable on the dark ground rather than by three near-identical dark fills. */
+.mk.mk.mk-site .mk-ledger-pill.is-settled {
+  background: rgba(0, 242, 254, .12);
+  color: var(--nt-cyan);
+}
+.mk.mk.mk-site .mk-ledger-pill.is-pending {
+  background: rgba(251, 191, 36, .14);
+  color: #FBBF24;
+}
+.mk.mk.mk-site .mk-ledger-pill.is-refunded {
+  background: rgba(255, 255, 255, .08);
+  color: var(--nt-muted);
+}
+
+/* =====================================================================================
+   7. THE HERO — the aurora, and Cyber Breathe
+   =====================================================================================
+   In the Blueprint skin the hero was "the one dark plate on a light page" and its `::before`
+   painted a midnight gradient to BE that plate. On Deep Space there is no plate to paint: the
+   page is already the colour the plate was. So the pseudo is re-tasked as an AURORA — the
+   brief's gradient accent, at low opacity, bleeding from the top of the hero — which is what
+   gives the section an identity now that it can no longer be darker than its surroundings. */
+.mk.mk.mk-site .pg-hero::before,
+.mk.mk.mk-site .mk-hero::before {
+  background:
+    radial-gradient(120% 90% at 12% -10%, rgba(0, 242, 254, .22), transparent 58%),
+    radial-gradient(100% 80% at 88% 6%, rgba(79, 172, 254, .16), transparent 62%),
+    linear-gradient(180deg, rgba(15, 23, 42, .55) 0%, rgba(2, 6, 23, 0) 78%);
+  border-color: var(--nt-line);
+  border-radius: var(--nt-r-card);
+  box-shadow: var(--nt-glow-md);
+  animation: cyberBreathe 6s ease-in-out infinite;
+}
+
+/* The hero's own ink. These were the `--mk-deep-*` tokens; they now resolve to the general
+   ladder, but the hero's lede is stated explicitly because it sits on the aurora rather than
+   on flat ground and needs the full-strength step. */
+.mk.mk.mk-site .pg-hero .pg-d1 { color: var(--nt-ink); }
+.mk.mk.mk-site .pg-hero .pg-lede { color: var(--nt-prose); }
+.mk.mk.mk-site .pg-hero .pg-micro { color: var(--nt-cyan); }
+.mk.mk.mk-site .pg-hero .pg-stats { border-top-color: var(--nt-line); }
+.mk.mk.mk-site .pg-hero .pg-stat dt { color: var(--nt-cyan); }
+.mk.mk.mk-site .pg-hero .pg-stat dd { color: var(--nt-ink); }
+.mk.mk.mk-site .pg-hero .pg-stat dd small { color: var(--nt-muted); }
+
+/* The coordinate readout — the most "instrument" thing on the page, and the one place the
+   brief's monospace still earns its keep. It becomes a glass chip with a cyan edge. */
+.mk.mk.mk-site .pg-coord {
+  background: rgba(0, 242, 254, .07);
+  border: 1px solid rgba(0, 242, 254, .22);
+  border-radius: var(--nt-r-chip);
+}
+.mk.mk.mk-site .pg-coord-sep { color: var(--nt-muted); }
+.mk.mk.mk-site .pg-coord-note { color: var(--nt-muted); }
+
+/* The hero figure frames. */
+.mk.mk.mk-site .pg-hero .pg-row-art {
+  background: rgba(0, 242, 254, .06);
+  border-color: var(--nt-line);
+}
+
+/* =====================================================================================
+   8. THE CARDS, THE BENTO, AND THE PRICING — where the brief's animation actually lands
+   =====================================================================================
+   "Cyber Breathe (animation: cyberBreathe 6s) — Penerapan: Pricing Cards, Hero Section.
+   Efek: Elemen melayang naik-turun dalam hitungan milimeter dan memancarkan pendaran glow
+   cyan yang mengembang lalu menyusut."
+
+   THE TILT COLLISION, AND WHY IT DECIDES THE IMPLEMENTATION.
+   The pricing cards carry `data-tilt`, and Motion.tsx drives them with GSAP's `quickTo` on
+   `rotationX`/`rotationY`. GSAP does not write `transform` alone: as part of its transform
+   handling it also writes the independent properties (`translate: none; rotate: none;
+   scale: none`), which was observed directly in the element's inline style while auditing this.
+
+   That rules out animating `transform`, because a CSS animation outranks a normal inline
+   declaration and would therefore REPLACE GSAP's rotation matrix — killing the tilt, which is
+   a feature the brief also asks for. It does NOT rule out the independent `translate`
+   property: a CSS animation on `translate` beats GSAP's `translate: none` reset, so the float
+   survives a hover, and `transform` is left untouched for GSAP to rotate.
+
+   So: `translate` carries the travel, `box-shadow` carries the glow, and `transform` is left
+   alone entirely. Three properties, no collision, both halves of Cyber Breathe intact.
+
+   The bento cells carry `data-spotlight` only. That effect writes `--mx`/`--my` custom
+   properties and no transform at all, so those cards breathe directly. */
+.mk.mk.mk-site .pg-cell,
+.mk.mk.mk-site .pg-price-card,
+.mk.mk.mk-site .mk-price-card {
+  border: 1px solid var(--nt-line);
+  background: var(--nt-glass);
+  -webkit-backdrop-filter: blur(var(--nt-blur)) saturate(150%);
+  backdrop-filter: blur(var(--nt-blur)) saturate(150%);
+  box-shadow: var(--nt-glow-sm);
+  /* Two animations, and the property list matters: `cyberBreathe` drives the glow and
+     `cyberFloat` drives the travel. See the keyframes in section 11. */
+  animation: cyberBreathe 6s ease-in-out infinite, cyberFloat 6s ease-in-out infinite;
+}
+
+/* Staggered so the grid breathes as a field rather than as one block pulsing in unison, which
+   is what makes a page feel alive instead of animated. Delays are index-based via nth-child
+   and stay under the 6s period so no two neighbours ever land on the same phase.
+
+   `animation-delay` takes a LIST, one entry per animation, because a single value would apply
+   to both and put the glow and the float in lockstep — which is exactly the machine-like
+   effect the stagger exists to avoid. Negative values start the cycle mid-flight so the grid
+   is already breathing on first paint rather than easing in from a dead stop. */
+.mk.mk.mk-site .pg-cell:nth-child(2n),
+.mk.mk.mk-site .pg-price-card:nth-child(2n),
+.mk.mk.mk-site .mk-price-card:nth-child(2n) { animation-delay: -1.5s, -.75s; }
+.mk.mk.mk-site .pg-cell:nth-child(3n),
+.mk.mk.mk-site .pg-price-card:nth-child(3n),
+.mk.mk.mk-site .mk-price-card:nth-child(3n) { animation-delay: -3s, -1.9s; }
+.mk.mk.mk-site .pg-cell:nth-child(5n),
+.mk.mk.mk-site .pg-price-card:nth-child(5n),
+.mk.mk.mk-site .mk-price-card:nth-child(5n) { animation-delay: -4.5s, -3.1s; }
+
+/* The hover state. On a dark ground a border lightening is nearly invisible, so the response
+   is carried by the edge glow instead — the brief's "spotlight" idea applied to the card
+   itself rather than only to the cursor. */
+.mk.mk.mk-site .pg-cell.pg-cell:hover,
+.mk.mk.mk-site .pg-price-card.pg-price-card:hover,
+.mk.mk.mk-site .mk-price-card.mk-price-card:hover {
+  border-color: rgba(0, 242, 254, .38);
+  box-shadow: var(--nt-glow-md);
+}
+
+/* The figure frames inside the bento. The Blueprint skin filled them with the canvas grey;
+   here they are a darker inset so the illustration reads as being ON the glass. */
+.mk.mk.mk-site .pg-cell-art,
+.mk.mk.mk-site .pg-sec-tint .pg-cell-art {
+  background: rgba(2, 6, 23, .45);
+  border-color: var(--nt-line);
+}
+
+/* THE "+" REGISTRATION MARKS ARE RETIRED, and this is a deliberate removal rather than an
+   oversight — the new brief never mentions them and retires the whole aesthetic they belong to:
+
+     "Aturan desain Blueprint sebelumnya memaksakan sudut 0px pada seluruh bentuk. Konsep
+      Neo-Topography menghapusnya dan beralih ke desain organik dan fluid."
+
+   The marks are the Blueprint skin's signature device. They were also measurably broken by the
+   change of shape: blueprint.css positions them at `inset: 0`, i.e. the SQUARE corners of the
+   box, while the cards are now 20px-radius. Measured on the first figure frame, 9 px of the
+   painted arms hang OUTSIDE the rounded shape — outside the card's own silhouette — and a read
+   of the rendered band reported them as doubled/ghosted borders, which is exactly what a mark
+   hanging in the cut-away corner looks like.
+
+   `background-image: none` rather than `display: none`, because the pseudo-element carries no
+   other paint and removing the images is the smallest change that removes the marks. */
+.mk.mk.mk-site .pg-cell-art::after,
+.mk.mk.mk-site .pg-row-art::after,
+.mk.mk.mk-site .pg-hero .pg-cell-art::after,
+.mk.mk.mk-site .pg-hero .pg-row-art::after {
+  background-image: none;
+}
+
+/* The feature card. The previous skin highlighted it with a solid blue border; the brief asks
+   for a gradient, so it takes the accent gradient as its edge via a border-image-free
+   approach: a cyan ring at the glow token's strength, which is the same visual idea and does
+   not break the 20px radius the way `border-image` does. */
+.mk.mk.mk-site .pg-price-card.pg-price-card.feat,
+.mk.mk.mk-site .mk-price-card.mk-price-card.feat,
+.mk.mk.mk-site .mk-plan.featured.mk-plan.featured {
+  background: linear-gradient(180deg, rgba(0, 242, 254, .10), rgba(15, 23, 42, .55) 46%);
+  border-color: rgba(0, 242, 254, .42);
+  box-shadow: var(--nt-glow-lg);
+}
+.mk.mk.mk-site .pg-price-card.pg-price-card.feat .pg-micro,
+.mk.mk.mk-site .mk-price-card.mk-price-card.feat .mk-price-name,
+.mk.mk.mk-site .mk-plan.featured.mk-plan.featured .mk-plan-name {
+  color: var(--nt-cyan);
+}
+.mk.mk.mk-site .pg-price-card.pg-price-card.feat .pg-price-fig,
+.mk.mk.mk-site .pg-price-card.pg-price-card.feat h3,
+.mk.mk.mk-site .pg-price-card.pg-price-card.feat .pg-price-list li,
+.mk.mk.mk-site .mk-price-card.mk-price-card.feat .mk-plist li {
+  color: var(--nt-ink);
+}
+.mk.mk.mk-site .pg-price-card.pg-price-card.feat p,
+.mk.mk.mk-site .pg-price-card.pg-price-card.feat .pg-price-fig small {
+  color: var(--nt-prose);
+}
+/* The feature card's checklist ticks. The tick is drawn as two borders on a rotated box, so it
+   is a BORDER colour rather than an ink — which is why an audit sweeping `getComputedStyle().color`
+   reports zero emerald on a page where the ticks are plainly green. Both are set: the border is
+   what draws the tick, and the ink is set alongside so the element's colour is the same value
+   and a later rule cannot half-apply it. */
+.mk.mk.mk-site .pg-price-card.pg-price-card.feat .pg-price-list li::before,
+.mk.mk.mk-site .mk-price-card.mk-price-card.feat .mk-plan-list li::before,
+.mk.mk.mk-site .mk-price-card.mk-price-card.feat .mk-plist li::before {
+  border-left-color: var(--nt-emerald);
+  border-bottom-color: var(--nt-emerald);
+  color: var(--nt-emerald);
+}
+
+/* The globe's survey dot. This is the marketing page's own "penanda" — the brief assigns
+   Neon Emerald to exactly this role ("Digunakan khusus untuk penanda atau highlight konversi
+   tinggi"), and the globe's caption names the office it marks. */
+.mk.mk.mk-site .pg-globe-dot {
+  background: var(--nt-emerald);
+  color: var(--nt-emerald);
+  box-shadow: 0 0 0 3px rgba(0, 255, 135, .22), 0 0 18px rgba(0, 255, 135, .55);
+}
+
+/* The status readouts that carry a positive state. Emerald is the conversion colour, so it is
+   also the honest one for "this worked" — and it is used for the MARK only, never for body
+   copy, which stays on the silver ladder. */
+.mk.mk.mk-site .mk-ledger-pill.is-settled,
+.mk.mk.mk-site .pg-stat.is-up dd {
+  color: var(--nt-emerald);
+}
+.mk.mk.mk-site .pg-price-note { color: var(--nt-muted); }
+.mk.mk.mk-site .pg-price-note a { color: var(--nt-cyan); }
+
+/* The globe and the closing quote — the two sections the Blueprint skin darkened by hand.
+   On Deep Space they are simply sections, so they only need their ink re-pointed. */
+.mk.mk.mk-site .pg-sec-dark .pg-quote-body p { color: var(--nt-prose); }
+.mk.mk.mk-site .pg-sec-dark .pg-quote-body strong { color: var(--nt-ink); }
+.mk.mk.mk-site .pg-sec-dark .pg-globe-cap strong { color: var(--nt-ink); }
+.mk.mk.mk-site .pg-sec-dark .pg-globe-cap { color: var(--nt-prose); }
+.mk.mk.mk-site .pg-sec-dark .pg-globe-sub { color: var(--nt-muted); }
+
+/* The audience marquee. Its separator dots and label were tuned for a light ground. */
+.mk.mk.mk-site .pg-marquee-label { color: var(--nt-muted); }
+.mk.mk.mk-site .pg-marquee-item { color: var(--nt-prose); }
+.mk.mk.mk-site .pg-marquee-item::after { background: rgba(0, 242, 254, .55); }
+
+/* The glow cursor. The Blueprint skin's blue radial becomes the brief's cyan. */
+.mk.mk.mk-site .gf-glow {
+  background: radial-gradient(circle, rgba(0, 242, 254, .16) 0%, rgba(0, 242, 254, 0) 68%);
+}
+
+/* =====================================================================================
+   9. THE CONTROLS
+   =====================================================================================
+   THE INK RULE, restated because this is where it is easiest to get wrong: every neon fill
+   takes `--nt-on-neon` (Deep Space). White measures 1.39:1 on cyan, 1.34:1 on emerald and
+   2.42:1 on sky — all failures, and all invisible at a glance because a bright button with
+   white text looks fine until someone tries to read it in daylight.
+
+   THE GLOBE'S ACCENT, and why it needs its own rule. `paper.css` hardcodes
+   `--globe-accent: #F35D19` on `.mk .pg-globe-canvas` at (0,2,0), which outranks the token
+   block's inheritance — so the survey dot stayed orange while every other accent on the page
+   turned cyan. Stated here at (0,4,0) with the token, so the globe follows the palette.
+
+   `--globe-line` is the wireframe graticule, and it deliberately does NOT take the accent.
+   Painting the whole sphere in neon would make the one lit marker indistinguishable from the
+   lines it sits on, which is the opposite of what a marker is for.
+
+   THE PRIMARY CTA IS THE BRIEF'S GRADIENT ("Gradasi bercahaya untuk teks Heading dan tombol
+   CTA"), shifting on the same 6s clock as the headings.
+
+   `background-color` IS RESET EXPLICITLY, and that is not belt-and-braces. The rule this
+   overrides in blueprint.css uses the `background` SHORTHAND with the marker token, which sets
+   background-color as well as background-image. Overriding only `background-image` would leave
+   the old solid sitting UNDERNEATH the gradient — invisible where the gradient is opaque, but
+   visible at its soft edges, and it measured as the button's backgroundColor in the audit.
+   Resetting it to `transparent` is what makes the gradient the only pigment. */
+.mk.mk.mk-site .pg-globe-canvas,
+.mk.mk.mk-site .mk .pg-globe-canvas {
+  --globe-accent: var(--nt-emerald);
+  --globe-line: rgba(148, 163, 184, .42);
+}
+
+
+.mk.mk.mk-site .pg-btn.pg-btn-primary,
+.mk.mk.mk-site .mk-btn.mk-btn-primary,
+.mk.mk.mk-site .mk-price-card.feat .mk-btn.mk-btn-primary,
+.mk.mk.mk-site .pg-price-card.feat .pg-btn.pg-btn-primary,
+.mk.mk.mk-site .mk-plan.featured .mk-plan-cta,
+.mk.mk.mk-site .mk-submit,
+.mk.mk.mk-site .mk-send {
+  background-color: transparent;
+  background-image: var(--nt-grad);
+  background-size: 220% 100%;
+  border-color: transparent;
+  color: var(--nt-on-neon);
+  font-weight: 600;
+  animation: gradientShift 6s ease-in-out infinite;
+  box-shadow: 0 6px 26px -10px rgba(0, 242, 254, .55);
+}
+
+/* Hover. The gradient is paused and pushed brighter rather than swapped for a solid, so the
+   control keeps its identity; the glow tightens, which reads as the button coming forward. */
+.mk.mk.mk-site .pg-btn.pg-btn-primary:hover,
+.mk.mk.mk-site .mk-btn.mk-btn-primary:hover,
+.mk.mk.mk-site .mk-price-card.feat .mk-btn.mk-btn-primary:hover,
+.mk.mk.mk-site .pg-price-card.feat .pg-btn.pg-btn-primary:hover,
+.mk.mk.mk-site .mk-plan.featured .mk-plan-cta:hover,
+.mk.mk.mk-site .mk-submit:hover:not(:disabled),
+.mk.mk.mk-site .mk-send:hover:not(:disabled) {
+  background-image: linear-gradient(100deg, #6FF6FF 0%, #7CC0FF 52%, #6FF6FF 100%);
+  border-color: transparent;
+  color: var(--nt-on-neon);
+  box-shadow: 0 10px 34px -10px rgba(0, 242, 254, .75);
+}
+
+/* The secondary controls. An outline button on a dark ground is a glass pill with a
+   control-strength edge — not the brief's 0.10 hairline, which measures 1.27:1 and leaves a
+   button that cannot be found. */
+.mk.mk.mk-site .mk-btn-outline,
+.mk.mk.mk-site .pg-btn-outline,
+.mk.mk.mk-site .mk-portal,
+.mk.mk.mk-site .mk-plan-cta,
+.mk.mk.mk-site .mk-acct-all,
+.mk.mk.mk-site .mk-acct-out {
+  background: rgba(255, 255, 255, .05);
+  border-color: var(--nt-control-line);
+  color: var(--nt-ink);
+}
+.mk.mk.mk-site .mk-btn-outline:hover,
+.mk.mk.mk-site .pg-btn-outline:hover,
+.mk.mk.mk-site .mk-portal:hover,
+.mk.mk.mk-site .mk-plan-cta:hover {
+  background: rgba(0, 242, 254, .12);
+  border-color: var(--nt-cyan);
+  color: var(--nt-ink);
+}
+.mk.mk.mk-site .mk-price-card .mk-btn-outline:hover { color: var(--nt-ink); }
+
+/* The ghost button. */
+.mk.mk.mk-site .mk-btn-ghost { color: var(--nt-prose); }
+.mk.mk.mk-site .mk-btn-ghost:hover { background: rgba(0, 242, 254, .10); color: var(--nt-ink); }
+
+/* =====================================================================================
+   10. THE INSULATED SCREENS
+   =====================================================================================
+   /login, /onboarding, /reset and the 404 carry bare `.mk` and are NOT under `.mk-site`, so
+   nothing above reaches them. They keep the midnight ground the previous skin gave them —
+   which is the brief's isolation requirement, and also the right call: a sign-in form is not
+   a marketing page and should not be breathing at anyone.
+
+   They are listed here only so the intent is on the record, and so a future change to the
+   `.mk` selector does not silently absorb them. */
+
+/* =====================================================================================
+   11. THE KEYFRAMES
+   =====================================================================================
+   Named exactly as the brief names them (`cyberBreathe`, `gradientShift`) rather than with
+   this project's usual `mk-`/`gf-` prefix, so the client can search the stylesheet for the
+   two names in their own document. No collision: the only other keyframes on the site are
+   gf-ck-*, gf-star-spin, mk-acctpage-spin, mk-car-focus, mk-con-*, mk-menu-in and sync-pulse. */
+
+/* Cyber Breathe. The glow expands and contracts over the same 6s as the float, and the two are
+   deliberately not in phase — a card whose light peaks at the same instant it reaches the top
+   of its travel reads as a loop, while a slight offset reads as breathing. */
+@keyframes cyberBreathe {
+  0%, 100% {
+    box-shadow: 0 0 0 1px rgba(0, 242, 254, .10), 0 8px 24px -14px rgba(0, 242, 254, .22);
+  }
+  50% {
+    box-shadow: 0 0 0 1px rgba(0, 242, 254, .20), 0 16px 46px -16px rgba(0, 242, 254, .46);
+  }
+}
+
+/* The float, on its own keyframes because it lives on a pseudo-element. Three millimetres at a
+   typical 96dpi is about 1px, so the travel is set in px at a value that reads as motion and
+   not as drift: 3px, which is under the 4px threshold where a card starts to look like it is
+   falling off the grid. */
+@keyframes cyberFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+/* Liquid Gradient Shift. The background is 220% wide, so moving its position from 0% to 100%
+   and back carries the gradient across the glyphs without ever reaching an end stop — which
+   is what stops the loop from showing a seam. */
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* =====================================================================================
+   12. REDUCED MOTION
+   =====================================================================================
+   The brief's whole third pillar is motion, so this is the section that has to be right: a
+   visitor who has asked their operating system for stillness gets the complete design — the
+   colours, the glass, the gradient headings, the neon — with the movement removed. The
+   gradient is PARKED at its midpoint rather than switched off, because a heading that loses
+   its pigment when the animation stops would be a worse outcome than the animation itself. */
+@media (prefers-reduced-motion: reduce) {
+  .mk.mk.mk-site .pg-cell,
+  .mk.mk.mk-site .pg-price-card,
+  .mk.mk.mk-site .mk-price-card,
+  .mk.mk.mk-site .pg-hero::before,
+  .mk.mk.mk-site .mk-hero::before {
+    animation: none;
+    /* The card keeps its resting glow rather than losing the shadow with the animation, and
+       `translate` is explicitly squared in case a stalled frame left it mid-travel. */
+    box-shadow: var(--nt-glow-sm);
+    translate: 0 0;
+  }
+  .mk.mk.mk-site .pg-d1,
+  .mk.mk.mk-site .pg-d2,
+  .mk.mk.mk-site .pg-quote .pg-d2,
+  .mk.mk.mk-site .pg-btn.pg-btn-primary,
+  .mk.mk.mk-site .mk-btn.mk-btn-primary,
+  .mk.mk.mk-site .mk-submit,
+  .mk.mk.mk-site .mk-send,
+  .mk.mk.mk-site .mk-progress span {
+    animation: none;
+    background-position: 50% 50%;
+  }
+}

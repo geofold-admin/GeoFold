@@ -13,6 +13,11 @@
 # testing
 /coverage
 
+# screenshots written by the verification scripts (verify-ui, verify-app, verify-neo,
+# audit-colour, audit-headline, shots-neo). Generated output, ~4MB per run — regenerated on
+# demand, never a source of truth.
+/shots
+
 # next.js
 /.next/
 /out/

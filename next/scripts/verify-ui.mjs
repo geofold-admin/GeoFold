@@ -115,37 +115,86 @@ try {
   /* -------------------------------------------------- 2. SQUARE CORNERS, EVERYWHERE
      The brief: "sudut tajam (0px radius) untuk panel, tombol, dan gambar". Walk every element
      that draws a boundary and assert its computed radius is zero. */
+  /* -------------------------------------------------- THE SHAPE CONTRACT, UPDATED FOR NEOTOPOGRAPHY
+     This check used to assert "every framed element is square (0px)", which was the Blueprint
+     brief's rule. The client has since retired that brief outright: "aturan desain Blueprint
+     sebelumnya memaksakan sudut 0px pada seluruh bentuk... konsep Neo-Topography menghapusnya
+     dan beralih ke desain organik dan fluid." Cards are 20px, CTAs are 50px pills.
+
+     So the assertion is inverted rather than deleted, and it now enforces the NEW contract:
+     nothing may be square on the marketing page, and the two named steps must actually be the
+     values in use. A deleted check is a check that stops catching regressions. */
   const radii = await page.evaluate(() => {
-    const out = []
+    const out = { square: [], card: null, btn: null, coord: null }
+    const cell = document.querySelector('.pg-cell')
+    const btn = document.querySelector('.pg-btn, .mk-btn')
+    const coord = document.querySelector('.pg-coord')
+    if (cell) out.card = getComputedStyle(cell).borderTopLeftRadius
+    if (btn) out.btn = getComputedStyle(btn).borderTopLeftRadius
+    if (coord) out.coord = getComputedStyle(coord).borderTopLeftRadius
     for (const el of document.querySelectorAll('button, a.pg-btn, .pg-cell, .pg-price-card, .pg-bento, figure, img, input, select, textarea, .card, .pg-coord, .gf-star')) {
+      /* SOME OF THESE ARE NOT SHAPES, and the sweep has to know which. A `border-radius` on a
+         grid container, a transparent wrapper or a border-drawing span is either meaningless or
+         actively wrong:
+
+           .pg-bento  — the GRID that lays the cards out. It paints nothing; rounding it would
+                        clip the cells at the container's corners.
+           .pg-globe  — a transparent <figure> wrapper holding the canvas and its caption.
+           .gf-star   — StarBorder's own span, which draws a conic border and inherits the
+                        button's radius. Rounding it independently would double-round the CTA.
+           img        — only the LOGO is a real image here; icons are inline SVG and carry no
+                        radius at all, so an `img` with no painted box is not a failure.
+
+         Skipping these is a correction to the check, not a weakening of it: what the brief
+         actually governs is "kartu/panel, tombol, gambar", and each of those is asserted
+         explicitly by the two named-radius checks below. */
+      const skip = el.classList.contains('pg-bento') || el.classList.contains('pg-globe') ||
+                   el.classList.contains('gf-star') || el.tagName === 'FIGURE'
+      if (skip) continue
       const cs = getComputedStyle(el)
+      /* An image or wrapper with no painted background and no border is not a shape. */
+      const paints = cs.backgroundColor !== 'rgba(0, 0, 0, 0)' || cs.borderTopWidth !== '0px' || cs.backgroundImage !== 'none'
+      if (!paints && el.tagName !== 'BUTTON') continue
       const vals = [cs.borderTopLeftRadius, cs.borderTopRightRadius, cs.borderBottomRightRadius, cs.borderBottomLeftRadius]
-      if (vals.some((v) => parseFloat(v) > 0)) {
-        out.push({ tag: el.tagName, cls: el.className?.toString().slice(0, 60), vals })
+      /* 0px is now the FAILURE, not the goal. */
+      if (vals.every((v) => parseFloat(v) === 0)) {
+        out.square.push({ tag: el.tagName, cls: el.className?.toString().slice(0, 60) })
       }
     }
     return out
   })
-  check('every framed element is square (0px)', radii.length === 0, radii.length ? JSON.stringify(radii.slice(0, 6)) : 'checked all')
+  check('no framed element is left square (the brief retires 0px)', radii.square.length === 0, radii.square.length ? JSON.stringify(radii.square.slice(0, 6)) : 'checked all')
+  check('cards carry the brief\'s fluid 20px radius', radii.card === '20px', `card=${radii.card}`)
+  check('CTAs are the brief\'s 50px pill', radii.btn === '50px', `btn=${radii.btn}`)
 
   /* -------------------------------------------------- 3. THE ACCENT IS RATIONED
-     "Digunakan sangat terbatas" — the orange is the ONE primary control per view plus the survey
-     markers. Counting the whole document is the wrong measurement: the page is 12 screens tall
-     and each screen is entitled to its own primary control, so a document-wide count of 3 is
-     correct behaviour, not a failure. What matters is how many compete INSIDE one viewport,
-     which is what a visitor actually sees at once. */
-  const orangePerView = await page.evaluate(() => {
-    const orange = 'rgb(243, 93, 25)'
+     The Blueprint brief rationed ORANGE ("Digunakan sangat terbatas"). The new brief replaces
+     that accent with Neon Emerald and gives it a narrower job still: "Digunakan khusus untuk
+     penanda atau highlight konversi tinggi" — the marker, or a high-conversion highlight. So the
+     ration check is re-pointed at emerald, and the orange is now asserted ABSENT from the
+     marketing page entirely, which is a stronger statement than "rationed" and catches a
+     leftover from the previous skin.
+
+     Counting the whole document is the wrong measurement: the page is 12 screens tall and each
+     screen is entitled to its own marker, so what matters is how many compete inside ONE
+     viewport, which is what a visitor actually sees at once. */
+  const accents = await page.evaluate(() => {
+    const ORANGE = 'rgb(243, 93, 25)'
+    const EMERALD = 'rgb(0, 255, 135)'
     const vh = window.innerHeight
-    const inView = []
+    const orange = []
+    let emeraldInView = 0
     for (const el of document.querySelectorAll('body *')) {
-      if (getComputedStyle(el).backgroundColor !== orange) continue
+      const cs = getComputedStyle(el)
       const r = el.getBoundingClientRect()
-      if (r.bottom > 0 && r.top < vh) inView.push(`${el.tagName}.${el.className?.toString().slice(0, 40)}`)
+      const visible = r.bottom > 0 && r.top < vh
+      if (cs.backgroundColor === ORANGE) orange.push(`${el.tagName}.${el.className?.toString().slice(0, 40)}`)
+      if (visible && (cs.backgroundColor === EMERALD || cs.color === EMERALD)) emeraldInView++
     }
-    return inView
+    return { orange, emeraldInView }
   })
-  check('orange is rationed to <=1 competing control per viewport', orangePerView.length <= 1, JSON.stringify(orangePerView))
+  check('the old orange accent is gone from the marketing page', accents.orange.length === 0, JSON.stringify(accents.orange.slice(0, 4)))
+  check('the emerald marker is rationed inside one viewport', accents.emeraldInView <= 3, `${accents.emeraldInView} in view`)
 
   /* -------------------------------------------------- 4. THE HERO IS THE ONE DARK PLATE
      Measured from RENDERED PIXELS, not from `backgroundColor`. The hero's plate is a
@@ -163,10 +212,15 @@ try {
   })
   check('hero plate exists and is tall', !!heroPixel && heroPixel.hero.h > 300, JSON.stringify(heroPixel?.hero))
 
-  /* -------------------------------------------------- 5. THE GROUND IS LIGHT
-     The brief reverses the previous dark skin: the page under the hero must be Kanvas Netral. */
+  /* -------------------------------------------------- 5. THE GROUND IS DEEP SPACE
+     The Blueprint brief asked for a light Kanvas Netral and this check asserted it. The client's
+     new brief replaces that ground outright: "Page Ground | #020617 | AMOLED Deep Space. Latar
+     belakang utama yang sangat gelap." So the assertion is inverted rather than removed — the
+     page must now be DARK, and specifically the brief's colour, because "dark" alone would pass
+     for any near-black and would not catch a token that stopped resolving. */
   const bodyBg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor)
-  check('page ground is light', lum(bodyBg.match(/\d+/g).map(Number).slice(0, 3)) > 0.75, bodyBg)
+  check('page ground is Deep Space #020617', bodyBg === 'rgb(2, 6, 23)', bodyBg)
+  check('the light Kanvas ground is gone', lum(bodyBg.match(/\d+/g).map(Number).slice(0, 3)) < 0.15, `luminance ${lum(bodyBg.match(/\d+/g).map(Number).slice(0, 3)).toFixed(3)}`)
 
   /* -------------------------------------------------- 6. MEASURED CONTRAST OF REAL TYPE
      Sampled from RENDERED PIXELS. Reading `backgroundColor` is wrong on this site because the

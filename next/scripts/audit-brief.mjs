@@ -46,34 +46,58 @@ await new Promise((r) => setTimeout(r, 2500))
 
 const marks = await page.evaluate(() => {
   const out = []
-  /* The marks live on the ART FRAMES, not on the cards: blueprint.css section 4 says the sheet's
-     outer cards carry them from the base skin and the figure frames inside get their own set.
-     NOTE: an empty `content: ''` computes to `""` (a quoted empty string), NOT to `none` — testing
-     against `none` alone reports a correctly-drawn mark as missing. Test for a real value instead. */
+  /* THE "+" MARKS, AND WHY THIS CHECK IS NOW INVERTED.
+     It used to require them: "registration marks '+' are drawn on the figure frames", because the
+     Blueprint brief asked for "aksen pendaftaran silang (+) halus di sudut-sudut kartu". The
+     client has retired that brief and its whole aesthetic:
+
+       "Aturan desain Blueprint sebelumnya memaksakan sudut 0px pada seluruh bentuk. Konsep
+        Neo-Topography menghapusnya dan beralih ke desain organik dan fluid."
+
+     The marks are that skin's signature device, the new brief never mentions them, and they were
+     measurably broken by the change of shape — blueprint.css pins them to `inset: 0`, the SQUARE
+     corners, while the cards are now 20px-radius, so part of each arm hung outside the card's own
+     silhouette (9 px on the first figure frame, and a read of the rendered band reported them as
+     doubled/ghosted borders).
+
+     Inverting the check keeps it doing work: it now catches a mark left behind by a later edit,
+     which is the failure that actually matters from here.
+
+     NOTE: an empty `content: ''` computes to `""` (a quoted empty string), NOT to `none`, so the
+     test is on the painted arms rather than on `content`. */
   for (const sel of ['.pg-cell-art', '.pg-row-art']) {
-    const el = document.querySelector(sel)
-    if (!el) continue
-    const cs = getComputedStyle(el, '::after')
-    const c = cs.content
-    out.push({ sel, content: c, drawn: c !== 'none' && c !== '', layers: (cs.backgroundImage.match(/linear-gradient/g) ?? []).length })
+    for (const el of document.querySelectorAll(sel)) {
+      const cs = getComputedStyle(el, '::after')
+      out.push({ sel, content: cs.content, arms: (cs.backgroundImage.match(/linear-gradient/g) ?? []).length })
+    }
   }
   return out
 })
-check('registration marks "+" are drawn on the figure frames', marks.length > 0 && marks.every((m) => m.drawn && m.layers >= 8), JSON.stringify(marks))
+check('the retired "+" registration marks are gone', marks.length === 0 || marks.every((m) => m.arms === 0), JSON.stringify(marks.slice(0, 4)))
 
 const pricing = await page.evaluate(() => {
   const read = (sel) => {
     const el = document.querySelector(sel)
     if (!el) return null
     const cs = getComputedStyle(el)
-    return { bg: cs.backgroundColor, border: cs.borderTopColor, borderW: cs.borderTopWidth }
+    return { bg: cs.backgroundColor, border: cs.borderTopColor, borderW: cs.borderTopWidth, radius: cs.borderTopLeftRadius, blur: cs.backdropFilter }
   }
   return { free: read('.pg-price-card:not(.feat)'), premium: read('.pg-price-card.feat'), page: getComputedStyle(document.querySelector('.mk')).backgroundColor }
 })
 const pageGround = rgb(pricing.page)
 const freeBg = rgb(pricing.free.bg)
+
+/* THE PREMIUM-CARD CHECK, RE-POINTED. It used to assert the Blueprint brief's rule — "the Premium
+   card is highlighted in GEOFOLD Blue #014AB5". The client has retired that brief and its palette
+   outright, so the old assertion now fails on a design that is correct. Rather than delete it
+   (a deleted check stops catching regressions) it is inverted to the NEW brief's rule: the
+   featured card must be distinguished by the brief's cyan accent, and it must be a frosted-glass
+   surface, since "Seluruh container tidak menggunakan bayangan gelap biasa, melainkan menggunakan
+   backdrop-filter: blur(16px)". */
 const premBorder = rgb(pricing.premium.border)
-check('Premium card is highlighted in GEOFOLD Blue #014AB5', isBlue(premBorder), `border ${pricing.premium.border} w=${pricing.premium.borderW}`)
+const isCyan = (c) => c[2] > 200 && c[1] > 180 && c[0] < 120
+check('Premium card is highlighted in the brief\'s Cyber Cyan', isCyan(premBorder), `border ${pricing.premium.border} w=${pricing.premium.borderW}`)
+check('Premium card is a frosted-glass surface (blur 16px)', /blur\(16px\)/.test(pricing.premium.blur), `backdrop-filter: ${pricing.premium.blur}`)
 check('Free card blends with the page ground', pricing.free.bg === 'rgba(0, 0, 0, 0)' || ratio(freeBg, pageGround) < 1.15, `card ${pricing.free.bg} vs page ${pricing.page}`)
 
 /* ---------------------------------------------------------------- app chrome (demo login) */

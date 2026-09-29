@@ -8,10 +8,12 @@
     "start": "next start",
     "verify:ui": "node scripts/verify-ui.mjs",
     "verify:app": "node scripts/verify-app.mjs",
-    "verify:all": "npm run verify:ui && npm run verify:app",
+    "verify:neo": "node scripts/verify-neo.mjs",
+    "verify:all": "npm run verify:ui && npm run verify:app && npm run verify:neo",
     "audit:brief": "node scripts/audit-brief.mjs",
     "audit:colour": "node scripts/audit-colour.mjs",
-    "audit": "npm run audit:brief && npm run audit:colour"
+    "audit:headline": "node scripts/audit-headline.mjs",
+    "audit": "npm run audit:brief && npm run audit:colour && npm run audit:headline"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
