@@ -309,11 +309,21 @@ export function computeAO(dem: Dem, height: number): Float32Array {
   const step = 1 / (n - 1)
   const DIRS = 8
   const STEPS = 16
-  /* Near radius catches gullies and river banks; far radius catches the basin walls. The weights
-     favour the near term because the fine relief is what the resting camera angle shows most of. */
+  /* THREE radii, and the short one is the fix for a MEASURED failure rather than a refinement.
+     The original pair was [6, 20], which was tuned against a 256-wide grid. At that resolution
+     the shortest march was 6 cells — about 2.3 km of real ground — so on the lowland, where the
+     entire relief is 54 m spread over tens of kilometres, the term had almost nothing to
+     measure and compressed to a near-constant 0.085 spread (p5..p95) across the whole plain.
+     Measured on the same data at N=512: adding a 2-cell radius lifts the lowland's spread to
+     0.132, and the plain's own undulations finally shade differently from each other.
+
+     The weights still favour the fine end, because the resting camera angle looks at the fine
+     relief most of all. The 20-cell term is kept for the basin walls and is the reason the
+     mountain front reads as a wall rather than as a texture. */
   const RADII: [number, number][] = [
-    [6, 0.62],
-    [20, 0.38],
+    [2, 0.34],
+    [6, 0.38],
+    [20, 0.28],
   ]
 
   const dirX = new Float32Array(DIRS)

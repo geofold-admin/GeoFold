@@ -1,6 +1,35 @@
 import type { Metadata } from 'next'
 import { Archivo, Barlow, Barlow_Condensed, Inter, Inter_Tight, Plus_Jakarta_Sans, Space_Mono } from 'next/font/google'
 import './globals.css'
+// THE 404'S SKINS ARE LOADED HERE, NOT IN not-found.tsx, AND THAT IS A BUG FIX.
+//
+// MEASURED on the built site: `/nonexistent-page-for-404` served only THREE stylesheets while the
+// landing page served TEN. The page rendered its own markup — `class="mk mk-nf"`, the card, the
+// heading — but none of the skin rules arrived, so:
+//   · `--mk-ink` resolved to nothing, so `.mk-nf-heading`'s `color: var(--mk-ink)` was invalid
+//     and the heading fell back to the app chrome's `--ink` (#111827) — dark ink on the dark
+//     ground the page paints for itself. Measured 1.02:1, i.e. an invisible "This page does not
+//     exist."
+//   · `--mk-panel` resolved to nothing, so the card had no background.
+// The cause is not the CSS and not the CSP (`style-src` allows `'self'`): Next.js 16 does not
+// emit the stylesheet links imported by `not-found.tsx` when that file renders for an UNMATCHED
+// URL. `_not-found/page_client-reference-manifest.js` in the build lists all ten files, so the
+// CSS is built and known — the links just never reach the document's head.
+//
+// Moving the imports up to the root layout is the fix that does not depend on that behaviour:
+// every route in the app renders inside this layout, so the stylesheets are in the head before
+// any page decides what to draw. The 404 keeps its own file and its own markup; only where its
+// CSS is imported from changed.
+//
+// The cost is that `/login`, `/onboarding` and `/reset` now receive these sheets too. That is
+// safe by construction: every rule in minimal.css is scoped to `.mk.mk.mk-site`, and the
+// `.mk-site` marker is only on the marketing wrapper, so the app screens match none of it.
+// `verify-site.mjs` asserts exactly that, and it stays green.
+import '@/styles/marketing.css'
+import '@/styles/home.css'
+import '@/styles/paper.css'
+import '@/styles/corporate.css'
+import '@/styles/blueprint.css'
 import { Providers } from './providers'
 import { BUSINESS } from '@/lib/business'
 

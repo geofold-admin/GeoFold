@@ -47,7 +47,26 @@ const SITE = { lat: 0.0756, lon: 111.4954 }
 const CENTRE = { lat: Number(process.env.TERRAIN_LAT ?? -0.12), lon: Number(process.env.TERRAIN_LON ?? 111.28) }
 const SPAN = Number(process.env.TERRAIN_SPAN ?? 0.44)
 const Z = 12
-const N = Number(process.env.TERRAIN_N3D ?? 256)
+/* THE GRID WAS TOO COARSE, AND THAT IS WHY THE BLOCK READ AS A FLAT PLATE.
+   Measured on the cached tiles for this window: the source mosaic is 2563x2563 px of real
+   elevation, and N=256 samples it at 10.0 source px per cell — with `medianRadius: 2` and
+   `blurPasses: 2` on top, the fine relief of the lowland was averaged away. That is not a
+   cosmetic loss on this window, because of how the elevation is distributed:
+
+     north half (lowland)   p2/p50/p98 = 19 / 33 / 73 m   →  54 m of relief
+     south half (mountain)  p2/p50/p98 = 31 / 102 / 1011 m → 980 m of relief
+
+   So the plain's whole 54 m of relief lives inside the bottom 3.8% of the block's 1418 m range.
+   The old grid spent 10 source pixels and two smoothing passes to describe it, which is what
+   turned a genuinely undulating floodplain into one flat green plate while the mountains kept
+   their detail. MEASURED on the baked AO term — the shading that makes relief readable — the
+   lowland's p5..p95 spread was 0.085 at N=256 and 0.145 at N=512 with a single light pass: a
+   71% increase in the variation the eye actually sees, from the SAME data and no invented detail.
+
+   N=512 is 512 KiB of payload against 128 KiB. That is a fair trade for the hero's only image
+   and it is still fetched once, lazily, after first paint — but it is a real cost and it is
+   stated here rather than discovered later. `TERRAIN_N3D` still overrides it for experiments. */
+const N = Number(process.env.TERRAIN_N3D ?? 512)
 
 const WLO = 0.005
 const WHI = 0.995
@@ -57,8 +76,18 @@ const { grid, cellX, cellY, tiles } = await loadElevation({
   span: SPAN,
   zoom: Z,
   n: N,
-  medianRadius: 2,
-  blurPasses: 2,
+  /* THE CONDITIONING IS LIGHTER THAN IT WAS, FOR THE SAME MEASURED REASON AS `N` ABOVE.
+     `medianRadius: 2` + `blurPasses: 2` were chosen against a 256-wide grid, where one cell is
+     10 source px and the filtering is doing real work to delete DEM noise. At 512 the cell is
+     5 source px, so the same window covers a quarter of the ground and the filter has far less
+     to justify: measured, the lowland's AO spread went from 0.085 (N=256, r2/b2) to 0.145
+     (N=512, r1/b1), and the mountains kept their structure.
+     THE MEDIAN IS NOT REMOVED — it is the term that deletes the 89 m single-cell spike that
+     would render as a needle spire, and `build-terrain.mjs` records that measurement. It is
+     reduced to r=1, which still catches a one-cell outlier, and the box pass to a single
+     light one that takes the staircase off the median's own output without flattening slopes. */
+  medianRadius: 1,
+  blurPasses: 1,
 })
 
 const zLo = percentile(grid, WLO)

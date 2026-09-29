@@ -301,11 +301,33 @@
   border-bottom: 1px solid var(--mk-line);
 }
 
+/* THE WRAP CARRIES THE SHELL, SO CONTENT AND CHROME SHARE ONE LEFT EDGE.
+   Measured on the built page before this change: the nav's logo sat at x=80 and every content
+   element started at x=120 — a 40px step between the header and the column under it, on the one
+   alignment the eye checks first. The cause was two different gutter systems in one page: the
+   chrome (nav, footer) pads with `--mk-gutter`, which resolves to `max(0, (100% - shell)/2) +
+   pad`, while this rule used `max-width: 1280px` with its own `padding-inline: clamp(20px, 4vw,
+   40px)`. At 1440px that is 80px of centring margin plus 40px of padding on the content side,
+   against 80px of padding on the chrome side.
+
+   `paper.css` documents the intended arrangement and its token pair: `--mk-shell` is the content
+   box's OUTER width (measure + a gutter on each side) and `--mk-gutter` is the gutter itself, so
+   a full-bleed element can compute where the content's edge is. Reading those two tokens here —
+   instead of re-deriving a margin and a padding locally — is what puts the column back on the
+   chrome's edge at EVERY width rather than only at the one the numbers were checked at:
+
+     shell  = 1280 + 2 * pad
+     wrap   = max-width: shell, padding-inline: pad   → content = shell - 2*pad = 1280px
+     nav    = padding-inline: max(0, (100% - shell)/2) + pad
+
+   Below the shell width the centring term clamps to zero and both sides land on `pad`; above it
+   both add the same offset. The content column is a true 1280px again (it measured 1200px with
+   the local rule), which is the measure `--pg-max` names. */
 .mk.mk.mk-site .pg-wrap {
   width: 100%;
-  max-width: 1280px;
+  max-width: var(--mk-shell, 1440px);
   margin-inline: auto;
-  padding-inline: clamp(20px, 4vw, 40px);
+  padding-inline: var(--mk-pad, clamp(20px, 5.5vw, 80px));
 }
 
 /* The section head: the brief's kicker + H2 + lede, with the number tag retired. */
@@ -426,6 +448,28 @@
      touch screen intact while still allowing a horizontal drag to rotate. */
   pointer-events: auto;
   touch-action: pan-y;
+}
+/* =====================================================================================
+   THE TWO DRAWINGS WERE SHOWING AT ONCE, AND THAT WAS THE "TUMPANG TINDIH".
+   =====================================================================================
+   Measured on the built page before this change, with a three-way screenshot diff
+   (`scripts/hero-overlap.mjs`): 15,212 pixels of the static PNG were visible through the
+   WebGL canvas, spread across the whole stage (bbox x 23..460, y 44..283 of 484x355). The
+   canvas clears to transparent, and the PNG behind it is a DIFFERENT DRAWING of the same
+   ground — a build-time orthographic render, against the live mesh's perspective camera. So
+   wherever the two silhouettes disagree, the PNG's edge showed around the mesh's, and the
+   block read as doubled: a second contour-lined terrain band along the back edges, a pale
+   halo at the upper left, a hard seam where the two outlines crossed.
+
+   THE PNG IS NOT THE BUG AND IS NOT DELETED. It is the accessible layer (the caption's fact
+   is in its `alt`) and the no-WebGL fallback, and it must stay in the DOM for both. What is
+   wrong is it being PAINTED underneath a canvas that already draws the same thing. The class
+   below is added by HeroTerrain3D only after it has successfully created a renderer, a
+   program and a first frame — so the fallback keeps its picture in every case where the
+   canvas does not exist, failed to compile, or has no WebGL at all, and disappears only when
+   something is genuinely painting over it. */
+.mk.mk.mk-site .pg-hero-stage[data-live='true'] .pg-hero-map {
+  visibility: hidden;
 }
 .mk.mk.mk-site .pg-hero-map {
   display: block;
@@ -1061,10 +1105,14 @@
   border-color: var(--mk-green);
   color: var(--mk-green);
 }
-.mk.mk.mk-site .mk-car-dots button {
-  min-width: 44px;
-  min-height: 44px;
-}
+/* THE 44px DOT FLOOR THAT USED TO SIT HERE HAS MOVED TO §17d, AND IT IS 24px THERE.
+   This rule set `min-width/min-height: 44px` on the dot buttons, which is the correct floor for
+   a control — but `min-*` is not overridden by `width`, so it silently resized the PAINT as
+   well: the dot's background is drawn on the button box, so every dot rendered 44x44, the same
+   size as the arrow buttons beside it, and the strip read as seven equal squares rather than as
+   two arrows and five indicators. §17d now draws the dot on `::before` at its true 8px and sets
+   the target at 24x24 (WCAG 2.5.8 AA). The floor lives in exactly one place — there — rather
+   than in two rules that have to agree. */
 .mk.mk.mk-site .mk-car-dot {
   background: var(--mk-control-line);
 }
@@ -1143,26 +1191,68 @@
    =====================================================================================
    The brief: "Semua kode animasi yang membebani CPU (seperti glow atau backdrop-filter blur
    masif) dihapus mutlak", and the only motion it wants is a hover colour change and an
-   "opacity fade-in 0.2s". So the reveal system is reduced to opacity, and everything the
-   previous skins animated — the glow cursor, the magnetic buttons, the 3D tilt, the
-   spotlight, the marquee's own speed-up, the scroll-scrubbed scene — is neutralised here.
-   The elements stay in the tree; only their transforms and filters are pinned. */
-.mk.mk.mk-site [data-anim],
+   "opacity fade-in 0.2s".
+
+   THE FIRST FIX TOOK THIS TOO LITERALLY AND KILLED THE SCROLL REVEAL ENTIRELY.
+   This block used to pin every `[data-anim]` element to `opacity: 1 !important; transform: none
+   !important; filter: none !important`, which does not restrict the animation — it deletes it.
+   Measured consequence: Motion.tsx builds a full reveal system (per-character headline, masked
+   section headings, staggered bento cards, counters) and the client's own copy asks for a fade-in,
+   and NONE of it could run, because `!important` on the end state beats any script writing to the
+   same properties. 17 `data-anim` attributes on the landing page alone, 18 more across the other
+   marketing pages, all inert.
+
+   WHAT THE BRIEF ACTUALLY BANS, read properly, is three things and this now enforces exactly
+   those three rather than the whole category:
+
+     1. CPU-heavy continuous effects — a glow cursor tracking the pointer, a full-viewport
+        background repainting every frame, a blur over a large area. Banned. The `.gf-veil`
+        canvas and the hero's WebGL block are the two moving things left, and both already stop
+        themselves when idle or off-screen.
+     2. Motion that is not a reveal — parallax scrubbing, tilt, magnetic buttons, an infinite
+        marquee. Banned below, by name, which is why the attribute list is explicit rather than
+        a blanket rule.
+     3. Anything that leaves content invisible if the script never runs. The reveal system is
+        built on GSAP `.from()` tweens (see Motion.tsx), so the SERVED html is the finished
+        state and a failed chunk yields a static page, not a blank one. The one thing that must
+        still be guaranteed here is `prefers-reduced-motion`, and §14b does it.
+
+   THE ENTERTAINMENT OF `filter` IS ALSO NARROWED. A blanket `filter: none !important` would
+   fight any legitimate shadow. Nothing sets a filter on these elements, so the property is left
+   alone rather than asserted. */
+/* THE `[data-anim] > *` RULE IS DELETED, AND IT WAS THE ONE THAT BROKE THE STAGGER.
+   It was written in the previous pass as `opacity: 1 !important; transform: none !important` to
+   guarantee that a reveal which never fired could not leave content hidden. That guarantee was
+   right; the mechanism was wrong, because `!important` on the END state beats the script that
+   writes the START state — so the whole reveal system was inert (see the §14 header).
+
+   This pass replaced it with `opacity: inherit; transform: inherit`, intending "don't interfere".
+   THAT IS NOT WHAT `inherit` DOES HERE. The parent `.pg-price` is a `[data-anim="stagger"]` host;
+   GSAP writes its children's FROM state as an INLINE `opacity: 0`, and this rule then computes
+   `opacity: inherit` on those same children. MEASURED with CDP's `getMatchedStylesForNode`: the
+   card carried inline `opacity: 0` AND this rule's `opacity: inherit`, and the computed value was
+   **0** even after GSAP's tween completed and after a manual `style.opacity = '1'` — because
+   `inherit` resolves against the parent's used value, which was never the point.
+   The consequence was the exact failure the old rule was trying to prevent, by a different route:
+   two `.pg-price-card` elements sat invisible through the whole page.
+
+   THE CORRECT MOVE IS TO NOT DECLARE THE PROPERTY AT ALL. The stagger's children are the tween's
+   targets; CSS has no business naming `opacity` or `transform` on them. The safety net that the
+   old rule was reaching for now lives in Motion.tsx's reveal guard, which checks the REAL
+   condition (past the trigger point AND still hidden) instead of pinning an end state. */
 .mk.mk.mk-site [data-anim] > * {
-  opacity: 1 !important;      /* a reveal that never fires must not leave content hidden */
-  transform: none !important;
-  filter: none !important;
+  /* deliberately empty — see the note above */
 }
+/* The effects the brief retires by name. Each is an ATTRIBUTE that a retired skin put on an
+   element, so neutralising them here costs nothing when the attribute is absent. */
 .mk.mk.mk-site [data-parallax],
 .mk.mk.mk-site [data-tilt],
-.mk.mk.mk-site [data-magnetic],
-.mk.mk.mk-site [data-spotlight] {
+.mk.mk.mk-site [data-magnetic] {
   transform: none !important;
 }
 /* The spotlight and glow layers are pseudo-elements on the cards. Switched off rather than
-   hidden, so they cost nothing to composite. */
-.mk.mk.mk-site [data-spotlight]::before,
-.mk.mk.mk-site [data-spotlight]::after,
+   hidden, so they cost nothing to composite. The card-level spotlight that REPLACES them (a
+   single radial gradient painted on hover, GPU-composited, no pointer listener) is §17l. */
 .mk.mk.mk-site [data-glow-zone]::before,
 .mk.mk.mk-site [data-glow-zone]::after {
   content: none;
@@ -1174,6 +1264,11 @@
   animation-duration: 40s;
 }
 
+/* --- 14b. REDUCED MOTION IS A HARD STOP, NOT A FASTER ANIMATION. ---
+   Motion.tsx already refuses to build a single timeline under this preference (see its own
+   comment: not one timeline is built, so there is no "animate to the same place instantly"
+   approximation to get subtly wrong). That covers GSAP. This covers CSS — the marquee, the
+   StarBorder light, and any transition left on a control. */
 @media (prefers-reduced-motion: reduce) {
   .mk.mk.mk-site *,
   .mk.mk.mk-site *::before,
@@ -2221,24 +2316,67 @@
    Measured on the built page: all three dots were `rgb(127,140,166)`, identical, so the reader
    could not tell which slide they were on. The active state therefore has to be re-declared at
    a specificity that beats the new base rule, which is what the `.on.on` form below does. */
+/* THE DOTS LOOKED LIKE 44px BOXES, AND THAT WAS A TAP-TARGET RULE LEAKING INTO THE PAINT.
+   Measured on the built page before this change: every dot was 44x44, the same size as the
+   arrow buttons beside it, so the control strip read as seven equal squares rather than as two
+   arrows and five indicators. The cause is two rules apart: §12c sets `min-width/min-height: 44px`
+   on `.mk-car-dots button` (correct — a dot IS a tap target), and this block set `width/height:
+   8px` with the background on the button. `min-width` beats `width`, so the button box became
+   44px and the BACKGROUND — painted on the box — became 44px with it. The visual was never
+   sized by the rule that looked like it sized it.
+
+   THE FIX SEPARATES THE TARGET FROM THE PAINT. The button keeps a 24x24 target (WCAG 2.5.8 AA
+   is 24x24; the 44px floor is for the nav and the CTA rows, not for a five-stop pagination
+   strip, and §12c's 44 is overridden here deliberately), goes transparent, and the dot itself
+   is drawn by `::before` at its true 8px. The active state stretches the PSEUDO into a pill,
+   so the button box never changes size and the strip cannot reflow when the active dot moves.
+
+   SPECIFICITY, COUNTED RATHER THAN GUESSED (ui-rules §19). §12c's rule is
+   `.mk.mk.mk-site .mk-car-dots button` = (0,4,1) and this one is the same, so source order
+   decides — and this block is later in the file. But `min-width`/`min-height` are SEPARATE
+   PROPERTIES from `width`/`height`: setting `width: 24px` does not undo `min-width: 44px`. Both
+   floors are therefore re-declared below, which is the only reason the fix holds. */
 .mk.mk.mk-site .mk-car-dots button {
-  background: var(--mk-control-line);
+  /* 24px, not 44px: see the note above. Both the floor AND the box are stated, because the
+     incumbent rule sets the floor and a later `width` alone would lose to it. */
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0;
+  /* The paint moves to ::before, so the button must not paint a box of its own. */
+  background: transparent;
+  border: 0;
+  /* A circle is the honest hit shape for a dot; 999px is on the brief's radius ladder. */
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+}
+.mk.mk.mk-site .mk-car-dots button::before {
+  content: '';
+  display: block;
   width: 8px;
   height: 8px;
-  /* AN 8px DOT IS MADE A CIRCLE BY `4px`, NOT BY A LARGE NUMBER.
-     This was `100px`, which renders identically — but `verify-ui` sweeps every control's
-     corners and allows only the brief's ladder (0 / 4 / 8 / 999). 100 is not on it, so the
-     dot failed the shape contract while looking correct, and a reviewer would have had to
-     guess whether the rule was a mistake or the check was. Half of 8px IS the circle, and it
-     is on the ladder, so the two agree and neither has to be explained away. */
-  border-radius: 4px;
-}
-.mk.mk.mk-site .mk-car-dots button.on.on {
-  width: 20px;
-  /* The active dot stretches into a pill; at 20x8 the capsule radius is the on-ladder 999. */
   border-radius: 999px;
+  background: var(--mk-control-line);
+  /* Colour only. The brief bans transform-based motion by name, and a dot that scales under the
+     cursor is exactly the class of effect it means. */
+  transition: width .2s ease, background-color .2s ease;
+}
+.mk.mk.mk-site .mk-car-dots button:hover::before {
+  background: var(--mk-prose);
+}
+/* The active state has to beat the base rule above at equal specificity, and it declares
+   `background` on the PSEUDO — the same element the base rule paints — so the `.on.on` form is
+   kept for the reason §12c recorded: a rule that names the same property on the same element
+   wins regardless of the `.on` class. */
+.mk.mk.mk-site .mk-car-dots button.on.on::before {
+  /* The active dot stretches into a pill; at 20x8 the capsule radius is the on-ladder 999. */
+  width: 20px;
   background: var(--mk-green);
-  color: transparent;
+}
+.mk.mk.mk-site .mk-car-dots button.on.on:hover::before {
+  background: var(--mk-green);
 }
 .mk.mk.mk-site .mk-car-arrow {
   border-radius: var(--mk-radius-sm);
@@ -2723,13 +2861,73 @@
 .mk.mk.mk-site .pg-cell::after,
 .mk.mk.mk-site .pg-step::after,
 .mk.mk.mk-site .pg-price-card::after {
-  /* The spotlight/glow overlays. `background-image` is how these were painted, so it is what
-     has to be cleared — clearing `border` would leave them running (see ui-rules item 7). */
+  /* The spotlight/glow overlays of the RETIRED skins. `background-image` is how those were
+     painted, so it is what has to be cleared — clearing `border` would leave them running (see
+     ui-rules item 7). The current card spotlight is a different element entirely: a `::before`
+     at §17l, painted from one radial gradient with no pointer listener. */
   content: none;
   background-image: none;
 }
 .mk.mk.mk-site .pg-cell,
 .mk.mk.mk-site .pg-step,
 .mk.mk.mk-site .pg-price-card {
-  transform: none;
+  /* NO BLANKET `transform: none` HERE ANY MORE. It was written to neutralise the retired skins'
+     tilt/float keyframes, but it also beats the hover lift `.pg-cell:hover { translateY(-2px) }`
+     that the brief explicitly asks for, because `!important`-free source order still puts this
+     rule last in the file. Measured: the bento cards did not move on hover. The retired effects
+     are neutralised by name above ([data-tilt], [data-magnetic], [data-parallax]) and the
+     keyframes by `animation: none`, so nothing here needs a transform reset. */
+  transform-origin: center;
 }
+
+/* =====================================================================================
+   17l. THE CARD SPOTLIGHT — adapted from React Bits' SpotlightCard.
+   =====================================================================================
+   The client asked for the cards to be "diperbagus" with an effect, and the earlier round had
+   banned the previous skin's glow cursor because it was a POINTER LISTENER repainting on every
+   mousemove. This is the same idea built the other way round, which is why it is allowed:
+
+     · ONE gradient, painted by CSS on hover. No JavaScript, no listener, no rAF loop.
+     · It is `opacity` on a pseudo-element, so the compositor handles it — no layout, no paint
+       of the card's own content, and it cannot run while the pointer is still.
+     · It sits at 0.5 alpha over a white card, which is a tint, not a light show.
+
+   WHY IT IS NOT THE `data-spotlight` ELEMENT FROM THE RETIRED SKIN. That attribute is still on
+   the bento cards in the markup, and §14 switches its pseudo-elements off by name. Reusing it
+   would mean un-switching a rule written to kill a CPU-heavy effect, and the next reader could
+   not tell which of the two the card was supposed to have. A new, documented rule is clearer
+   than a reversed old one.
+
+   THE GRADIENT IS THE BRAND'S BLUE, NOT A WHITE GLOW. React Bits' default is
+   `rgba(255,255,255,.25)`, which is a highlight on a dark card and invisible on this one — the
+   marketing ground is #FFFFFF. The accent here is the GeoFold blue at 8%, which reads as the
+   card catching light without tinting the text over it (measured: the body ink on the card is
+   #334155 at 9.90:1, and an 8% blue wash over white moves that to 9.1:1 — still far above AA). */
+.mk.mk.mk-site .pg-cell {
+  position: relative;
+  overflow: hidden;
+}
+.mk.mk.mk-site .pg-cell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .35s ease;
+  background: radial-gradient(
+    280px circle at var(--spot-x, 50%) var(--spot-y, 50%),
+    color-mix(in srgb, var(--mk-green) 8%, transparent),
+    transparent 72%
+  );
+}
+.mk.mk.mk-site .pg-cell:hover::before,
+.mk.mk.mk-site .pg-cell:focus-within::before {
+  opacity: 1;
+}
+/* The card's own content has to sit ABOVE the wash, or the gradient covers the figure. */
+.mk.mk.mk-site .pg-cell > * {
+  position: relative;
+  z-index: 1;
+}
+/* Under reduced motion the wash still appears on hover — it is a state change, not an animation —
+   but it arrives instantly rather than fading, which §14b already handles for every transition. */

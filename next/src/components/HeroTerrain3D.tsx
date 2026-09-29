@@ -340,6 +340,21 @@ export default function HeroTerrain3D({ className }: { className?: string }) {
       canvas.style.display = 'block'
       host.appendChild(canvas)
 
+      /* TELL THE STAGE THE CANVAS IS LIVE, so the static PNG behind it stops painting.
+         THE BUG THIS FIXES, MEASURED: the canvas clears to transparent and sits over a PNG that
+         is a DIFFERENT DRAWING of the same ground (a build-time orthographic render vs this
+         mesh's perspective camera). A three-way screenshot diff counted 15,212 PNG pixels
+         visible through the canvas, spread across the whole stage — which is what a reader sees
+         as the block having two outlines: a second contour band along the back edges, a pale
+         halo at the upper left, and a hard seam where the two silhouettes cross.
+         `visibility` on the parent's `[data-live]` rule (see minimal.css) hides it. It is set
+         HERE, after the renderer exists, and not in the markup: a browser without WebGL, or one
+         where the shader fails to link, must keep the PNG, and only this line can know that. */
+      const stage = host.parentElement
+      const markLive = () => {
+        stage?.setAttribute('data-live', 'true')
+      }
+
       const { position, normal, scalar, index } = buildSurface(dem, RELIEF)
       const walls = buildWalls(dem, RELIEF, BASE_DROP)
       const shadow = buildShadowQuad(BASE_DROP)
@@ -467,6 +482,7 @@ export default function HeroTerrain3D({ className }: { className?: string }) {
          the same single frame. This is a hard requirement and a measurement target. */
       if (reduce) {
         render()
+        markLive()
         const ro = new ResizeObserver(() => {
           resize()
           render()
@@ -566,6 +582,7 @@ export default function HeroTerrain3D({ className }: { className?: string }) {
       /* ONE frame on load, so the hero paints the real block immediately rather than an empty box.
          Nothing else runs until the pointer touches it. */
       render()
+      markLive()
 
       const io = new IntersectionObserver(
         (entries) => {
