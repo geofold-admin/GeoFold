@@ -377,13 +377,27 @@ export function SurveyGlobe({ className }: { className?: string }) {
 
     layout()
 
+    /* THE FIRST FRAME IS DRAWN SYNCHRONOUSLY, AND THAT IS A BUG FIX.
+       The client reported the globe as "kadang putih kadang transparant" — sometimes white,
+       sometimes transparent. Measured on the live page: the canvas element was 300x150 (the
+       HTML default for a <canvas> with no width/height attribute) with a FULLY TRANSPARENT
+       backing store, and `layout()` had not run yet. The component only ever drew from inside
+       `requestAnimationFrame`, so between first paint and the first rAF callback the box was
+       the wrong size and empty, and the band's blue showed straight through it.
+       Whether that is visible depends on when the browser schedules the callback relative to
+       the paint, which is exactly why it looked intermittent rather than reliably broken.
+
+       Drawing here means the very first painted frame is the real sphere. The rAF loop still
+       takes over for the animation; this only removes the empty window before it starts.
+       `draw()` needs no valid `w`/`h` guard of its own — it returns early if layout() failed. */
+    draw()
+
     // Reduced motion: one honest static frame, no loop and no listeners.
     if (reduce.matches) {
       const staticDraw = () => {
         layout()
         draw()
       }
-      staticDraw()
       const ro = new ResizeObserver(staticDraw)
       ro.observe(canvas)
       return () => ro.disconnect()

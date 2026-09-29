@@ -30,6 +30,23 @@ let grand=0, grandFail=0
 for(const path of PAGES){
   const p=await b.newPage()
   await p.setViewport({width:1440,height:1000})
+  /* THE PAGE IS FROZEN BEFORE IT IS MEASURED, AND THAT IS NOT COSMETIC.
+     This probe scrolls the page to trigger lazy paint, then photographs it once and reads
+     every text box's colour from that one capture. Any element that moves on its own between
+     the scroll sweep and the screenshot is recorded at one position and photographed at
+     another — the ground sampled under its box then belongs to a DIFFERENT element, and the
+     ratio reported is nonsense.
+     That is exactly what the product carousel does now: it advances every 4s. Measured
+     before this line was added, the carousel track sat at scrollLeft 38 when the boxes were
+     read and at 1440 when the shot was taken, so the phone mockup's coordinate stamp was
+     sampled against whatever had slid into its place. The suite reported it at 1:1 (white on
+     white) on one run and passed on the next — a flake that would have been chased as a real
+     contrast bug for a long time.
+     Emulating `prefers-reduced-motion: reduce` is the honest fix rather than pausing a
+     specific component: the carousel (and every other animated thing here) already treats
+     that preference as "hold still", so this is the same contract a real user gets, and the
+     suite now measures the static page it always assumed it had. */
+  await p.emulateMediaFeatures([{name:'prefers-reduced-motion', value:'reduce'}])
   await p.evaluateOnNewDocument(()=>{ const s=document.createElement('style'); s.textContent='html{scroll-behavior:auto !important}'; document.documentElement.appendChild(s) })
   try { await p.goto('http://localhost:3100'+path,{waitUntil:'networkidle2',timeout:30000}) } catch(e){ console.log(`${path}: SKIP (${e.message.slice(0,40)})`); await p.close(); continue }
   await new Promise(r=>setTimeout(r,1800))

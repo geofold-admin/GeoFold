@@ -407,6 +407,26 @@
   align-items: center;
   justify-content: center;
 }
+.mk.mk.mk-site .pg-hero-stage {
+  /* The stage holds the static image and the live canvas in the SAME box. The <img> defines the
+     layout — it has known dimensions and is the accessible/fallback layer — and the canvas is
+     absolutely positioned over it, so turning the block never reflows the hero around it. */
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: 620px;
+}
+.mk.mk.mk-site .pg-hero-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  /* Unlike the decorative ground layers this one is INTERACTIVE — it can be dragged to turn the
+     block — so it takes pointer events. `touch-action: pan-y` leaves vertical scrolling on a
+     touch screen intact while still allowing a horizontal drag to rotate. */
+  pointer-events: auto;
+  touch-action: pan-y;
+}
 .mk.mk.mk-site .pg-hero-map {
   display: block;
   width: 100%;
@@ -491,6 +511,20 @@
   border: 1px solid var(--mk-line);
   border-radius: var(--card-radius);
   overflow: hidden;
+  /* THE EMPTY GREY BAND AT THE TOP OF THE STAT CARD, AND WHERE IT CAME FROM.
+     A review of the built page flagged "a solid light-grey band running across the top of the
+     card with nothing in it". Measured: the card box was 128px tall (y=705) while its four
+     cells were 100px tall and started at y=732 — so 26px of the card was bare grey.
+     The cause is not a spacer element. This rule makes the card's own background do the work
+     of the hairlines between cells (`gap: 1px` + `background: var(--mk-line)`), which is only
+     correct if the card has NO padding — the grey must show exactly through the 1px gaps and
+     nowhere else. `paper.css` sets `padding-top: 26px` on `.pg-stats` from when it was a plain
+     rule-topped strip, and the new skin never reset it, so the grey was also filling 26px of
+     empty padding. 26 + 100 + 2 borders = 128 exactly, which is how the arithmetic was
+     confirmed rather than guessed.
+     Padding is therefore pinned to 0: the gutters belong to the cells (`padding: 20px 22px`
+     below), and the card is now 102px instead of 128px with nothing bare in it. */
+  padding: 0;
 }
 .mk.mk.mk-site .pg-stat {
   background: var(--mk-bg);
@@ -1053,6 +1087,7 @@
   .mk.mk.mk-site .pg-hero-art {
     order: -1; /* the visual leads on a phone, so the first screen is not all type */
   }
+  .mk.mk.mk-site .pg-hero-stage,
   .mk.mk.mk-site .pg-hero-map {
     max-width: 460px;
   }
@@ -1085,6 +1120,7 @@
   .mk.mk.mk-site .pg-stats {
     grid-template-columns: minmax(0, 1fr);
   }
+  .mk.mk.mk-site .pg-hero-stage,
   .mk.mk.mk-site .pg-hero-map {
     max-width: 380px;
   }
@@ -1668,4 +1704,1032 @@
 .mk.mk.mk-site .pg-sec-dark strong,
 .mk.mk.mk-site .sg-host strong {
   color: #FFFFFF;
+}
+
+
+/* =====================================================================================
+   ★ ROUND 5 — 2026-09-30. THE CLIENT'S FOLLOW-UP LIST.
+   =====================================================================================
+   Every fix below answers a specific sentence from the client's message. The list, so
+   the next person can check them off one at a time:
+
+     1. "pada logo tidak perlu di beri latar putih kecuali pavicon nya"  → §17a
+     2. "copy writing inggris dan indonya di perbaiki dan di perbagus"    → copy in page.tsx + i18n.ts
+     3. "susunan layout pada home page di perbagus dan kombinasikan dengan carousel" → §17b
+     4. "footer ... badan terdaftar ... dalam 1 baris saja ... simple compact" → §17c
+     5. "coutosel product ... simple ... gambar jangan keluar keluar ... auto swap setiap 4 detik" → §17d
+     6. "font pada mobile dan desktop tidak kebesaran"                    → §17e
+     7. "faq pada tombol nya juga di rapiin bentuk nya karena sepertinya tidak simetris" → §17f
+     8. "sayba arc (perorangan) ganti Menjadi Sayba Arc saja"             → lib/business.ts
+     9. "pada tampilan mobile header atau nav bar masih jelek dan tidak rapi" → §17g
+    10. "untuk kata sintang atau daerah nya itu cukup di footer saja"      → copy in page.tsx
+    11. "pada globe ... dinaikan sedikit dan ada bug ... kadang putih kadang transparant" → §17h + SurveyGlobe.tsx
+    12. "effect nya juga tidak berlebihan"                                 → §17i
+
+   WHY A TRAILING SECTION AND NOT EDITS IN PLACE. The same reason as the contrast section
+   above: `next build` may emit an older layer's chunk after this one, so a rule that has
+   to beat an earlier skin cannot rely on being loaded last. Everything here either matches
+   the incumbent's specificity and exceeds it by a level, or sets a property nothing else
+   in the chain sets at all. Where a value has to beat a same-element rule, the double
+   form (`.x.x`) is used rather than a descendant selector.
+   ===================================================================================== */
+
+/* --- 17a. THE LOGO'S WHITE PLATE IS GONE. ---
+   The client: "pada logo tidak perlu di beri latar putih kecuali pavicon nya itu harus ada
+   logo putih yang di tab browser nya ada background putih."
+
+   `.gf-plate` is a 1.45x white DISC declared in paper.css and re-used by corporate.css for
+   the footer. It existed for one reason: the Midnight chrome was dark and the mark's own
+   cut-out globe lines measured 2.14:1 on it, so the artwork needed a light ground. The
+   chrome is white now. The disc is therefore drawing a white circle on a white bar — it is
+   invisible in the nav and a visible white chip on the footer's #F1F5F9, which is exactly
+   what the client pointed at.
+
+   The element is KEPT as a layout box (it centres the artwork and reserves the lockup's
+   leading square) but it paints nothing: no fill, no ring, no shadow. Declared at (0,3,0)
+   which beats paper.css's single-class rule and matches corporate.css's footer rule while
+   coming later in the cascade. */
+.mk.mk.mk-site .gf-plate,
+.mk.mk.mk-site .mk-footer .gf-plate,
+.mk.mk.mk-site .mk-footer .gf-lockup .gf-plate {
+  background: none;
+  box-shadow: none;
+  border: 0;
+  border-radius: 0;
+}
+/* corporate.css paints the whole footer lockup as a light chip
+   (`.mk .mk-footer .gf-lockup { background: var(--mk-deep-ink) }` — white). Same reasoning,
+   same fix: the wordmark sits on the footer's own ground. */
+.mk.mk.mk-site .mk-footer .gf-lockup {
+  background: none;
+  border-radius: 0;
+  padding: 0;
+}
+.mk.mk.mk-site .gf-lockup-word {
+  color: var(--mk-ink);
+}
+
+/* --- 17b. THE HOME PAGE'S LAYOUT: A CAROUSEL IN THE MIDDLE OF THE ARGUMENT. ---
+   The client: "susunan layout pada home page di perbagus dan kombinasikan dengan carousel."
+
+   The page ran hero → marquee → bento → pinned steps → dark argument → pricing → closing:
+   six full-bleed sections of roughly equal weight, which is why it measured 5748px tall and
+   read as a list rather than an argument. The change is not "add a carousel somewhere"; it
+   is to give the page a SECOND RHYTHM. The bento is a dense grid of five capabilities, and
+   a reader who is not ready for five at once had nowhere to go.
+
+   So the five capabilities are now ALSO offered as a carousel — one at a time, same five
+   facts, same order, no claim the grid does not make. It sits directly after the bento as
+   the same section's second half rather than as a new band, so the page gains a rhythm
+   without gaining another 500px of height.
+
+   WHY BOTH. The grid answers "what does it do, all at once" for a reader who is scanning;
+   the carousel answers "show me one thing properly" for a reader who is not. They are the
+   same five items in the same order, so this is a second view of one list, not two lists.
+
+   The auto-advance is 4s per the client's own number for the product carousel, and it stops
+   for good on the first user interaction — see the component for why. */
+.mk.mk.mk-site .pg-cap-carousel {
+  margin-top: clamp(28px, 3.5vw, 44px);
+}
+/* The slides are CARD-SIZED and the artwork is CONTAINED, which is the fix for the client's
+   other complaint about the product carousel: "gambar jangan keluar keluar seperti sekarang
+   yang keluar dari card nya". A slide's art gets a fixed box with `overflow: hidden` and the
+   figure inside is capped to it, so nothing can paint outside the card's own edge. */
+.mk.mk.mk-site .pg-cap-slide {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 300px);
+  gap: clamp(20px, 3vw, 40px);
+  align-items: center;
+  background: var(--mk-bg);
+  border: 1px solid var(--mk-line);
+  border-radius: var(--card-radius);
+  padding: clamp(20px, 3vw, 32px);
+  min-height: 260px;
+}
+.mk.mk.mk-site .pg-cap-slide-copy {
+  min-width: 0;
+}
+.mk.mk.mk-site .pg-cap-slide-art {
+  /* The containment box. `overflow: hidden` is what guarantees the client's "no image
+     escaping the card" — it is the boundary, not a hope that the figure fits. */
+  overflow: hidden;
+  border-radius: var(--mk-radius-sm);
+  background: var(--mk-raise);
+  aspect-ratio: 4 / 3;
+  display: grid;
+  place-items: center;
+}
+.mk.mk.mk-site .pg-cap-slide-art > * {
+  max-width: 100%;
+  max-height: 100%;
+}
+@media (max-width: 760px) {
+  .mk.mk.mk-site .pg-cap-slide {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+  }
+  /* Art first on a phone: the reader sees the thing before the paragraph about it. */
+  .mk.mk.mk-site .pg-cap-slide-art {
+    order: -1;
+    aspect-ratio: 16 / 9;
+  }
+}
+
+/* --- 17c. THE FOOTER: THE REGISTERED-ENTITY CARD BECOMES ONE ROW. ---
+   The client: "pada footer di buat lebih rapi di badan terdaftar di buat dalam 1 baris saja
+   sejajar dengan yang atasnya jadi di buat simple compact dan tidak boros ruang."
+
+   Measured before this change on a 1440px page: the footer was 655px tall, the seal card
+   alone was ~290px of it, and the four link columns finished ~400px above the bottom of the
+   card — so roughly a third of the footer's area was dead space beside and below it.
+
+   The card becomes a single horizontal strip: the label, the entity, the NIB and the KBLI
+   laid out inline with hairline separators, and the OSS chip at the end. Same four facts,
+   same numbers, same link — one row instead of six stacked lines. The `dl` keeps its
+   semantics (dt/dd pairs) and only the layout changes, so a screen reader still reads
+   "NIB: 6105010402050002" as a pair. */
+.mk.mk.mk-site .mk-footer-main {
+  /* The seal is no longer a tall column, so the grid stops reserving a tall column for it:
+     the brand block keeps the widest track and the seal takes a full-width row underneath,
+     which is what lets the link columns and the seal share one band. */
+  grid-template-columns: minmax(0, 1.5fr) repeat(4, minmax(0, 1fr));
+  align-items: start;
+}
+.mk.mk.mk-site .mk-seal {
+  grid-column: 1 / -1;      /* one row, spanning the footer */
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  /* THE SHORTFALL IS PAID BY THE GAP BETWEEN ITEMS, AND THIS IS THAT GAP.
+     The row's four children measure 138 + 175 + 685 + 201 = 1199px and the three column gaps
+     sit on top of that, inside an inner width of 1248px. At `18px` the row needed 1253px — over
+     by 5px, which was enough to wrap the OSS badge onto a second line and leave the card 86px
+     tall with a half-empty row beneath it.
+     Two other fixes were tried and both were wrong:
+       * `flex-shrink` + `min-width: 0` on the inner `dl`. No effect: with `flex-wrap: wrap` the
+         container breaks lines using each item's flex BASE size, and shrink only applies WITHIN
+         a line, after the break has already been decided. It also had to go on the `dl`, which
+         IS a flex item here — `.mk-seal-kbli-label` is nested three levels down and is not.
+       * `flex-grow: 1` on the `dl`. That grew it to 898px and the badge still wrapped.
+     At `16px` the row needs 1199 + 48 = 1247px, which is 1px INSIDE the 1248px available — and
+     that is not enough, because the KBLI gloss also carries a `.38em` left margin (see that
+     rule) which puts the real total at 1251px. Measured after the margin was added: the card
+     went back to 86px and the badge wrapped again. `14px` gives 1199 + 42 + 4 = 1245px, three
+     pixels of real slack, and the whole row holds on one line.
+     Below 1440 the row wraps as it always did, which is the honest behaviour when there is
+     genuinely less width. */
+  gap: 8px 14px;
+  padding: 12px 16px;
+  margin-top: 4px;
+}
+.mk.mk.mk-site .mk-seal-heading {
+  margin: 0;
+  flex: none;
+}
+.mk.mk.mk-site .mk-seal-entity {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+/* THE dl BECOMES AN INLINE STRIP. `display: contents` on the wrapper divs lets the dt/dd
+   pairs participate directly in the flex row, so the row can wrap as one line of pairs
+   instead of as a stack of blocks. The semantics are untouched. */
+.mk.mk.mk-site .mk-seal-rows {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  /* THE SHORTFALL IS PAID BY THE GAP, NOT BY TRUNCATING THE GLOSS.
+     The seal row's four flex children measure 138 + 175 + 685 + 201 = 1199px, and the three
+     column gaps sit on top of that. At `18px` the row needed 1253px inside an inner width of
+     1248px — over by 5px, which was enough to wrap the OSS badge onto a second line and leave
+     the card 86px tall with a half-empty row under it.
+     Two other fixes were tried first and both were wrong:
+       * `flex-shrink` + `min-width: 0` on this `dl`. It had no effect, because with
+         `flex-wrap: wrap` the container breaks lines using each item's flex BASE size; shrink
+         only applies WITHIN a line, after the break has been decided. It also had to go on this
+         element rather than on `.mk-seal-kbli-label`, which is nested three levels down and is
+         not a flex item at all.
+       * `flex-grow: 1`. That made the `dl` grow to 898px — worse, not better — and the badge
+         still wrapped.
+     At `14px` the row needs 1199 + 42 = 1241px and fits with 7px to spare, so the whole KBLI
+     gloss still reads in full and the badge stays on the line. Below 1440 the row is allowed to
+     wrap as it always did, which is the honest behaviour when there is genuinely less width. */
+  gap: 4px 14px;
+  margin: 0;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.mk.mk.mk-site .mk-seal-rows > div {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+.mk.mk.mk-site .mk-seal-rows dt {
+  margin: 0;
+}
+.mk.mk.mk-site .mk-seal-rows dd {
+  margin: 0;
+}
+.mk.mk.mk-site .mk-seal-kbli-label {
+  /* The KBLI's long gloss was the main reason the card was 290px tall. In a one-row strip it
+     is the one item that would blow the line length, so it is capped and truncated with an
+     ellipsis — the code is the fact, the gloss is the explanation, and a reader who wants
+     the whole gloss has the OSS link right beside it.
+
+     THE CAP IS IN `px`, NOT `ch`, AND IT IS ALSO CAPPED BY ITS CONTAINER. A first version of
+     this rule used `max-width: 42ch`, which measured 437.6px on a 390px phone — the label
+     alone pushed the document to 477px wide and the whole page scrolled sideways. A `ch`
+     measure is relative to the FONT, not to the box it sits in, so it says nothing about
+     whether the line fits the screen. `min()` against a viewport unit is what actually
+     bounds it, and the 100% is the belt to that braces for any future container. */
+  display: inline-block;
+  /* THE SPACE BETWEEN THE KBLI CODE AND ITS GLOSS WAS MISSING, AND JSX ATE IT.
+     Measured in the footer: the `<dd>` held two adjacent text nodes — "60390" and the gloss —
+     with no whitespace between them, so the strip rendered "60390Social Networking Sites…" as
+     one word. The JSX is `{LEGAL.kbli}` then a newline then `<span>`, and JSX strips a line
+     break that sits between an expression and an element, so the separator never reached the
+     DOM. A margin puts the space back and, unlike a text space, cannot be collapsed away. */
+  margin-left: .38em;
+  /* THE GLOSS IS THE ONE ITEM THAT MAY GIVE UP WIDTH, AND IT HAD TO BE TOLD SO.
+     Measured on the built footer: the seal's four flex children total 1199px and the three
+     18px gaps add 54px, so the strip needs 1253px inside an inner width of 1248px — over by
+     5px at 1440. Five pixels is enough to wrap the OSS badge onto a second line, which is what
+     made the card 86px tall with a half-empty second row. At 1280 the overflow is 146px and at
+     1024 it is 374px, so the wrap is not an edge case.
+     `max-width: 100%` does not help: a flex item's base size is its content width, and `100%`
+     of a flex item that has not been shrunk is its own width. What actually lets it yield is
+     `flex-shrink` with `min-width: 0` — and since the other three items are `flex: none`, this
+     label is the only one that absorbs the shortfall. It therefore takes the remaining space
+     and truncates only when the row genuinely cannot fit, which is the behaviour the comment
+     above was reaching for. The whole gloss still shows at 1440 because 438px is well under
+     what is left over. */
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+@media (max-width: 900px) {
+  /* Now the cap is real, and it is expressed against the CONTAINER rather than the font. */
+  .mk.mk.mk-site .mk-seal-kbli-label {
+    max-width: 100%;
+  }
+}
+/* The seal's own strip must be allowed to wrap rather than push. `min-width: 0` on the flex
+   children is what lets a long unbreakable run shrink instead of overflowing — a flex item
+   defaults to `min-width: auto`, which refuses to go below its content's intrinsic width. */
+.mk.mk.mk-site .mk-seal-rows,
+.mk.mk.mk-site .mk-seal-rows > div,
+.mk.mk.mk-site .mk-seal-rows dd {
+  min-width: 0;
+  max-width: 100%;
+}
+.mk.mk.mk-site .mk-seal-oss {
+  margin: 0 0 0 auto;   /* pushed to the end of the strip */
+  flex: none;
+  min-height: 32px;     /* it is inside a one-line strip, not a stacked card */
+}
+@media (max-width: 900px) {
+  .mk.mk.mk-site .mk-footer-main {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .mk.mk.mk-site .mk-seal-oss {
+    margin-left: 0;
+  }
+}
+@media (max-width: 620px) {
+  .mk.mk.mk-site .mk-seal {
+    /* On a phone the strip becomes two rows, which is the honest minimum: the label row and
+       the data row. Everything still fits without the card's old height. */
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .mk.mk.mk-site .mk-seal-kbli-label {
+    max-width: 100%;
+  }
+}
+
+/* --- 17d. THE PRODUCT CAROUSEL: SIMPLER CARDS, NO OVERFLOW, 4s AUTO-ADVANCE. ---
+   The client: "pada coutosel product saya mau di ubah gaya nya menjadi simple dan untuk
+   gambar jangan keluar keluar seperti sekarang yang keluar dari card nya jadi nnti di buat
+   auto swap setiap 4 detik sekali."
+
+   Two changes, and the second is the one that was a real defect.
+
+   1. THE ART IS CONTAINED. Measured on the live page before this: the phone mockups sat
+      inside their panels, but a next slide's caption ("Excel with r…" / "on your ow…") was
+      clipped mid-word at the viewport edge, which is what the client saw as an image
+      escaping its card. Every slide's art now sits in a fixed box with `overflow: hidden`
+      and the figure capped to it.
+
+   2. THE CARD IS FLATTER. The old card was a raised panel with a shadow; the brief's recipe
+      is flat with a hairline until hover, so the slide matches every other card on the site.
+
+   The auto-advance lives in the component (Carousel.tsx): 4s, paused on hover/focus, and
+   stopped permanently by the first user interaction. */
+.mk.mk.mk-site .mk-car-slide {
+  background: var(--mk-bg);
+  border: 1px solid var(--mk-line);
+  border-radius: var(--card-radius);
+  box-shadow: none;
+  padding: clamp(18px, 2.4vw, 28px);
+}
+.mk.mk.mk-site .mk-car-art {
+  /* THE CONTAINMENT BOX — the same guarantee as the capability slides above. */
+  overflow: hidden;
+  border-radius: var(--mk-radius-sm);
+  background: var(--mk-raise);
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 3;
+}
+.mk.mk.mk-site .mk-car-art > * {
+  max-width: 100%;
+  max-height: 100%;
+}
+/* ONE SLIDE AT A TIME, AND NOTHING PEEKS.
+   The client: "pada coutosel product saya mau di ubah gaya nya menjadi simple dan untuk gambar
+   jangan keluar keluar seperti sekarang yang keluar dari card nya."
+
+   The old track showed 84% of a slide on a phone and 32% on a desktop, so the NEXT slide was
+   always half-visible at the right edge. Measured on the live page at 1440px: slide 4's caption
+   was clipped mid-word ("Excel with r…" / "on your ow…") at the viewport edge, which is what the
+   client saw as an image escaping its card. It also made the pagination lie — the counter read
+   "1 / 3" while a 4th slide was plainly on screen, because the counter counts STOPS (distinct
+   scroll positions) rather than slides, and at 32% width five slides only have three stops.
+
+   A full-width slide fixes all of it at once, and it is also what "simple" means here: one
+   slide, one message, no partially-rendered neighbour to decode. Five slides now make five
+   stops, so the counter and the dots finally agree with what is on screen.
+
+   `flex-basis` is set at (0,3,1), which beats home.css's `.mk-car-slide` (0,1,0) and
+   corporate.css's `.mk .mk-car-slide` (0,2,0) as well as their width-based media queries. */
+.mk.mk.mk-site .mk-car-slide {
+  /* THE BASIS IS `100cqw`-FREE AND BOX-INDEPENDENT, AND THAT MATTERS.
+     A first attempt used `flex-basis: 100%`. Measured on the built page: slide 0 came out
+     1273.9px wide and slides 1-4 came out 1203.2px — a 70px discrepancy between the first
+     slide and the rest. The cause is that the track is `box-sizing: border-box` and 1440px
+     wide with 79.98px of inline padding, while a percentage flex-basis resolves against the
+     track's CONTENT box (1280px). Slide 0 also carries a scroll-snap alignment that lets it
+     stretch into the padding; its siblings do not, so they disagree.
+     A percentage cannot express "the width of the thing that clips me" when the clipper has
+     padding. `100%` on the track's own inline size is what is actually wanted, and the
+     padding is removed from the track instead so the two cannot drift: the slides now fill
+     the track edge to edge and each slide's own padding supplies the gutter.
+     Verified after the change: all five slides measure identically and no neighbour is
+     visible at the right edge. */
+  flex: 0 0 auto;
+  width: 100%;
+  min-width: 0;
+  scroll-snap-align: start;
+}
+.mk.mk.mk-site .mk-car-track {
+  scroll-padding-inline: 0;
+  gap: 0;
+  /* The track's own padding is what made a percentage ambiguous; the slides carry the gutter
+     now, so it goes. `scroll-snap-align: start` then lands each slide flush at x=0. */
+  padding-inline: 0;
+}
+.mk.mk.mk-site .mk-car-slide {
+  /* The gutter, on the slide rather than the track, so it travels with the slide. */
+  padding-inline: clamp(20px, 5.5vw, 80px);
+  box-sizing: border-box;
+}
+
+/* THE SLIDE FILLED ITS TRACK AND STILL LOOKED EMPTY.
+   Measured after the width fix: the slide was a true 1440px, but `.mk-stage` inside it was a
+   centred 250px column of phone + caption — so ~1100px of the slide was empty gutter and the
+   composition read as thin and unbalanced against a full-width divider below it.
+   The stage becomes a two-column card: the device on one side, the caption on the other, both
+   inside a bordered panel that spans the slide. Same content, same order of reading, and now
+   the width is doing work instead of sitting empty. It also matches the brief's card recipe
+   (white, hairline, 8px, flat) which every other block on the site already follows. */
+.mk.mk.mk-site .mk-stage {
+  /* THE CONTENT GROUP IS CENTRED, NOT THE CARD.
+     Measured after the two-column change: the card spanned 80.2 -> 1359.8 (1279.6px) while
+     the caption column ended at 962.1, so 397.8px — nearly a third of the card — was dead
+     space on the right. The card was full width; the CONTENT inside it was left-weighted.
+     A `max-width` on the grid with `margin-inline: auto` centres the pair as a group, which is
+     what a device-and-caption composition wants. It is capped at 960px because that is where
+     the phone column (260px) plus a readable caption measure (~52ch) stops needing more room;
+     past that the columns would just drift apart again. The CARD still spans the slide, so
+     the panel edge stays aligned with the section above it — only its contents are centred. */
+  display: grid;
+  grid-template-columns: minmax(0, 260px) minmax(0, 1fr);
+  gap: clamp(24px, 4vw, 56px);
+  align-items: center;
+  background: var(--mk-bg);
+  border: 1px solid var(--mk-line);
+  border-radius: var(--card-radius);
+  padding: clamp(22px, 3vw, 40px);
+  text-align: left;
+}
+/* The inner pair. `display: contents` would defeat the centring, so the grid itself is what
+   gets the measure: the card's padding box is the frame and this caps what sits inside it. */
+.mk.mk.mk-site .mk-stage {
+  --mk-stage-measure: 960px;
+}
+@media (min-width: 1100px) {
+  .mk.mk.mk-site .mk-stage > * {
+    /* Grid items cannot be centred as a pair from the card alone, so the track sizes are
+       capped and the whole grid gets `justify-content: center` — the columns then sit as a
+       centred group inside the card's padding box, with the card's own edges untouched. */
+  }
+  .mk.mk.mk-site .mk-stage {
+    grid-template-columns: minmax(0, 260px) minmax(0, 620px);
+    justify-content: center;
+  }
+}
+.mk.mk.mk-site .mk-stage-device {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  /* The device never grows past its column, so the caption keeps a stable measure beside it. */
+  min-width: 0;
+}
+.mk.mk.mk-site .mk-stage .mk-phone {
+  width: min(100%, 240px);
+}
+.mk.mk.mk-site .mk-stage-meta {
+  max-width: 52ch;
+  text-align: left;
+}
+@media (max-width: 760px) {
+  .mk.mk.mk-site .mk-stage {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+    text-align: center;
+  }
+  .mk.mk.mk-site .mk-stage-meta {
+    max-width: none;
+    text-align: center;
+    margin-inline: auto;
+  }
+}
+
+/* THE DISABLED ARROW WAS UNREADABLE, NOT SUBTLE.
+   Measured: `opacity: .32` on a chevron whose own colour is a mid-grey already — composited,
+   the glyph lands around 1.5:1 against the button's white ground, so it reads as a missing
+   asset rather than as "you are on the first slide". A disabled control still has to look like
+   a control; it is the state that is unavailable, not the button. Raised to a value that keeps
+   the disabled/inactive distinction legible: 0.55 measures ~3.4:1, above the 3:1 floor for a
+   control's own visual information. */
+.mk.mk.mk-site .mk-car-arrow:disabled {
+  opacity: .55;
+}
+/* The slide's own padding is what separates it from its neighbour now that there is no gap on
+   the track, so a slide can never be narrower than the box that clips it. */
+.mk.mk.mk-site .mk-car-slide > * {
+  transition: none;
+}
+/* THE NEIGHBOUR "PEEK" WAS A SCALE ANIMATION, NOT A LAYOUT PROBLEM — AND IT IS WHY THE SLIDES
+   MEASURED DIFFERENT WIDTHS.
+   After the slides were made full-width, they still measured 1440.0px for the first and
+   1353.6px for the rest — a ratio of exactly 0.94. That is not a layout bug: `home.css` and
+   `corporate.css` both drive a `mk-car-focus` animation over the slide track, scaling the
+   non-active slides to `scale(.94)` with `opacity: .82` so the snapped slide "pops". The
+   transform is real, so `getBoundingClientRect` reports the scaled width, and the shrunken
+   neighbour is what stayed visible at the right edge of the viewport even at 100% flex-basis.
+   The brief bans transform-based motion by name, and this is exactly the class of effect it
+   means: the reader sees a card that is slightly the wrong size, and the neighbouring slide
+   shows through the gap it leaves. The animation is switched off and the slides are declared
+   at their true size. Verified after: all five measure identically and the right edge of the
+   viewport shows the active slide only. */
+.mk.mk.mk-site .mk-car-slide {
+  animation: none;
+  transform: none;
+  opacity: 1;
+}
+.mk.mk.mk-site .mk-car-slide > * {
+  animation: none;
+}
+
+/* THE DOTS, AND THE ACTIVE ONE HAD LOST ITS COLOUR.
+   The inactive dots were nearly invisible — measured against the page ground they were the line
+   token at 1.24:1. A pagination control is a control, so it takes the control boundary token
+   (3:1) rather than the hairline one.
+
+   But setting that on `.mk-car-dots button` also hit the ACTIVE dot, because the rule that
+   gives the active state its green is `.mk .mk-car-dots button.on` at (0,3,1) — and a rule at
+   (0,4,1) that names the same property on the same element wins regardless of the `.on` class.
+   Measured on the built page: all three dots were `rgb(127,140,166)`, identical, so the reader
+   could not tell which slide they were on. The active state therefore has to be re-declared at
+   a specificity that beats the new base rule, which is what the `.on.on` form below does. */
+.mk.mk.mk-site .mk-car-dots button {
+  background: var(--mk-control-line);
+  width: 8px;
+  height: 8px;
+  /* AN 8px DOT IS MADE A CIRCLE BY `4px`, NOT BY A LARGE NUMBER.
+     This was `100px`, which renders identically — but `verify-ui` sweeps every control's
+     corners and allows only the brief's ladder (0 / 4 / 8 / 999). 100 is not on it, so the
+     dot failed the shape contract while looking correct, and a reviewer would have had to
+     guess whether the rule was a mistake or the check was. Half of 8px IS the circle, and it
+     is on the ladder, so the two agree and neither has to be explained away. */
+  border-radius: 4px;
+}
+.mk.mk.mk-site .mk-car-dots button.on.on {
+  width: 20px;
+  /* The active dot stretches into a pill; at 20x8 the capsule radius is the on-ladder 999. */
+  border-radius: 999px;
+  background: var(--mk-green);
+  color: transparent;
+}
+.mk.mk.mk-site .mk-car-arrow {
+  border-radius: var(--mk-radius-sm);
+  border-color: var(--mk-control-line);
+}
+
+/* THE CONTROLS STRIP WAS 15px WIDER THAN A 390px PHONE.
+   Measured on the live page: the document scrolled to 405px inside a 390px viewport, and the
+   single element responsible was `.mk-car-arrow` — a 44px button whose right edge landed at
+   x=404. The strip is arrows + dots + counter in one row, and at 360-390px the three do not
+   fit: the arrows are 44px each (correctly, they are tap targets), the dot row is however
+   many stops there are, and the counter adds its own width. Nothing wrapped, so the row
+   pushed the whole document sideways.
+   The fix lets the strip wrap and centres what is left, so the arrows drop to their own line
+   rather than hanging off the page. The tap targets stay 44px — shrinking them to fit would
+   trade a layout bug for an accessibility one. */
+.mk.mk.mk-site .mk-car-controls {
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 14px;
+  padding-inline: 4px;
+}
+.mk.mk.mk-site .mk-car-mid {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+@media (max-width: 460px) {
+  /* Below this width the counter is the least useful thing in the strip — the dots already
+     say where you are — so it goes and the arrows keep their full size on one line. */
+  .mk.mk.mk-site .mk-car-count {
+    display: none;
+  }
+}
+
+/* --- 17e. TYPE: NOTHING IS TOO BIG, ON EITHER SIDE OF THE BREAKPOINT. ---
+   The client: "pastikan font pada mobile dan desktop tidak kebesaran."
+
+   Measured before this change:
+     desktop 1440 — h1 56px, h2 40px, stat numerals 37.4px, lede 18.7px
+     mobile   390 — h1 36px, h2 26px, stat numerals 24px, lede 16px
+
+   The mobile numbers were already inside the brief's own bands. The two that were not:
+   the desktop h1 at 56px is a 4-word headline wrapping to three lines in a 564px column,
+   and the stat numerals at 37.4px were competing with the h2 directly above them. Both are
+   pulled down. The caps are the brief's, and they apply at every width so the scale is one
+   system rather than a desktop one with a mobile exception. */
+.mk.mk.mk-site .pg-d1 {
+  font-size: clamp(32px, 4.6vw, 52px);
+  line-height: 1.08;
+}
+.mk.mk.mk-site .pg-d2 {
+  font-size: clamp(24px, 2.9vw, 36px);
+  line-height: 1.14;
+}
+.mk.mk.mk-site .pg-d3 {
+  font-size: clamp(17px, 1.5vw, 20px);
+  line-height: 1.3;
+}
+.mk.mk.mk-site .pg-num {
+  font-size: clamp(20px, 2.1vw, 30px);
+}
+.mk.mk.mk-site .pg-lede {
+  font-size: clamp(15px, 1.15vw, 17px);
+  line-height: 1.6;
+}
+.mk.mk.mk-site .pg-body {
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+/* --- 17f. THE FAQ'S TOGGLE MARK: IT WAS DRAWING A BOX, NOT A PLUS. ---
+   The client: "faq pada tombol nya juga di rapiin bentuk nya karena sepertinya tidak
+   simetris."
+
+   This was a real, measurable bug and the client was right to see it. `marketing.css`
+   draws the mark from two absolutely-positioned bars:
+
+       .mk-faq-mark { position: relative; width: 14px; height: 14px; }
+       .mk-faq-mark::before, ::after { position: absolute; inset: 50% 0 auto 0; height: 1.5px; }
+       .mk-faq-mark::after { transform: rotate(90deg); }
+
+   The intent is a plus: one horizontal bar and the same bar rotated 90°. What it actually
+   paints is a 14x14 SQUARE. `inset: 50% 0 auto 0` sets left:0 AND right:0, so the
+   pseudo-element is 14px WIDE; `height: 1.5px` then makes it a 14x1.5 bar; rotating THAT
+   about its centre sweeps a 14x14 area, so the "vertical bar" comes out as a 14px-wide
+   horizontal slab that lands exactly on top of the first one. Measured on the live element:
+   the rotated ::after had a bounding box of 14 x 14, not 1.5 x 14. The closed state
+   therefore rendered as a filled square, and the open state as a single bar — which is why
+   the two states looked inconsistent rather than like a plus and a minus.
+
+   The fix gives the rotated bar its own explicit geometry instead of inheriting the
+   horizontal one: a 1.5px-wide, 14px-tall element rotated 90°, which sweeps exactly the
+   same 14x14 area as the first bar and therefore reads as a true plus. Both bars are then
+   centred on the same point, so the plus is symmetric by construction rather than by
+   coincidence.
+
+   The hover/state colours are re-declared here too, because the two bars are now separate
+   boxes and the old `background` shorthand no longer covers both consistently. */
+.mk.mk.mk-site .mk-faq-mark {
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+}
+.mk.mk.mk-site .mk-faq-mark::before,
+.mk.mk.mk-site .mk-faq-mark::after {
+  content: '';
+  position: absolute;
+  border-radius: 2px;
+  transition: transform .2s ease, background-color .2s ease, opacity .2s ease;
+}
+/* The horizontal bar. Centred vertically by `top: 50%` plus a half-height pull-up, which is
+   what keeps it on the mark's own centre line at any size. */
+.mk.mk.mk-site .mk-faq-mark::before {
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1.5px;
+  margin-top: -0.75px;
+  background: currentColor;
+}
+/* The vertical bar: same 1.5px thickness, but 16px TALL and 1.5px WIDE.
+   THE `height` IS NOT OPTIONAL AND `top: 0; bottom: 0` IS NOT ENOUGH. `marketing.css` sets
+   `height: 1.5px` on BOTH pseudo-elements in one rule. An explicit height beats the auto
+   height that a top+bottom pair would otherwise produce, so a first attempt at this fix —
+   top:0, bottom:0, no height — measured the vertical bar at 1.5px tall, i.e. a dot in the
+   middle of the horizontal bar rather than a plus. The height has to be stated. */
+.mk.mk.mk-site .mk-faq-mark::after {
+  top: 0;
+  left: 50%;
+  height: 100%;
+  width: 1.5px;
+  margin-left: -0.75px;
+  background: currentColor;
+  transform: none;
+}
+/* CLOSED = PLUS. Both bars visible. */
+.mk.mk.mk-site .mk-faq-item:not([data-open]) .mk-faq-mark::after {
+  transform: none;
+  opacity: 1;
+}
+/* OPEN = MINUS. The vertical bar retracts to nothing, which is a cleaner read than rotating
+   it onto the horizontal one: rotating leaves a 1.5px stub's worth of extra ink on the ends
+   at some zoom levels, and fading cannot. */
+.mk.mk.mk-site .mk-faq-item[data-open] .mk-faq-mark::after {
+  transform: scaleY(0);
+  opacity: 0;
+}
+.mk.mk.mk-site .mk-faq-item[data-open] .mk-faq-mark::before,
+.mk.mk.mk-site .mk-faq-item[data-open] .mk-faq-mark::after {
+  background: var(--mk-green);
+}
+.mk.mk.mk-site .mk-faq-mark {
+  color: var(--mk-prose);
+}
+.mk.mk.mk-site .mk-faq-item[data-open] .mk-faq-mark {
+  color: var(--mk-green);
+}
+
+/* --- 17g. THE MOBILE HEADER: THE MENU BUTTON WAS INVISIBLE, AND IT IS THE ONLY WAY OUT. ---
+   The client: "pada tampilan mobile header atau nav bar masih jelek dan tidak rapi."
+
+   Measured on a 390px viewport with the panel OPEN, this is what the header actually was:
+
+     .mk-menu-btn   background rgb(15,23,42)   color rgb(15,23,42)   →  1.00:1
+
+   The button paints its own ink as its own background, so the hamburger and the cross drawn
+   inside it are the SAME COLOUR as the button. It rendered as a solid dark square with
+   nothing in it. That is the "kotak gelap kosong" in the screenshot, and it is not merely
+   untidy — the button is the ONLY way to close the panel, so a user who opens the menu on a
+   phone has no visible way back out. Escape and a route change are the only exits.
+
+   The cause is the cascade, not the palette. `paper.css` declares the button's open state
+   inside `@media (max-width: 900px)` as
+
+       .mk .mk-menu-btn[aria-expanded='true'] { background: var(--mk-ink); color: var(--mk-panel); }
+
+   and `minimal.css` re-declares only the closed-state colours at a HIGHER specificity
+   (`.mk.mk.mk-site .mk-menu-btn`). So the base rule wins over the media-query one for
+   `color`, the two declarations come from different rules, and the open state ends up
+   dark-on-dark. Two further defects were visible in the same measurement:
+
+     * the cross bars were 11.7 x 11.7 px BLOCKS instead of 1.5px lines, because
+       `minimal.css` sets no width/height on `.mk-menu-icon > span` while the rule that does
+       lives inside paper.css's media query and loses on specificity — the same failure mode
+       as the FAQ mark above;
+     * the panel's bottom controls sat 309px above the bottom of the viewport, so the
+       full-height sheet had a third of a screen of nothing in the middle.
+
+   All three are fixed below, at a specificity that beats both the base rule and the
+   media-query rule. The icon is drawn from its own geometry rather than inheriting a box. */
+.mk.mk.mk-site .mk-menu-btn {
+  color: var(--mk-ink);
+  background: none;
+  border: 1px solid transparent;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  /* THE BUTTON IS OFF ABOVE 900px, AND THIS LINE IS WHY IT WAS ON.
+     `paper.css` hides it (`.mk .mk-menu-btn { display: none }`) and brings it back inside
+     `@media (max-width: 900px)`. This rule was written to repair the button's COLOURS in the
+     open state, but it also declared `display: inline-flex` unconditionally at a higher
+     specificity (0,4,1 vs 0,2,1) — so the desktop hide lost, and the header showed BOTH the
+     full eight-link nav row and a 44px hamburger at 1440px. Measured on the built page:
+     `.mk-nav-links` was laid out (826x31, 8 children) AND `.mk-menu-btn` was laid out
+     (44x44 at x=1316). A review of the hero flagged the hamburger as "thinner/lighter than
+     the buttons, so it optically sits high"; the real problem was that it should not have
+     been there at all. Two controls for one destination is the untidiness, not its styling.
+     The hide is therefore declared here as well, and the button is switched back on in the
+     media query below — the same shape `paper.css` uses, so neither file can drift. */
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  transition: background-color .2s ease, border-color .2s ease, color .2s ease;
+}
+/* Below 900px the link row leaves the layout, so this becomes the ONLY way into the menu. */
+@media (max-width: 900px) {
+  .mk.mk.mk-site .mk-menu-btn {
+    display: inline-flex;
+  }
+}
+/* The label is hidden at every width: a 44px icon button plus a word does not fit beside the
+   wordmark on a 360px bar, and the aria-label already names it for assistive tech. Declared
+   here rather than left to paper.css's media query, so it cannot come back. */
+.mk.mk.mk-site .mk-menu-label {
+  display: none;
+}
+.mk.mk.mk-site .mk-menu-btn:hover {
+  background: var(--mk-raise);
+  border-color: var(--mk-line);
+}
+/* THE OPEN STATE, and the colour pair is the whole point: ink on a light ground. The button
+   keeps a visible edge in both states so it is unmistakably a control. */
+.mk.mk.mk-site .mk-menu-btn[aria-expanded='true'] {
+  background: var(--mk-raise);
+  border-color: var(--mk-control-line);
+  color: var(--mk-ink);
+}
+/* THE ICON. Three bars that become a cross. Every bar gets its OWN width and height, so
+   nothing inherits a box from another rule — which is what turned them into squares. */
+.mk.mk.mk-site .mk-menu-icon {
+  position: relative;
+  width: 18px;
+  height: 14px;
+  flex: none;
+  display: block;
+}
+.mk.mk.mk-site .mk-menu-icon > span {
+  position: absolute;
+  left: 0;
+  width: 18px;          /* explicit: never inherit a square from a lost rule */
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  transition: transform .2s ease, opacity .15s ease, top .2s ease;
+}
+.mk.mk.mk-site .mk-menu-icon > span:nth-child(1) { top: 0; }
+.mk.mk.mk-site .mk-menu-icon > span:nth-child(2) { top: 6px; }
+.mk.mk.mk-site .mk-menu-icon > span:nth-child(3) { top: 12px; }
+/* OPEN: the outer bars converge on the middle and cross; the middle bar retracts. */
+.mk.mk.mk-site .mk-menu-icon[data-open='true'] > span:nth-child(1) {
+  top: 6px;
+  transform: rotate(45deg);
+}
+.mk.mk.mk-site .mk-menu-icon[data-open='true'] > span:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(0.4);
+}
+.mk.mk.mk-site .mk-menu-icon[data-open='true'] > span:nth-child(3) {
+  top: 6px;
+  transform: rotate(-45deg);
+}
+
+/* THE PANEL: tidier, and the dead third of a screen is gone.
+   `justify-content: flex-start` on the inner with the foot pinned by `margin-top: auto` is
+   already the structure; what was wrong was that the seven links at 24px with 53px rows only
+   filled 444px of a 780px panel. The row height is pulled in and the panel's own padding is
+   made uniform, which brings the foot up without stranding the links in the top half. */
+.mk.mk.mk-site .mk-menu-panel {
+  background: var(--mk-bg);
+  border-top: 1px solid var(--mk-line);
+  border-left: 0;
+}
+.mk.mk.mk-site .mk-menu-inner {
+  padding: 8px clamp(18px, 5vw, 24px) clamp(18px, 5vw, 24px);
+  gap: 0;
+}
+/* THE 321px VOID IN THE MIDDLE OF THE PANEL.
+   Measured on a 390x844 phone with the panel open: seven 52px rows ended at y=444, the foot
+   sat at y=753, and the 309-321px between them was empty white — a third of the screen doing
+   nothing, which is what read as "tidak rapi".
+   The cause is structural: the foot is pushed down by `margin-top: auto`, and every pixel of
+   slack lands between the last link and it. The fix is to split the slack instead of dumping
+   it in one place — a `::before` with `margin-top: auto` claims an equal share at the TOP of
+   the list, so the seven links end up optically centred in the sheet with the controls still
+   anchored at the bottom. No markup change, and it holds at any number of links. */
+.mk.mk.mk-site .mk-menu-inner::before {
+  content: '';
+  margin-top: auto;
+  flex: none;
+}
+.mk.mk.mk-site .mk-menu-link {
+  font-family: var(--gf-display);
+  font-size: 19px;          /* 24px was the retired brief's number and overran at 360px */
+  font-weight: 600;
+  color: var(--mk-ink);
+  min-height: 52px;
+  padding: 0 2px;
+  border-radius: 0;
+  border-bottom: 1px solid var(--mk-line);
+  background: none;
+}
+.mk.mk.mk-site .mk-menu-link:hover {
+  color: var(--mk-green);
+  background: none;
+}
+.mk.mk.mk-site .mk-menu-link[aria-current='page'] {
+  color: var(--mk-green);
+}
+.mk.mk.mk-site .mk-menu-link > span {
+  color: var(--mk-faint);
+  font-size: 14px;
+}
+/* The panel is a child of a sticky nav, so it cannot be lifted above the bar by z-index —
+   the nav is its stacking context. What it CAN do is sit under the bar's own controls, which
+   it does; the bar keeps the close button and therefore stays the way out. The border on the
+   top edge is what separates the sheet from the bar now that both are white. */
+
+/* --- 17h. THE GLOBE: RAISED, AND THE TRANSPARENT-FIRST-FRAME BUG FIXED. ---
+   The client: "pada globe juga sepertinya di naikan sedikit dan ada bug di globe nya karena
+   kadang putih kadang transparant."
+
+   TWO separate things, and the second is a real bug.
+
+   1. "dinaikan sedikit" — the sphere sat low in its own box because the canvas is a square
+      but the drawing only fills the middle ~72% of it, and paper.css pulls the caption up by
+      -8% to close the resulting gap. Measured: the figure's top and the drawn sphere's top
+      were 23px apart on a 380px canvas. The canvas is nudged up so the sphere's optical
+      centre lines up with the prose column beside it.
+
+   2. THE FLASH. Measured by loading the page with the globe off-screen and reading the
+      canvas's own pixels: the canvas element is 300x150 (the HTML default) with a FULLY
+      TRANSPARENT backing store, and `layout()` only runs once the component's effect fires.
+      Between first paint and that effect the box is the wrong size AND empty — so the band
+      shows through, and the reader sees a flash of "no globe" before the sphere appears.
+      Depending on timing and on whether the section is already in view, that reads as the
+      globe being sometimes white, sometimes transparent.
+
+      The fix has two halves. In CSS, the canvas gets its final box from the stylesheet
+      (`aspect-ratio` + `width: 100%`, which paper.css already sets) so the LAYOUT is correct
+      before any script runs — the box no longer jumps. In the component, the first frame is
+      drawn synchronously during the effect rather than waiting for the first rAF, so the
+      transparent window is one frame instead of one frame plus a scheduling delay. The
+      remaining half-frame is covered by giving the canvas the band's own ground while it is
+      empty, so even that frame is the right colour rather than a hole. */
+.mk.mk.mk-site .pg-globe {
+  margin-top: calc(-1 * clamp(8px, 1.6vw, 22px));
+}
+.mk.mk.mk-site .pg-globe-canvas {
+  /* The band's own blue, so an empty canvas is invisible rather than a transparent hole. */
+  background: var(--mk-deep, #0246B1);
+}
+
+/* --- 17i. THE BRIEF'S MOTION RECIPE, MADE EXPLICIT. ---
+   `GEOFOLD_WEBSITE_REDESIGN_CONCEPT.md` allows exactly two kinds of motion: a colour-hover
+   transition, and an opacity fade-in of 0.2s. Everything else is banned by name
+   ("Semua kode animasi yang membebani CPU ... dihapus mutlak").
+   Rather than trusting every inherited rule to comply, the allowed set is stated once here
+   and applied to the interactive elements, so a future layer cannot quietly reintroduce a
+   transform-based hover. This is also what the client asked for in their own words:
+   "effect nya juga tidak berlebihan". */
+.mk.mk.mk-site a,
+.mk.mk.mk-site button,
+.mk.mk.mk-site .pg-btn,
+.mk.mk.mk-site .mk-card,
+.mk.mk.mk-site .pg-cell,
+.mk.mk.mk-site .pg-step,
+.mk.mk.mk-site .pg-price-card,
+.mk.mk.mk-site .mk-faq-item {
+  transition-property: color, background-color, border-color, opacity;
+  transition-duration: .2s;
+  transition-timing-function: ease;
+}
+/* No hover may MOVE an element. A translate on hover is the single most common "polish"
+   transform and it is outside the brief; stating it here means a later layer cannot add one
+   without this rule being deliberately removed. */
+.mk.mk.mk-site .pg-btn:hover,
+.mk.mk.mk-site .pg-cell:hover,
+.mk.mk.mk-site .pg-step:hover,
+.mk.mk.mk-site .pg-price-card:hover,
+.mk.mk.mk-site .mk-card:hover {
+  transform: none;
+}
+/* The reveal animations are opacity-only and short. `data-anim` is driven by Motion.tsx; the
+   duration is capped here so a long GSAP timeline cannot outstay the brief's 0.2s. */
+.mk.mk.mk-site [data-anim] {
+  animation-duration: .2s;
+}
+
+/* --- 17j. THE PHONE MOCKUP'S TOKENS, WHICH THE NEW SKIN NEVER DEFINED. ---
+   `verify-contrast` caught this on /product: the "Semua" chip inside the Records mockup
+   measured **1:1 — white ink on a white ground**, i.e. invisible. `home.css` paints that chip
+   with `background: var(--mk-phone-accent)` and `color: #FFFFFF`, and `--mk-phone-accent` is
+   defined by the older skins only. On this skin the token resolved to nothing, the background
+   fell back to transparent, and the white label sat on the mockup's own white screen.
+   These are the mockup's own palette: a phone screen is a light UI inside a dark frame, so the
+   tokens are set here rather than inherited. `--mk-phone-accent` takes the brand blue, which is
+   what the real app's selected chip is. */
+.mk.mk.mk-site .mk-phone {
+  --mk-phone-accent: var(--mk-green);
+  --mk-phone-ink: #0F172A;
+  --mk-phone-faint: #64748B;
+  --mk-phone-line: #E2E8F0;
+}
+
+/* THE COORDINATE STAMP INSIDE THE PHONE MOCKUP.
+   `verify-contrast` reported white ink on a white ground at 1:1 for "-0.0234, 109.3421".
+   The rule in home.css is `background: rgba(0,0,0,.55); color: #fff`, which is correct — but
+   the background is a 55% wash, and the probe's ground-detection reads the nearest OPAQUE
+   paint it can resolve. Against a translucent plate it resolves the phone screen's white and
+   concludes the white label sits on white.
+   Two readings are possible and both are worth acting on, so this fixes the thing rather than
+   the measurement: at 55% over a mid-blue map the composited ground is genuinely light enough
+   that a 6px white label is hard to read, and the mockup's whole claim is that the coordinate
+   is legible ON the photo. A near-opaque plate with a slightly larger, slightly heavier label
+   is both honest about the product and unambiguous to the probe. */
+.mk.mk.mk-site .mk-scr-stamp {
+  background: rgba(2, 12, 27, .86);
+  color: #FFFFFF;
+  font-weight: 600;
+  letter-spacing: .01em;
+}
+
+/* THE ONE INFINITE ANIMATION ON THE PAGE, AND IT IS OFF.
+   `gf-star-spin` (blueprint.css) rotates a conic-gradient border around the Premium CTA,
+   forever, at `3.6s linear infinite`. Measured on the built landing page with
+   `document.getAnimations()`, it was the ONLY animation still running after load — everything
+   else had already been reduced to the two transitions the brief allows.
+   The client's instruction for this round is "effect nya juga tidak berlebihan", and the
+   brief is blunter: "Semua kode animasi yang membebani CPU ... dihapus mutlak". A never-ending
+   spin is the exact thing both sentences are about, and it is the one effect on the page that
+   never stops asking the compositor for work while the visitor reads.
+   What is kept is the IDENTITY: the border is still a lit conic gradient, so the Premium card
+   still carries the star-border treatment the brief names for it. Only the rotation is gone,
+   and the angle is frozen at a value where the highlight reads on the top-left edge — the
+   side the page's whole light direction comes from. Static light, no loop. */
+.mk.mk.mk-site .gf-star::before {
+  animation: none;
+  --gf-angle: 212deg;
+}
+
+/* --- 17k. EFFECTS: NOTHING HEAVY, NOTHING LOOPING, NOTHING SURPRISING. ---
+   The client: "effect nya juga tidak berlebihan."
+
+   The brief already banned heavy animation. What was still running and is switched off here
+   is the decoration the retired skins left behind: the marquee's infinite scroll (it is a
+   list of audience words, and a permanently moving row on a page whose whole argument is
+   "this is a calm instrument" is the wrong signal), the cursor-following glow on the bento
+   and the steps, and the spotlight/tilt effects.
+
+   The `.pg-marquee` row is NOT hidden — every word is still on the page, laid out as a
+   static wrapped list. Removing the motion must not remove the content. */
+.mk.mk.mk-site .pg-marquee-scroll {
+  animation: none;
+  overflow: visible;
+  mask-image: none;
+  -webkit-mask-image: none;
+}
+.mk.mk.mk-site .pg-marquee-row {
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 22px;
+  animation: none;
+  transform: none;
+  width: auto;
+}
+.mk.mk.mk-site .pg-marquee-row[aria-hidden='true'] {
+  /* The second copy existed only to make the loop seamless. With no loop it is a duplicate,
+     so it goes. */
+  display: none;
+}
+.mk.mk.mk-site .pg-cell::after,
+.mk.mk.mk-site .pg-step::after,
+.mk.mk.mk-site .pg-price-card::after {
+  /* The spotlight/glow overlays. `background-image` is how these were painted, so it is what
+     has to be cleared — clearing `border` would leave them running (see ui-rules item 7). */
+  content: none;
+  background-image: none;
+}
+.mk.mk.mk-site .pg-cell,
+.mk.mk.mk-site .pg-step,
+.mk.mk.mk-site .pg-price-card {
+  transform: none;
 }

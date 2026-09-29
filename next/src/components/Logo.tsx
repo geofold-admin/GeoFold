@@ -6,31 +6,28 @@
  * redrawn lookalike: the outlines were traced off the source so the curves and the joins are the
  * client's own.
  *
- * THE COLOURS ARE FROZEN. Blue #0246b1, orange #fa5f1f, in every theme. The mark is the mark; it
- * does not get recoloured to suit a background.
+ * THE MARK IS A CUT-OUT, AND THAT IS THE WHOLE STORY OF THIS FILE. The grid lines inside the G are
+ * not white ink — those pixels are holes that show whatever is behind them, and there is not one
+ * pure-white pixel in the artwork. So the mark is only legible where the ground behind it is
+ * light enough for #0246b1 to read on: 7.99:1 on white, 2.14:1 on a midnight plate.
  *
- * WHY THAT IS NOT TRIVIAL. Measured on the source: the grid lines inside the G are not white ink
- * at all, they are holes — those pixels are exactly the background colour, and there is not one
- * pure-white pixel in the file. The mark is a cut-out, so it inherits whatever sits behind it. On
- * the light ground the brand blue measures 7.99:1 and everything is fine; on the dark theme's
- * ground it falls to 2.14:1 and the G effectively disappears.
+ * WHY THERE IS NO LONGER A PLATE. This file used to wrap the mark in a white DISC (`.gf-plate`)
+ * because the chrome of the day was dark and the blue G vanished on it. The client has now asked
+ * for the plate to go, in as many words: "pada logo tidak perlu di beri latar putih kecuali
+ * pavicon nya" — no white background behind the logo, except the favicon.
  *
- * HOW THAT IS SOLVED, AND WHAT WAS REJECTED. Two wrong answers were tried first. Repainting the
- * blue to a pale tint "fixed" the contrast by destroying the brand. Plating the mark on its own
- * light rectangle kept the colours but put a stray white box in a dark header, which is not what
- * the mark should look like.
+ * That request is only safe because the chrome is no longer dark. `minimal.css` gives the
+ * marketing header and footer a white ground, and the app chrome is light too, so the mark sits on
+ * the ground it was drawn for and the plate has nothing left to do. The rule this file now
+ * follows is the simple one: THE MARK IS DRAWN ON A LIGHT GROUND, WITH NOTHING BEHIND IT. If a
+ * dark ground is ever reintroduced, this is the decision that has to be revisited — not by
+ * silently re-adding the disc, but by checking what the blue actually measures on the new ground.
  *
- * The answer is the third one, and it is the one the artwork was asking for: THE MARK IS ALWAYS ON
- * A LIGHT GROUND, AND THE GROUND IS THE CHROME. In dark mode the header and footer bands stay
- * light (see the `.mk-nav` / `.mk-footer` rules in paper.css) while the content between them goes
- * dark, so the mark sits on the same surface it does in light mode and reads IDENTICALLY in both
- * themes. Because the globe lines are holes, they then show that same light surface. Nothing about
- * the artwork changes, no plate is drawn, and the only thing that differs between themes is the
- * background of the two bands that hold the logo.
- *
- * WHY THAT IS ALSO GOOD DESIGN, not just a workaround: the header and footer become a consistent
- * "map sheet" edge around the content, which is what a survey sheet is — a light border with the
- * field in the middle. The chrome stays stable while the content is what changes.
+ * THE FAVICON IS THE ONE EXCEPTION, and it is the client's own carve-out. A browser tab strip is
+ * light or dark depending on the user's theme, and a 16px cut-out with transparent holes in it
+ * reads as a smudge on either. `src/app/icon.svg` therefore puts the mark on an opaque white
+ * square. That file is separate from this one precisely because the two have different jobs: this
+ * is the mark in the page, that is the mark in the browser chrome.
  *
  * WHY ONE IMAGE AND NOT TWO. There used to be a second, plated file with CSS to pick between them.
  * With a single artwork that is correct on both grounds that machinery has no job: one <img>,
@@ -76,25 +73,11 @@ export function Logo({
  * letterforms means it stays selectable, translatable and crisp at every size — and the mark
  * carries the brand on its own at the sizes where text would not read.
  *
- * WHY THE MARK SITS ON A WHITE DISC (added 2026-09-28, at the buyer's suggestion).
- *
- * The previous comment here argued that the header and footer bands would stay LIGHT so the mark
- * could sit on the same ground it does in light mode. That is not what shipped: the Midnight pass
- * made the chrome dark (`.mk-nav` is rgba(10,25,47,.93), the footer is #070F1F), and the mark —
- * whose globe lines are holes that show the background — measured 2.14:1 on it. The blue G
- * effectively disappeared, which is what the buyer saw and reported as "logonya... gimana?".
- *
- * The disc is the honest fix. The artwork is a cut-out and cannot be recoloured, so it needs a
- * light ground; a 46px white circle gives it exactly that while reading as a deliberate device
- * badge — a lens, a survey mark on a sheet — rather than as a patch. It is the shape the buyer
- * proposed, and it is the only one that keeps the mark's own colours on a dark bar.
- *
- * THE DISC SCALES WITH THE MARK. Measured on the first render: at 1.75x the disc came out 46px
- * inside a 67px nav bar — 69% of the bar's height — and 2.27x the wordmark beside it, which made
- * the badge the heaviest thing in the chrome and pulled the eye off the page's own headline. At
- * 1.6x it was still 42px and 2.08x. The ratio here is the correction: 1.45x puts the nav's disc
- * at 38px (58% of the bar, under the 2:1 a lockup wants) and the footer's at 35px. The mark
- * inside is 0.88 of the requested size, which keeps the artwork's diagonal inside the circle.
+ * WHY THE DISC IS GONE (2026-09-30). It was added because the Midnight chrome was dark and the
+ * mark's own cut-out lines measured 2.14:1 on it. The chrome is light now, so the disc has no job:
+ * it was drawing a white circle on a white bar, which is exactly the "white background behind the
+ * logo" the client asked to be removed. The markup keeps `.gf-plate` as a plain layout box — it
+ * still centres the artwork — but it paints nothing. The paint rule lives in `minimal.css`.
  */
 export function LogoLockup({ size = 26, className }: { size?: number; className?: string }) {
   return (

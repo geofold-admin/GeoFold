@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState, type CSSProperties } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, Polyline, CircleMarker, Tooltip, useMapEvents } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, Polyline, Polygon, CircleMarker, Tooltip, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { api } from '@/lib/api-client'
@@ -24,7 +24,19 @@ import type { SurveyDetail, SurveyFeatureCollection, SurveyProperties } from '@/
  * this is a 2px ring around a filled shape, which WCAG 1.4.11 measures at 3:1, and it clears it.
  */
 const MARKER = '#F35D19'
+
+/* The measuring and drawing strokes are GEOFOLD Blue. The design system assigns #014AB5 to
+   "warna Polyline (garis batas ukur), dan warna alat gambar" — the measuring polyline AND the
+   drawing tools, which is exactly the two things this component now does. */
 const MEASURE = '#014AB5'
+
+/* The polygon fill. The palette calls for "Warna Biru GEOFOLD yang dipudarkan hingga 15% opacity"
+   so that "gambar peta/satelit di bawahnya tetap terlihat jelas tembus pandang". So the fill is
+   the blue itself at 15%, not a pre-blended solid — over white it composites to #E0E7FF, the
+   swatch the document prints, but over satellite imagery it stays translucent, which is the
+   whole point of the rule. */
+const SELECT_FILL = MEASURE
+const SELECT_FILL_OPACITY = 0.15
 
 type Feature = SurveyFeatureCollection['features'][number]
 
@@ -49,6 +61,45 @@ const dotIcon = L.divIcon({
 
 function fmtDistance(meters: number): string {
   return meters >= 1000 ? `${(meters / 1000).toFixed(2)} km` : `${Math.round(meters)} m`
+}
+
+/* Area is reported in hectares once it is large enough that square metres stop being readable —
+   the palette document names the pair explicitly: "hasil kalkulasi luas (hektar/meter persegi)".
+   10 000 m² = 1 ha is the metric convention the document assumes. */
+function fmtArea(m2: number): string {
+  return m2 >= 10000 ? `${(m2 / 10000).toFixed(2)} ha` : `${Math.round(m2)} m²`
+}
+
+/* Geodesic area of a ring, by the spherical-excess formula Leaflet.draw and Turf both use. The
+   Earth radius is Leaflet core's L.CRS.Earth.R (6371000 m) — the same sphere L.LatLng.distanceTo
+   uses for the perimeter — so area and perimeter here share one Earth model instead of mixing
+   the mean radius with WGS84's equatorial one. The formula is antisymmetric in (lng2 - lng1), so
+   it is sign-correct for either winding and we take the magnitude at the end. */
+const EARTH_R = 6371000
+
+function geodesicArea(points: L.LatLng[]): number {
+  const n = points.length
+  if (n < 3) return 0
+  const rad = Math.PI / 180
+  let total = 0
+  for (let i = 0; i < n; i++) {
+    const p1 = points[i]
+    const p2 = points[(i + 1) % n]
+    total += (p2.lng - p1.lng) * rad * (2 + Math.sin(p1.lat * rad) + Math.sin(p2.lat * rad))
+  }
+  return Math.abs((total * EARTH_R * EARTH_R) / 2)
+}
+
+/* Closed-ring perimeter: the sum of the great-circle legs INCLUDING the leg that joins the last
+   vertex back to the first, because the shape the user is measuring is a polygon, not an open
+   path. Below three vertices there is no ring yet, so it falls back to the open path length. */
+function ringPerimeter(points: L.LatLng[]): number {
+  const n = points.length
+  if (n < 2) return 0
+  let total = 0
+  const legs = n >= 3 ? n : n - 1
+  for (let i = 0; i < legs; i++) total += points[i].distanceTo(points[(i + 1) % n])
+  return total
 }
 
 function SurveyMarker({
@@ -170,33 +221,72 @@ function SurveyMarker({
   )
 }
 
-// Click to drop points; the running total is shown in the panel. Uses Leaflet's great-circle
-// distanceTo so the reading is true ground distance, not pixels.
-function MeasureLayer({ points, setPoints }: { points: L.LatLng[]; setPoints: (p: L.LatLng[]) => void }) {
+type Mode = 'none' | 'measure' | 'polygon'
+
+/* One click handler drives both drawing modes: every click on the map appends a vertex to the
+   active shape. Measure draws an open polyline with a running distance; polygon draws a closed
+   ring with live area and perimeter. The mode is the only thing that differs, so it is the prop. */
+function DrawLayer({
+  mode,
+  points,
+  setPoints,
+}: {
+  mode: 'measure' | 'polygon'
+  points: L.LatLng[]
+  setPoints: (p: L.LatLng[]) => void
+}) {
   useMapEvents({
     click: (e) => setPoints([...points, e.latlng]),
   })
 
   if (points.length === 0) return null
 
-  let cumulative = 0
-  const labels = points.map((p, i) => {
-    if (i > 0) cumulative += points[i - 1].distanceTo(p)
-    return { p, cumulative }
-  })
+  if (mode === 'measure') {
+    let cumulative = 0
+    const labels = points.map((p, i) => {
+      if (i > 0) cumulative += points[i - 1].distanceTo(p)
+      return { p, cumulative }
+    })
+    return (
+      <>
+        <Polyline positions={points} pathOptions={{ color: MEASURE, weight: 3, dashArray: '6 8' }} />
+        {labels.map(({ p, cumulative: c }, i) => (
+          <CircleMarker key={i} center={p} radius={4} pathOptions={{ color: MEASURE, fillColor: '#fff', fillOpacity: 1, weight: 2 }}>
+            {i > 0 && (
+              <Tooltip permanent direction="top" offset={[0, -6]}>
+                <span style={{ fontSize: 11 }}>{fmtDistance(c)}</span>
+              </Tooltip>
+            )}
+          </CircleMarker>
+        ))}
+      </>
+    )
+  }
+
+  // Polygon: the closed ring, a handle on every vertex, and a floating area label at the centroid
+  // once there are enough vertices to enclose anything.
+  const closed = points.length >= 3
+  const centroid = points.reduce(
+    (a, p) => [a[0] + p.lat / points.length, a[1] + p.lng / points.length],
+    [0, 0],
+  ) as [number, number]
 
   return (
     <>
-      <Polyline positions={points} pathOptions={{ color: MEASURE, weight: 3, dashArray: '6 8' }} />
-      {labels.map(({ p, cumulative: c }, i) => (
-        <CircleMarker key={i} center={p} radius={4} pathOptions={{ color: MEASURE, fillColor: '#fff', fillOpacity: 1, weight: 2 }}>
-          {i > 0 && (
-            <Tooltip permanent direction="top" offset={[0, -6]}>
-              <span style={{ fontSize: 11 }}>{fmtDistance(c)}</span>
-            </Tooltip>
-          )}
-        </CircleMarker>
+      <Polygon
+        positions={points}
+        pathOptions={{ color: MEASURE, weight: 3, fillColor: SELECT_FILL, fillOpacity: SELECT_FILL_OPACITY }}
+      />
+      {points.map((p, i) => (
+        <CircleMarker key={i} center={p} radius={4} pathOptions={{ color: MEASURE, fillColor: '#fff', fillOpacity: 1, weight: 2 }} />
       ))}
+      {closed && (
+        <CircleMarker center={centroid} radius={0} pathOptions={{ opacity: 0, fillOpacity: 0 }}>
+          <Tooltip permanent direction="center">
+            <span style={{ fontSize: 11, fontWeight: 600 }}>{fmtArea(geodesicArea(points))}</span>
+          </Tooltip>
+        </CircleMarker>
+      )}
     </>
   )
 }
@@ -233,22 +323,63 @@ const btnStyle = (active: boolean): CSSProperties => ({
   color: active ? '#f2f2f3' : 'var(--ink)',
 })
 
+/* THE MODE BUTTON WEARS TWO HATS, AND THEY MUST NOT LOOK ALIKE.
+   `btnStyle(true)` is the SELECTED-state treatment: a solid `--accent` fill. That is right for
+   a basemap ("Satellite is the one you are looking at") and right for an idle mode button
+   ("Measure is armed"). But once a mode is ARMED the same button becomes the way OUT of it —
+   its label changes to "Done" — and a solid-accent "Done" sitting next to a solid-accent
+   "Satellite" reads as two selected things at once. A review of the built page flagged exactly
+   that: "Satellite and Done are both solid blue, so it is ambiguous which one represents the
+   active state."
+   The fix separates the two meanings by role: selection keeps the fill, an ACTION gets the
+   outline treatment, which is the same distinction the site already draws between a primary
+   and a secondary button. The armed mode is still visible — its readout card is open and the
+   button keeps an accent border and accent ink. */
+const doneStyle: CSSProperties = {
+  padding: '5px 11px',
+  fontSize: 12,
+  cursor: 'pointer',
+  background: 'var(--paper)',
+  color: 'var(--accent)',
+  border: '1px solid var(--accent)',
+  fontWeight: 600,
+}
+
+const mono: CSSProperties = { fontFamily: 'var(--font-mono), ui-monospace, monospace' }
+
+/* THE STACKING LAYER IS NOT A DETAIL. Leaflet builds its own z-index ladder inside the map:
+   panes 200–700, `.leaflet-control` at 800, and the `.leaflet-top`/`.leaflet-bottom` corners at
+   1000. This wrapper's app chrome is a SIBLING of `.leaflet-container`, which is `position:
+   relative` with `z-index: auto` and therefore does not create a stacking context — so our
+   z-index competes directly with Leaflet's. At the old value of 400 we TIED `.leaflet-pane` and,
+   being earlier in the DOM, lost: the whole rail painted under the tiles and was invisible
+   (verified: painting it magenta changed zero pixels). 1000 is Leaflet's own top-level control
+   layer, so the app chrome sits level with the zoom/attribution corners and above every map pane.
+   The rail is right-aligned and the corners are left/bottom-right, so level-equal never means
+   physically overlapping. */
+const MAP_CHROME_Z = 1000
+
 export default function MapView({ features: initial, height = '72vh' }: { features: Feature[]; height?: string }) {
   const [basemap, setBasemap] = useState<BasemapKey>('satellite')
   const [features, setFeatures] = useState<Feature[]>(initial)
-  const [measuring, setMeasuring] = useState(false)
-  const [points, setPoints] = useState<L.LatLng[]>([])
+  const [mode, setMode] = useState<Mode>('none')
+  const [measurePoints, setMeasurePoints] = useState<L.LatLng[]>([])
+  const [polyPoints, setPolyPoints] = useState<L.LatLng[]>([])
   const [note, setNote] = useState<string | null>(null)
 
   const first = features[0]
   const center: [number, number] = first ? [first.geometry.coordinates[1], first.geometry.coordinates[0]] : [-2.5, 118]
   const active = BASEMAPS[basemap]
+  const drawing = mode !== 'none'
 
   const totalMeters = useMemo(() => {
     let t = 0
-    for (let i = 1; i < points.length; i++) t += points[i - 1].distanceTo(points[i])
+    for (let i = 1; i < measurePoints.length; i++) t += measurePoints[i - 1].distanceTo(measurePoints[i])
     return t
-  }, [points])
+  }, [measurePoints])
+
+  const area = useMemo(() => geodesicArea(polyPoints), [polyPoints])
+  const perimeter = useMemo(() => ringPerimeter(polyPoints), [polyPoints])
 
   // Move a point: update the map immediately, then persist. If the save fails, snap it back so the
   // map never shows a location the server didn't accept.
@@ -267,48 +398,97 @@ export default function MapView({ features: initial, height = '72vh' }: { featur
     }
   }
 
-  const toggleMeasure = () => {
-    setMeasuring((m) => !m)
-    setPoints([])
+  const toggleMode = (m: Exclude<Mode, 'none'>) => {
+    setMode((cur) => (cur === m ? 'none' : m))
+    setMeasurePoints([])
+    setPolyPoints([])
+    setNote(null)
   }
+
+  const clearActive = () => (mode === 'measure' ? setMeasurePoints([]) : setPolyPoints([]))
 
   return (
     <div style={{ height, overflow: 'hidden', border: '1px solid var(--line)', position: 'relative' }}>
-      <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 400, display: 'flex', gap: 8 }}>
-        <div style={{ display: 'flex', border: '1px solid var(--line)' }}>
-          {(Object.keys(BASEMAPS) as BasemapKey[]).map((key) => (
-            <button key={key} type="button" onClick={() => setBasemap(key)} aria-pressed={basemap === key} style={btnStyle(basemap === key)}>
-              {BASEMAPS[key].label}
-            </button>
-          ))}
+      {/* ONE RAIL, TOP-RIGHT. Every surface this app owns lives in a single right-aligned column:
+          the mode buttons on the first row and the live readout stacked beneath them. Leaflet's
+          own chrome keeps the corners it draws itself into — zoom top-left, attribution
+          bottom-right — and nothing here is allowed to reach into the zoom corner. That is the
+          whole fix for the overlap: the old readout sat at top:10/left:10, which is precisely the
+          zoom control's box, and the two collided by 1870 px² at every width. `maxWidth` reserves
+          the zoom column (~44px) plus both 10px gutters, so when the row runs out of room it wraps
+          downward instead of growing left into the zoom buttons. */}
+      <div
+        data-map-rail
+        style={{
+          position: 'absolute', top: 10, right: 10, zIndex: MAP_CHROME_Z,
+          display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8,
+          maxWidth: 'calc(100% - 64px)',
+        }}
+      >
+        <div data-map-buttons style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <div style={{ display: 'flex', border: '1px solid var(--line)' }}>
+            {(Object.keys(BASEMAPS) as BasemapKey[]).map((key) => (
+              <button key={key} type="button" onClick={() => setBasemap(key)} aria-pressed={basemap === key} style={btnStyle(basemap === key)}>
+                {BASEMAPS[key].label}
+              </button>
+            ))}
+          </div>
+          <button type="button" data-mode-button="measure" onClick={() => toggleMode('measure')} aria-pressed={mode === 'measure'}
+            style={mode === 'measure' ? doneStyle : { ...btnStyle(false), border: '1px solid var(--line)' }}>
+            {mode === 'measure' ? 'Done' : 'Measure'}
+          </button>
+          <button type="button" data-mode-button="polygon" onClick={() => toggleMode('polygon')} aria-pressed={mode === 'polygon'}
+            style={mode === 'polygon' ? doneStyle : { ...btnStyle(false), border: '1px solid var(--line)' }}>
+            {mode === 'polygon' ? 'Done' : 'Polygon'}
+          </button>
         </div>
-        <button type="button" onClick={toggleMeasure} aria-pressed={measuring} style={{ ...btnStyle(measuring), border: '1px solid var(--line)' }}>
-          {measuring ? 'Done' : 'Measure'}
-        </button>
+
+        {mode === 'measure' && (
+          <div data-map-readout style={{ background: 'var(--paper)', border: '1px solid var(--line)', padding: '8px 12px', fontSize: 12, maxWidth: 240 }}>
+            <div style={{ fontWeight: 600, ...mono }}>Distance: {fmtDistance(totalMeters)}</div>
+            <div style={{ color: 'var(--ink-2)', marginTop: 2 }}>
+              {measurePoints.length === 0 ? 'Click the map to start measuring.' : `${measurePoints.length} point${measurePoints.length > 1 ? 's' : ''}`}
+            </div>
+            {measurePoints.length > 0 && (
+              <button type="button" onClick={clearActive} style={{ marginTop: 6, fontSize: 12, padding: '4px 8px', border: '1px solid var(--line)', background: 'transparent', cursor: 'pointer' }}>Clear</button>
+            )}
+          </div>
+        )}
+
+        {mode === 'polygon' && (
+          <div data-map-readout style={{ background: 'var(--paper)', border: '1px solid var(--line)', padding: '8px 12px', fontSize: 12, maxWidth: 240 }}>
+            {/* The two measurements take the monospaced face and the charcoal ink the palette
+                reserves for "hasil kalkulasi luas" — precision text, readable in the field. */}
+            <div style={{ fontWeight: 600, ...mono }}>Area: {fmtArea(area)}</div>
+            <div style={{ fontWeight: 600, ...mono, marginTop: 2 }}>Perimeter: {fmtDistance(perimeter)}</div>
+            <div style={{ color: 'var(--ink-2)', marginTop: 4 }}>
+              {polyPoints.length === 0
+                ? 'Click the map to draw a polygon.'
+                : `${polyPoints.length} corner${polyPoints.length > 1 ? 's' : ''}`}
+            </div>
+            {polyPoints.length > 0 && (
+              <button type="button" onClick={clearActive} style={{ marginTop: 6, fontSize: 12, padding: '4px 8px', border: '1px solid var(--line)', background: 'transparent', cursor: 'pointer' }}>Clear</button>
+            )}
+          </div>
+        )}
+
+        {/* The save-feedback note lives in the SAME rail rather than a bottom-left box. As a
+            separate bottom-left surface it collided with the attribution strip by 2574 px² at
+            390px (both anchor to the bottom edge and, at that width, the attribution grows tall
+            enough to reach the left gutter). Stacking it in the right column means the app owns
+            exactly one floating region and the corners are untouchable by construction. */}
+        {note && !drawing && (
+          <div data-map-note style={{ background: 'var(--paper)', border: '1px solid var(--line)', padding: '6px 10px', fontSize: 12, maxWidth: 240 }}>{note}</div>
+        )}
       </div>
 
-      {measuring && (
-        <div style={{ position: 'absolute', top: 10, left: 10, zIndex: 400, background: 'var(--paper)', border: '1px solid var(--line)', padding: '8px 12px', fontSize: 12, maxWidth: 220 }}>
-          <div style={{ fontWeight: 600 }}>Distance: {fmtDistance(totalMeters)}</div>
-          <div style={{ color: 'var(--ink-2, #666)', marginTop: 2 }}>
-            {points.length === 0 ? 'Click the map to start measuring.' : `${points.length} point${points.length > 1 ? 's' : ''}`}
-          </div>
-          {points.length > 0 && (
-            <button type="button" onClick={() => setPoints([])} style={{ marginTop: 6, fontSize: 12, padding: '4px 8px', border: '1px solid var(--line)', background: 'transparent', cursor: 'pointer' }}>Clear</button>
-          )}
-        </div>
-      )}
-
-      {note && !measuring && (
-        <div style={{ position: 'absolute', bottom: 10, left: 10, zIndex: 400, background: 'var(--paper)', border: '1px solid var(--line)', padding: '6px 10px', fontSize: 12 }}>{note}</div>
-      )}
-
-      <MapContainer center={center} zoom={first ? 12 : 5} style={{ height: '100%', width: '100%', cursor: measuring ? 'crosshair' : '' }}>
+      <MapContainer center={center} zoom={first ? 12 : 5} style={{ height: '100%', width: '100%', cursor: drawing ? 'crosshair' : '' }}>
         {/* keyed so switching swaps the layer instead of mutating the existing one */}
         <TileLayer key={basemap} attribution={active.attribution} url={active.url} maxZoom={19} />
         {basemap === 'satellite' && <TileLayer key="labels" url={LABELS_URL} maxZoom={19} />}
-        {features.map((f) => <SurveyMarker key={f.properties.id} feature={f} draggable={!measuring} onMove={onMove} />)}
-        {measuring && <MeasureLayer points={points} setPoints={setPoints} />}
+        {features.map((f) => <SurveyMarker key={f.properties.id} feature={f} draggable={!drawing} onMove={onMove} />)}
+        {mode === 'measure' && <DrawLayer mode="measure" points={measurePoints} setPoints={setMeasurePoints} />}
+        {mode === 'polygon' && <DrawLayer mode="polygon" points={polyPoints} setPoints={setPolyPoints} />}
       </MapContainer>
     </div>
   )

@@ -71,7 +71,7 @@ const copy: Record<Locale, Copy> = {
     whoKick: 'Siapa di baliknya',
     whoBody: {
       before:
-        'GeoFold dikembangkan dan dioperasikan dari Sintang, Kalimantan Barat. Alamat lengkap, nomor telepon dan jam operasional ada di ',
+        'GeoFold dikembangkan dan dioperasikan oleh tim yang bekerja di lapangan, bukan dari ruang rapat. Alamat lengkap, nomor telepon dan jam operasional ada di ',
       link: 'halaman kontak',
       after: '.',
     },
@@ -127,7 +127,7 @@ const copy: Record<Locale, Copy> = {
     whoKick: 'Who is behind it',
     whoBody: {
       before:
-        'GeoFold is built and operated from Sintang, West Kalimantan. The full address, phone number and opening hours are on the ',
+        'GeoFold is built and operated by a team that works in the field, not from a meeting room. The full address, phone number and opening hours are on the ',
       link: 'contact page',
       after: '.',
     },

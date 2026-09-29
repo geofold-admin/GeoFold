@@ -41,6 +41,15 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   // Don't advertise the framework/version to attackers.
   poweredByHeader: false,
+  /* THE BUILD OUTPUT DIRECTORY IS OVERRIDABLE, AND THAT IS A CONCURRENCY SAFETY VALVE.
+     `.next` is a single shared directory, so two builds running against it at once corrupt each
+     other's output — a second build wipes the first's chunks mid-serve and every page 500s. On a
+     machine where more than one agent or terminal works in this repo, that failure looks like
+     "the app broke" rather than "two builds collided".
+     `NEXT_DIST_DIR` lets a verification build write somewhere else and leave the running server's
+     `.next` alone. Unset (the normal case, and every existing command) it is exactly `.next`, so
+     nothing about the default changes. */
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }]
   },

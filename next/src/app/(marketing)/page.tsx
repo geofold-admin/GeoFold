@@ -2,7 +2,9 @@ import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { FigAerial, FigCapture, FigExport, FigMap, FigOffline } from './Figures'
+import { Carousel } from './Carousel'
 import { SurveyGlobe } from '@/components/SurveyGlobe'
+import HeroTerrain3D from '@/components/HeroTerrain3D'
 import SpecularEdge from '@/components/SpecularEdge'
 import { DitherVeil } from '@/components/DitherVeil'
 import { StarBorder } from '@/components/StarBorder'
@@ -58,6 +60,10 @@ type Copy = {
   capsTitle: string
   capsLede: string
   caps: Array<{ kicker: string; title: string; body: string }>
+  /* The accessible name for the capability carousel, which pages the SAME five items the
+     bento shows as a grid. It has to say what is being paged through, or a screen reader
+     announces "carousel" with no subject. */
+  capsCarouselLabel: string
   stepsMicro: string
   stepsTitle: string
   stepsLede: string
@@ -81,18 +87,18 @@ type Copy = {
 const copy: Record<Locale, Copy> = {
   id: {
     meta: {
-      title: 'Survei lapangan yang tidak kehilangan satu titik pun | GeoFold',
+      title: 'Data lapangan yang tidak bisa dibantah | GeoFold',
       description:
-        'Foto berkoordinat, bekerja penuh offline, sinkron sendiri begitu ada sinyal. Ekspor ke Excel dan CSV dengan foto tertanam. Gratis untuk 2 proyek.',
+        'Satu foto, satu titik, koordinat tercetak di dalam gambarnya. Tetap bekerja tanpa sinyal, lalu sinkron sendiri. Ekspor ke Excel dan CSV dengan foto menempel di barisnya. Gratis untuk 2 proyek.',
     },
-    eyebrow: 'Survei lapangan · Android & web',
-    h1: 'Titik survei yang tidak hilang.',
+    eyebrow: 'Alat survei lapangan · Android & web',
+    h1: 'Bukti lapangan, bukan sekadar foto.',
     lede:
-      'GeoFold mengubah ponsel lapangan menjadi alat ukur: satu foto berkoordinat, satu titik tercatat, langsung tersimpan di perangkat. Tidak ada sinyal bukan masalah: datanya menyusul sendiri begitu kembali online.',
+      'GeoFold mengubah ponsel lapangan menjadi alat ukur: setiap titik membawa koordinat, akurasi, dan waktu yang tercetak langsung ke dalam gambarnya. Tetap bekerja tanpa sinyal, lalu mengirim sendiri begitu ada koneksi.',
     ctaStart: 'Mulai gratis',
     ctaDownload: 'Unduh aplikasi',
     coordLabel: 'Posisi kami',
-    coordNote: 'Titik kerja lapangan pertama',
+    coordNote: 'Titik survei pertama kami',
     stats: [
       { label: 'Proyek gratis', unit: 'selamanya' },
       { label: 'Foto per proyek', unit: 'paket gratis' },
@@ -100,9 +106,10 @@ const copy: Record<Locale, Copy> = {
       { label: 'Biaya mulai', unit: 'tanpa kartu' },
     ],
     capsMicro: 'Apa yang bisa dilakukan',
-    capsTitle: 'Lima hal, dikerjakan dengan benar.',
+    capsTitle: 'Lima hal, dikerjakan sampai benar.',
     capsLede:
-      'Bukan daftar fitur. Ini yang membedakan catatan lapangan yang bisa dipertanggungjawabkan dari foto di galeri ponsel.',
+      'Ini bukan daftar fitur. Ini garis pembeda antara catatan lapangan yang bisa dipertanggungjawabkan dan foto yang mengendap di galeri ponsel.',
+    capsCarouselLabel: 'Lima kemampuan GeoFold, satu per satu',
     caps: [
       {
         kicker: 'Tangkap',
@@ -131,7 +138,7 @@ const copy: Record<Locale, Copy> = {
       },
     ],
     stepsMicro: 'Cara kerjanya',
-    stepsTitle: 'Tiga langkah. Selesai.',
+    stepsTitle: 'Tiga langkah, lalu selesai.',
     stepsLede:
       'Dari proyek kosong sampai laporan yang siap dikirim, tanpa langkah tambahan di antaranya.',
     steps: [
@@ -158,10 +165,10 @@ const copy: Record<Locale, Copy> = {
       after:
         ', lalu menyimpan angka yang sama di basis data. Keduanya tetap menempel ke mana pun fotonya berpindah.',
     },
-    globePlace: 'Sintang, Kalimantan Barat',
-    globeSub: 'Titik ini tempat kami bekerja, dan tempat survei pertama diuji.',
+    globePlace: 'Tempat kami bekerja',
+    globeSub: 'Titik ini yang membuat produk ini ada: masalah nyata di lapangan, bukan asumsi ruang rapat.',
     priceMicro: 'Harga',
-    priceTitle: 'Gratis dulu. Bayar hanya kalau memang perlu.',
+    priceTitle: 'Mulai gratis. Bayar hanya kalau memang perlu.',
     free: {
       name: 'Gratis',
       body: '2 proyek, 3 foto per proyek, penyimpanan 10 MB, batas harian. Selamanya, tanpa kartu.',
@@ -193,9 +200,9 @@ const copy: Record<Locale, Copy> = {
       link: 'Kebijakan pengembalian dana',
     },
     close: {
-      title: 'Coba dulu. Gratis.',
-      body: 'Tidak perlu kartu kredit. Dua proyek pertama tidak dipungut biaya, selamanya.',
-      ctaPrimary: 'Buat akun',
+      title: 'Coba dulu. Tanpa biaya.',
+      body: 'Tidak perlu kartu kredit. Dua proyek pertama gratis selamanya — cukup untuk membuktikan apakah alat ini cocok dengan cara kerja tim Anda.',
+      ctaPrimary: 'Buat akun gratis',
       ctaGhost: 'Tanya dulu',
     },
     audienceLabel: 'Untuk siapa',
@@ -213,18 +220,18 @@ const copy: Record<Locale, Copy> = {
 
   en: {
     meta: {
-      title: 'Field surveys that never lose a point | GeoFold',
+      title: 'Field data that holds up | GeoFold',
       description:
-        'Photos with the coordinates printed into them, full offline capture, syncing themselves the moment there is a signal. Exports to Excel and CSV with the photos embedded. Free for 2 projects.',
+        'One photo, one point, with the coordinates printed into the image itself. Keeps working with no signal, then syncs on its own. Exports to Excel and CSV with the photos embedded in their rows. Free for 2 projects.',
     },
-    eyebrow: 'Field survey · Android & web',
-    h1: 'Survey points that never go missing.',
+    eyebrow: 'Field survey instrument · Android & web',
+    h1: 'Field evidence, not just photos.',
     lede:
-      'GeoFold turns a field phone into a survey instrument: one geotagged photo, one recorded point, saved to the device immediately. No signal is not a problem: the data catches up on its own once you are back online.',
+      'GeoFold turns a field phone into a survey instrument: every point carries a coordinate, an accuracy figure and a timestamp written onto the image itself. It keeps working with no signal, then sends itself the moment there is one.',
     ctaStart: 'Start free',
     ctaDownload: 'Download the app',
     coordLabel: 'Our position',
-    coordNote: 'The first field site',
+    coordNote: 'Our first survey site',
     stats: [
       { label: 'Free projects', unit: 'forever' },
       { label: 'Photos per project', unit: 'free plan' },
@@ -232,9 +239,10 @@ const copy: Record<Locale, Copy> = {
       { label: 'Cost to start', unit: 'no card' },
     ],
     capsMicro: 'What it does',
-    capsTitle: 'Five things, done properly.',
+    capsTitle: 'Five things, done until they are right.',
     capsLede:
-      'This is not a feature list. It is the difference between field records that hold up and photos sitting in a phone gallery.',
+      'This is not a feature list. It is the line between field records that hold up under scrutiny and photos quietly rotting in a phone gallery.',
+    capsCarouselLabel: 'The five things GeoFold does, one at a time',
     caps: [
       {
         kicker: 'Capture',
@@ -263,7 +271,7 @@ const copy: Record<Locale, Copy> = {
       },
     ],
     stepsMicro: 'How it works',
-    stepsTitle: 'Three steps. Done.',
+    stepsTitle: 'Three steps, then done.',
     stepsLede: 'From an empty project to a report you can send, with nothing extra in between.',
     steps: [
       {
@@ -289,10 +297,10 @@ const copy: Record<Locale, Copy> = {
       after:
         ', then stores the same figures in the database. Both stay attached wherever the photo travels.',
     },
-    globePlace: 'Sintang, West Kalimantan',
-    globeSub: 'This is where we work, and where the first survey was tested.',
+    globePlace: 'Where we work',
+    globeSub: 'This is the point the product came out of: real problems in the field, not assumptions made in a meeting room.',
     priceMicro: 'Pricing',
-    priceTitle: 'Free first. Pay only if you actually need to.',
+    priceTitle: 'Start free. Pay only if you actually need to.',
     free: {
       name: 'Free',
       body: '2 projects, 3 photos per project, 10 MB of storage, daily limits. Forever, no card.',
@@ -324,9 +332,9 @@ const copy: Record<Locale, Copy> = {
       link: 'Refund policy',
     },
     close: {
-      title: 'Try it first. Free.',
-      body: 'No credit card needed. The first two projects cost nothing, forever.',
-      ctaPrimary: 'Create an account',
+      title: 'Try it first. At no cost.',
+      body: 'No credit card needed. The first two projects are free forever — enough to prove whether this fits the way your team actually works.',
+      ctaPrimary: 'Create a free account',
       ctaGhost: 'Ask a question',
     },
     audienceLabel: 'Who it is for',
@@ -447,32 +455,37 @@ export default async function HomePage() {
                 THE CLIENT'S REQUEST: "untuk di bagian atas di hero section berikan gambar peta
                 3D ikuti refrensi foto yang saya berikan." Both reference photos are terrain
                 blocks — a slice of ground lifted out of the earth, corner-on, with the cut side
-                walls visible — so this is that form, built from REAL elevation for this part of
-                West Kalimantan by `scripts/build-terrain.mjs`.
+                walls visible.
 
-                It is an <img> with alt text, not a CSS background: the picture carries a fact
-                about where the business works, and a fact a screen reader cannot reach is
-                decoration. The alt names the place and what the picture is, because "3D map" on
-                its own tells a non-sighted reader nothing they can use.
+                IT IS TURNED NOW, NOT JUST DRAWN. It used to be a single <img>: a build-time
+                render of this ground, honest but dead — a picture OF a 3D map. HeroTerrain3D
+                draws the same ground as a real WebGL mesh you can turn, built from the same
+                cached Terrarium elevation (scripts/build-terrain-3d.mjs) so the block and its
+                own static fallback cannot disagree about the hillside.
 
-                The caption under it is not decorative either: it is the only thing on the page
-                that says the block is a real place rather than a stock render, and it reads its
-                place name from the same constant the coordinate readout and the globe use. */}
+                THE <img> STAYS, BEHIND THE CANVAS, AND THAT IS THE POINT. It is the accessible
+                layer: the picture carries a fact about where the business works, and a fact a
+                screen reader cannot reach is decoration. It is also the no-WebGL fallback. The
+                canvas is aria-hidden and simply covers it when WebGL is available. */}
             <figure className="pg-hero-art">
-              {/* eslint-disable-next-line @next/next/no-img-element -- a static, fixed-size,
-                  already-optimised PNG of a generated asset; next/image would add a loader and
-                  a layout box for an image whose dimensions are known at build time. */}
-              <img
-                className="pg-hero-map"
-                src="/hero-terrain.png"
-                alt={`A 3D terrain map block of the country around ${SITE_LOCATION.place.id}, built from satellite elevation data`}
-                width={1200}
-                height={880}
-                // Above the fold on the landing page: without this the browser discovers it late
-                // and the hero paints as an empty column first.
-                fetchPriority="high"
-                decoding="async"
-              />
+              <div className="pg-hero-stage">
+                {/* eslint-disable-next-line @next/next/no-img-element -- a static, fixed-size,
+                    already-optimised PNG of a generated asset, and now the accessible/fallback
+                    layer under the canvas; next/image would add a loader and a layout box for an
+                    image whose dimensions are known at build time. */}
+                <img
+                  className="pg-hero-map"
+                  src="/hero-terrain.png"
+                  alt={`A 3D terrain block of the ground we work on, built from real satellite elevation data`}
+                  width={1200}
+                  height={880}
+                  // Above the fold on the landing page: without this the browser discovers it late
+                  // and the hero paints as an empty column first.
+                  fetchPriority="high"
+                  decoding="async"
+                />
+                <HeroTerrain3D className="pg-hero-canvas" />
+              </div>
               <figcaption className="pg-hero-map-cap">
                 {c.globePlace} · {c.globeSub}
               </figcaption>
@@ -563,6 +576,38 @@ export default async function HomePage() {
                 </div>
               </article>
             ))}
+          </div>
+
+          {/* ================= the same five, one at a time =================
+              The client: "susunan layout pada home page di perbagus dan kombinasikan dengan
+              carousel."
+
+              The bento above is a dense grid — five capabilities at once, which is the right
+              answer for a reader who is scanning and the wrong one for a reader who is not.
+              This is the SAME five items, in the SAME order, one per slide, so the section
+              offers both readings without making a second claim. It is the section's second
+              half rather than a new band, so the page gains a rhythm without gaining another
+              500px of height.
+
+              The slide's art is the same figure the bento cell above uses, inside a
+              containment box (`.pg-cap-slide-art`, `overflow: hidden`) — which is also what
+              answers the client's other note about images escaping their card. */}
+          <div className="pg-cap-carousel">
+            <Carousel label={c.capsCarouselLabel}>
+              {c.caps.map((cap, i) => (
+                <article className="pg-cap-slide" key={cap.title}>
+                  <div className="pg-cap-slide-copy">
+                    <p className="pg-cell-n pg-num">{String(i + 1).padStart(2, '0')}</p>
+                    <p className={i === AERIAL_INDEX ? 'pg-micro aerial' : 'pg-micro accent'}>
+                      {cap.kicker}
+                    </p>
+                    <h3 className="pg-d3">{cap.title}</h3>
+                    <p className="pg-body">{cap.body}</p>
+                  </div>
+                  <div className="pg-cap-slide-art">{figs[i]}</div>
+                </article>
+              ))}
+            </Carousel>
           </div>
         </div>
       </section>

@@ -25,6 +25,9 @@
 # next.js
 /.next/
 /out/
+# An isolated build written by NEXT_DIST_DIR (see next.config.ts) so a verification build does not
+# clobber the .next a running server is serving from.
+/.next-verify/
 
 # production
 /build

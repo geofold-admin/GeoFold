@@ -17,8 +17,17 @@ export const BUSINESS = {
    *  gateway's merchant account and on the bank account settlements go to. */
   legalName: 'Sayba Arc',
 
-  /** Legal form, if any — e.g. 'PT', 'CV', or 'Perorangan' (sole trader). */
-  legalForm: 'Perorangan',
+  /** Legal form, if any — e.g. 'PT', 'CV', or 'Perorangan' (sole trader).
+   *
+   *  EMPTIED 2026-09-30 at the client's request: "kata sayba arc (perorangan) ganti Menjadi
+   *  Sayba Arc saja." The footer renders `OPERATOR` as `legalName (legalForm)` whenever this is
+   *  non-empty, so clearing it is what turns "Sayba Arc (Perorangan)" into "Sayba Arc" — one
+   *  value, one place, and the parentheses disappear from every page at once.
+   *
+   *  Note this is a PRESENTATION change only. The sole-trader status itself has not changed and
+   *  is still what the merchant accounts are registered under; if a payment gateway ever needs
+   *  the legal form printed, set this back to 'Perorangan' and it returns everywhere. */
+  legalForm: '',
 
   /** Registered business address, as supplied by the operator. Corrected 2026-09-14 — the
    *  operator moved from Pontianak to Sintang. A verifier reads this off the contact page, so it

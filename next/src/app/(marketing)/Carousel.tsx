@@ -60,6 +60,10 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 /** Distance in px within which two computed positions are treated as the same stop. */
 const SAME_POSITION = 8
 
+/** How long each slide holds before the carousel advances itself. The client asked for four
+ *  seconds in as many words: "auto swap setiap 4 detik sekali". */
+const AUTO_ADVANCE_MS = 4000
+
 /**
  * The distinct scroll offsets this track can actually reach, in order.
  *
@@ -157,25 +161,95 @@ export function Carousel({
     })
   }, [])
 
+  /* ==================================================================================
+     AUTO-ADVANCE, 4 SECONDS — the client's number: "auto swap setiap 4 detik sekali".
+
+     THE FOUR RULES IT FOLLOWS, and each one is a reason not to do the obvious thing.
+
+     1. IT STOPS FOR GOOD ON THE FIRST USER INTERACTION. An auto-advancing carousel that
+        fights the reader is the classic failure: they swipe back to a slide, and four
+        seconds later it takes it away again. WCAG 2.2.2 asks for a mechanism to pause, and
+        "stop when they touch it" is the one mechanism that needs no extra button in a
+        control strip that is already three elements wide.
+
+     2. IT PAUSES WHILE HOVERED OR FOCUSED. A pointer resting on the card, or a keyboard
+        user tabbed into the arrows, means the reader is engaged with it. Advancing under
+        them at that moment is the same bug as (1), just slower to notice.
+
+     3. IT DOES NOT RUN AT ALL UNDER `prefers-reduced-motion`. Auto-advancing content is
+        motion the reader did not ask for; the preference exists precisely for this.
+
+     4. IT DOES NOT RUN WHEN THERE IS ONLY ONE STOP. Nothing to advance to.
+
+     WHY IT LIVES HERE AND NOT IN CSS. There is no CSS animation that can move a
+     scroll-snap track to a position the component had to MEASURE. The stops are derived
+     from the real slide offsets (see `positionsFor`), so the advance has to call the same
+     `goTo` the arrows do — which also means the auto-advance can never land somewhere a
+     dot cannot reach.
+     ================================================================================== */
+  const [paused, setPaused] = useState(false)
+  const [stopped, setStopped] = useState(false)
+
+  /** Any deliberate interaction ends the rotation permanently. */
+  const stopForever = useCallback(() => setStopped(true), [])
+
+  useEffect(() => {
+    if (stopped || paused) return
+    if (stops.length < 2) return
+    if (typeof window === 'undefined') return
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+
+    const id = window.setInterval(() => {
+      setStops((current) => {
+        if (current.length < 2) return current
+        setActive((a) => {
+          const next = (a + 1) % current.length
+          const track = trackRef.current
+          if (track) {
+            const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+            track.scrollTo({ left: current[next], behavior: reduced ? 'auto' : 'smooth' })
+          }
+          return next
+        })
+        return current
+      })
+    }, AUTO_ADVANCE_MS)
+
+    return () => window.clearInterval(id)
+  }, [stopped, paused, stops.length])
+
   /* The track is focusable so a keyboard user can page it without a pointer at all; the handler
      is only for the arrows that would otherwise scroll the PAGE sideways. */
   const onKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === 'ArrowLeft') {
         e.preventDefault()
+        stopForever()
         goTo(Math.max(0, active - 1))
       } else if (e.key === 'ArrowRight') {
         e.preventDefault()
+        stopForever()
         goTo(Math.min(stops.length - 1, active + 1))
       }
     },
-    [active, stops.length, goTo],
+    [active, stops.length, goTo, stopForever],
   )
 
   const count = stops.length
 
   return (
-    <section className="mk-car" aria-roledescription="carousel" aria-label={label}>
+    <section
+      className="mk-car"
+      aria-roledescription="carousel"
+      aria-label={label}
+      /* A pointer resting on the carousel means the reader is engaged with it, so the
+         rotation waits. `onFocus`/`onBlur` cover the keyboard case: a reader who has tabbed
+         into the arrows is just as engaged as one who is hovering, and `onFocus` on the
+         section catches the track's own tabIndex and every control inside it. */
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocus={() => setPaused(true)}
+      onBlur={() => setPaused(false)}>
       <div
         className="mk-car-track"
         ref={trackRef}
@@ -183,6 +257,9 @@ export function Carousel({
         role="group"
         aria-label={label}
         onKeyDown={onKeyDown}
+        /* A swipe or a drag of the track is the clearest possible "I am driving now". */
+        onPointerDown={stopForever}
+        onTouchStart={stopForever}
       >
         {children.map((child, i) => (
           <div
@@ -202,7 +279,7 @@ export function Carousel({
           <button
             type="button"
             className="mk-car-arrow"
-            onClick={() => goTo(Math.max(0, active - 1))}
+            onClick={() => { stopForever(); goTo(Math.max(0, active - 1)) }}
             disabled={active === 0}
             aria-label="Sebelumnya / Previous">
             <ChevronLeft size={17} aria-hidden="true" />
@@ -218,7 +295,7 @@ export function Carousel({
                   aria-selected={i === active}
                   aria-label={`${i + 1} / ${count}`}
                   className={i === active ? 'on' : undefined}
-                  onClick={() => goTo(i)}
+                  onClick={() => { stopForever(); goTo(i) }}
                 />
               ))}
             </div>
@@ -232,7 +309,7 @@ export function Carousel({
           <button
             type="button"
             className="mk-car-arrow"
-            onClick={() => goTo(Math.min(count - 1, active + 1))}
+            onClick={() => { stopForever(); goTo(Math.min(count - 1, active + 1)) }}
             disabled={active === count - 1}
             aria-label="Berikutnya / Next">
             <ChevronRight size={17} aria-hidden="true" />
