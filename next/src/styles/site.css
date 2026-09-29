@@ -295,12 +295,65 @@
 .mk.mk.mk-site .mk-hero .mk-rec-t {
   color: var(--mk-deep-prose);
 }
+/* THE COORDINATE CARD IS OPAQUE, AND THAT IS A FIX RATHER THAN A PREFERENCE.
+   blueprint.css gives it `background: rgba(127, 168, 232, .06)` — a 6% wash, which composites to
+   rgb(17, 34, 58) on the plate. That is fine on a flat ground and wrong on this one: the hero now
+   carries a graticule, and a 6% wash does not hide it. Measured by sampling a row inside the card
+   at the graticule's own 72px pitch: **38.4 luminance on a line against 31.9 between lines** — a
+   6.5 lift that drew a faint vertical stripe straight through the readout, severing `32″` from `N`.
+
+   This is the one place where the static graticule needed a concession, and the honest fix is an
+   opaque card rather than a fainter grid: the grid is the hero's texture, and a panel that sits on
+   top of it has to be a panel. The colour is the exact composite of the wash it replaces
+   (`rgba(127,168,232,.06)` over `#0A192F` = `#11223A`), so the card looks identical while the
+   stripe disappears. */
 .mk.mk.mk-site .pg-hero .pg-coord {
+  background: #11223A;
   color: var(--mk-deep-ink);
 }
 .mk.mk.mk-site .pg-hero .pg-coord-label,
 .mk.mk.mk-site .pg-hero .pg-coord-note {
   color: var(--mk-deep-prose);
+}
+
+/* THE COORDINATE READOUT ON A NARROW PHONE.
+   Measured at 320px: the inline-flex row wraps, and because the separators are flex items of their
+   own they wrap too — the result was the latitude on line one and the longitude plus a stray
+   vertical tick on line two. It does not overflow (scrollWidth = clientWidth at 320/360/390), so
+   nothing was broken; it just read as a line that had come apart.
+
+   Below 460px it becomes a two-column grid instead: the label on the left, the two DMS values
+   stacked on the right. That is how a field instrument actually presents a position — a label and
+   its readings — and it removes the wrapping question entirely rather than tuning it.
+
+   THE CHILDREN ARE NOT ALL SPANS OF THE SAME KIND. The two values are `TechText` components, each
+   rendering `<span class="gf-tech">`; the label, the note and the two rules are plain spans. So the
+   grid places `.pg-coord-label` and `.gf-tech` by name and lets the note span the full width — a
+   `:nth-child` scheme would have counted five items and put the rules in the reading column. The
+   separators are hidden because the grid already divides the two sides; a 1px tick alone in a cell
+   would be a divider between nothing. */
+@media (max-width: 460px) {
+  .mk.mk.mk-site .pg-hero .pg-coord {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 2px 12px;
+    align-items: baseline;
+    width: 100%;
+  }
+  .mk.mk.mk-site .pg-hero .pg-coord-label {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+  .mk.mk.mk-site .pg-hero .pg-coord .gf-tech {
+    grid-column: 2;
+  }
+  .mk.mk.mk-site .pg-hero .pg-coord-sep {
+    display: none;
+  }
+  .mk.mk.mk-site .pg-hero .pg-coord-note {
+    grid-column: 1 / -1;
+    margin-top: 6px;
+  }
 }
 
 /* =====================================================================================

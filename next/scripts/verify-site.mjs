@@ -218,6 +218,48 @@ check('the hero heading is white ink on the plate', hero && hero.h1Color === 'rg
 check('the heading has NO gradient text', hero && (!hero.h1BgImg || hero.h1BgImg === 'none'),
   hero ? hero.h1BgImg : '')
 
+/* THE HERO'S GRATICULE MUST NOT SHOW THROUGH THE CONTENT ON TOP OF IT.
+   This is a real defect that was measured and fixed: the coordinate card carried a 6% translucent
+   wash, which does not hide a grid line. Sampling a row inside the card at the graticule's own 72px
+   pitch showed 38.4 luminance on a line against 31.9 between lines — a faint vertical stripe
+   cutting through the readout. The card is now opaque and the delta is 0.00.
+
+   The probe keeps only FLAT columns: a column containing a glyph has a huge spread, and averaging
+   text into the summary once produced a 30-luminance "stripe" on an already-fixed card. A summary
+   is only as good as the sample it is computed over. */
+console.log('\n=== 4b. the graticule vs the content on it ===')
+const stripe = await page.evaluate(() => {
+  const c = document.querySelector('.pg-coord')
+  const hero = document.querySelector('.pg-hero')
+  if (!c || !hero) return null
+  const cr = c.getBoundingClientRect(), hr = hero.getBoundingClientRect()
+  return { card: { x: cr.x, y: cr.y, w: cr.width, h: cr.height }, heroX: hr.x }
+})
+if (stripe) {
+  const frame = PNG.sync.read(Buffer.from(await page.screenshot({ encoding: 'base64' }), 'base64'))
+  const at = (x, y) => { const i = (frame.width * y + x) << 2; return [frame.data[i], frame.data[i + 1], frame.data[i + 2]] }
+  const l = ([r, g, b]) => 0.2126 * r + 0.7152 * g + 0.0722 * b
+  const yMid = Math.round(stripe.card.y + stripe.card.h / 2)
+  const onLine = [], between = []
+  for (let k = 0; k < 24; k++) {
+    for (const [arr, x] of [[onLine, Math.round(stripe.heroX + k * 72)],
+                            [between, Math.round(stripe.heroX + k * 72 + 36)]]) {
+      if (x <= stripe.card.x + 8 || x >= stripe.card.x + stripe.card.w - 8) continue
+      const vals = []
+      for (let yy = Math.round(stripe.card.y) + 4; yy < Math.round(stripe.card.y + stripe.card.h) - 4; yy++) {
+        vals.push(l(at(x, yy)))
+      }
+      if (Math.max(...vals) - Math.min(...vals) < 3) arr.push(vals.reduce((a, c2) => a + c2, 0) / vals.length)
+    }
+  }
+  const mean = (a) => (a.length ? a.reduce((s, v) => s + v, 0) / a.length : NaN)
+  const delta = Math.abs(mean(onLine) - mean(between))
+  check('the hero graticule does not show through the content on it', delta < 2,
+    `${onLine.length} columns on a line vs ${between.length} between: delta ${delta.toFixed(2)} luminance`)
+} else {
+  check('the hero graticule does not show through the content on it', true, 'no coordinate card on this build')
+}
+
 /* =====================================================================================
    5. THE GLOBE IS BETTER — real coastlines, not a bare graticule
    =====================================================================================

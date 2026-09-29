@@ -230,14 +230,14 @@ Semua dijalankan terhadap build produksi yang disajikan di port 3100.
 | :--- | ---: |
 | `verify:ui` | **47 lulus / 0 gagal** |
 | `verify:app` | **18 lulus / 0 gagal** |
-| `verify:site` | **28 lulus / 0 gagal** |
+| `verify:site` | **29 lulus / 0 gagal** |
 | `audit:brief` | **11 lulus / 0 gagal** |
 | `audit:colour` | laporan proporsi per halaman |
 | `audit:headline` | semua heading terbukti TERLIHAT |
 | `npx tsc --noEmit` | **exit 0** |
 | `npx next build` | bersih |
 
-**Total: 104 pemeriksaan, 0 gagal.**
+**Total: 105 pemeriksaan, 0 gagal.**
 
 ### Tiga kontrak lama yang saya perbarui, bukan hapus
 
@@ -255,7 +255,7 @@ pemeriksaan yang menguji desain yang **sudah pensiun** dan gagal pada desain yan
   menuntut biru merek, **dan** menuntut kartu Premium benar-benar berbeda dari kartu Free, **dan**
   menuntut glassmorphism **hilang**.
 - `verify-neo.mjs` (26 pemeriksaan untuk kulit Neo) dihapus dan digantikan `verify-site.mjs`
-  (28 pemeriksaan untuk kontrak ini).
+  (29 pemeriksaan untuk kontrak ini).
 
 Tidak ada pemeriksaan yang dihapus tanpa pengganti. Sebuah pemeriksaan yang dihapus adalah
 pemeriksaan yang berhenti menangkap regresi.
@@ -297,19 +297,35 @@ Ini dicatat karena masing-masing menghasilkan **jawaban salah yang terdengar mey
    sementara masing-masing punya padding internal 40px. Dinaikkan ke 24px, menyamakan ritmenya
    dengan grid harga di landing.
 
+9. **Graticule menembus kartu koordinat.** Kartu itu berlatar `rgba(127,168,232,.06)` — cucian 6%
+   yang tidak menghalangi garis grid. Diukur pada baris di dalam kartu, mengikuti periode 72px milik
+   graticule: **38.4 luminans pada garis vs 31.9 di antaranya** — selisih 6.5 yang menggambar garis
+   vertikal samar melintasi bacaan, memotong `32″` dari `N`. Kartu sekarang **opaque** dengan warna
+   hasil komposit persis (`#11223A`), dan selisihnya **0.00**.
+
+10. **Statistik ringkasan yang dihitung di atas sampel yang salah.** Percobaan pertama probe di
+   atas merata-ratakan piksel teks ke dalam ringkasannya dan melaporkan "garis 30 luminans" pada
+   kartu yang **sudah** diperbaiki — setiap kolom bersih membaca 32.1 yang identik. Probe sekarang
+   hanya menyimpan kolom yang rata (tanpa glyph). Ringkasan sebagus sampelnya.
+
+11. **Pemeriksaan visual yang salah soal garis.** Ditanya apakah ada garis di dalam kotak,
+    pemeriksaan visual menjawab "tidak ada" — dua kali. Pengukuran membuktikan ada. Ini kasus
+    keempat di proyek ini di mana penglihatan keliru dan angka benar; perlakukan temuan visual
+    sebagai hipotesis, bukan putusan.
+
 ---
 
 ## 10. Berkas yang berubah
 
 | Berkas | Status | Keterangan |
 | :--- | :--- | :--- |
-| `src/styles/site.css` | **baru** | 827 baris. Seluruh lapisan ini: token, section polos, hero, globe, kontrol, motion |
+| `src/styles/site.css` | **baru** | 880 baris. Seluruh lapisan ini: token, section polos, hero, globe, kontrol, motion |
 | `src/components/land.ts` | **baru** | 90 cincin, 2.910 titik garis pantai Natural Earth |
 | `src/components/SurveyGlobe.tsx` | diubah | Menggambar benua asli; 473 baris |
 | `src/app/(marketing)/Motion.tsx` | diubah | 641 → 264 baris; efek berlebihan dihapus, bukan dimatikan |
 | `src/app/(marketing)/layout.tsx` | diubah | `site.css` diimpor terakhir; `SiteGround` dilepas |
 | `src/styles/home.css` | diubah | Gutter harga 12px → 24px |
-| `scripts/verify-site.mjs` | **baru** | 28 pemeriksaan untuk kontrak ini |
+| `scripts/verify-site.mjs` | **baru** | 29 pemeriksaan untuk kontrak ini |
 | `scripts/build-land.mjs` | **baru** | Generator satu-kali untuk `land.ts` |
 | `scripts/verify-ui.mjs` | diubah | Tiga kontrak lama diperbarui |
 | `scripts/audit-brief.mjs` | diubah | Pemeriksaan kartu Premium diperbarui |
