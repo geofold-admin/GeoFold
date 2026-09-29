@@ -9,6 +9,14 @@ import SpecularEdge from '@/components/SpecularEdge'
 import { DitherVeil } from '@/components/DitherVeil'
 import { StarBorder } from '@/components/StarBorder'
 import { TechText } from '@/components/TechText'
+import { TerrainGallery, type TerrainPanel } from '@/components/TerrainGallery'
+/* THE GALLERY'S PANELS COME FROM THE RENDER MANIFEST, and importing it is the point.
+   The labels describe MEASURED relief ("Swamp and minor rivers" for the 78 m window, "High
+   country" for the 979 m one). Hand-copying them into this file would let the captions drift
+   away from the data the moment a window moves — and the drift would be silent, because a
+   caption is not type-checked against an elevation. Reading the same file the renderer wrote
+   makes that impossible. */
+import terrainManifest from '../../../public/terrain/manifest.json'
 import type { Locale } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'
 import { pageMetadata } from '@/lib/seo'
@@ -64,6 +72,14 @@ type Copy = {
      bento shows as a grid. It has to say what is being paged through, or a screen reader
      announces "carousel" with no subject. */
   capsCarouselLabel: string
+  /* THE TERRAIN GALLERY. Five blocks of real elevation data for the region the business works
+     in — see scripts/build-terrain-gallery.mjs, which renders them and asserts the shared ramp
+     covers every window. The labels live in that script's manifest rather than here, because
+     they describe MEASURED ground and a translator editing them without the data would be
+     guessing. These three strings are the section's own heading. */
+  terrainMicro: string
+  terrainTitle: string
+  terrainLede: string
   stepsMicro: string
   stepsTitle: string
   stepsLede: string
@@ -110,6 +126,10 @@ const copy: Record<Locale, Copy> = {
     capsLede:
       'Ini bukan daftar fitur. Ini garis pembeda antara catatan lapangan yang bisa dipertanggungjawabkan dan foto yang mengendap di galeri ponsel.',
     capsCarouselLabel: 'Lima kemampuan GeoFold, satu per satu',
+    terrainMicro: 'Medan yang kami kerjakan',
+    terrainTitle: 'Bukan peta hiasan. Ini tanah yang sebenarnya.',
+    terrainLede:
+      'Lima potong medan di sekitar Sintang, dirender dari data elevasi publik yang sama yang dipakai alat kami. Angka di tiap panel adalah relief — beda tinggi titik terendah dan tertinggi di potongan itu: dari 78 meter di rawa dataran rendah sampai 979 meter di pegunungan.',
     caps: [
       {
         kicker: 'Tangkap',
@@ -243,6 +263,10 @@ const copy: Record<Locale, Copy> = {
     capsLede:
       'This is not a feature list. It is the line between field records that hold up under scrutiny and photos quietly rotting in a phone gallery.',
     capsCarouselLabel: 'The five things GeoFold does, one at a time',
+    terrainMicro: 'The ground we work on',
+    terrainTitle: 'Not a decorative map. This is the actual ground.',
+    terrainLede:
+      'Five blocks of terrain around Sintang, rendered from the same public elevation data our tools use. The number on each panel is its relief — the height difference between the lowest and highest point in that block: from 78 metres in the lowland swamp to 979 metres in the high country.',
     caps: [
       {
         kicker: 'Capture',
@@ -392,6 +416,18 @@ export default async function HomePage() {
   const locale = await getLocale()
   const c = copy[locale]
   const figs = figures(locale)
+
+  /* The gallery's panels, straight from the render manifest. `TerrainPanel` wants the four fields
+     the component reads and the manifest carries six (the extras are the lat/lon of the window
+     and its measured stats, kept in the file for anyone re-rendering it). Mapping explicitly
+     rather than casting means a manifest that loses a field fails the build instead of shipping
+     a panel with a blank label. */
+  const terrainPanels: TerrainPanel[] = terrainManifest.map((p) => ({
+    file: p.file,
+    id: p.id,
+    label: p.label,
+    note: p.note,
+  }))
 
   return (
     <>
@@ -685,6 +721,36 @@ export default async function HomePage() {
               </figcaption>
             </figure>
           </div>
+        </div>
+      </section>
+
+      {/* ================= the terrain gallery =================
+          THE REACT BITS ACCORDIONGALLERY, ADAPTED. The client asked for this component by name
+          ("yarn shadcn@latest add @file:react-bits/AccordionGallery-JS-CSS"); the interaction is
+          kept and the content is the site's own — five blocks of REAL elevation data for the
+          region the business surveys, rendered by scripts/build-terrain-gallery.mjs.
+
+          WHY IT SITS HERE. The section above argues that a photo without a coordinate is not
+          evidence, and names the place the business works from. This is the same argument made
+          with the product's own material: the actual ground, at its actual heights. A gallery of
+          stock photography here would undercut the sentence directly above it.
+
+          THE LABELS COME FROM THE RENDER MANIFEST, NOT FROM THIS FILE. They describe measured
+          relief ("78 m" through "979 m"), so they belong beside the data that produced them. */}
+      <section className="pg-sec pg-sec-tint">
+        <div className="pg-wrap">
+          <div className="pg-head">
+            <div className="pg-head-top">
+              <p className="pg-micro">{c.terrainMicro}</p>
+            </div>
+            <h2 className="pg-d2" data-anim="lines">
+              {c.terrainTitle}
+            </h2>
+            <p className="pg-body pg-head-lede" data-anim="up">
+              {c.terrainLede}
+            </p>
+          </div>
+          <TerrainGallery panels={terrainPanels} locale={locale} />
         </div>
       </section>
 

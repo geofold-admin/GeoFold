@@ -2931,3 +2931,221 @@
 }
 /* Under reduced motion the wash still appears on hover — it is a state change, not an animation —
    but it arrives instantly rather than fading, which §14b already handles for every transition. */
+
+/* =====================================================================================
+   18. THE TERRAIN GALLERY — adapted from React Bits' AccordionGallery.
+   =====================================================================================
+   A row of five panels where the active one expands and the rest compress. The interaction is
+   borrowed; the CONTENT is the site's own: each panel is a block of real terrain rendered from
+   public-domain DEM data by scripts/build-terrain-gallery.mjs. See TerrainGallery.tsx for the
+   full note on what was kept and what was changed.
+
+   THE PANEL IS THE MEDIA'S WINDOW, NOT ITS SIZE. The image inside is deliberately WIDER than its
+   panel (the `--tg-media-size` variable, measured by the component) so it can drift at a
+   parallax offset without ever pulling a bare edge into view. `overflow: hidden` on the frame is
+   what makes that safe, and it is also what keeps a 900x1100 image from dictating the row's
+   height.
+
+   THE INACTIVE PANELS ARE DESATURATED, NOT HIDDEN. Grayscale alone would leave them competing
+   for attention at the same value as the active one, so the dim overlay does the separating and
+   the grayscale does the de-emphasising. Both are driven by custom properties the tween writes,
+   which keeps the interpolation on the compositor rather than in a style recalc per frame. */
+.mk.mk.mk-site .tg-gallery {
+  --tg-gap: 10px;
+  --tg-media-size: 320px;
+  --tg-accent: var(--mk-green);
+  --tg-overlay: #0A192F;
+  display: flex;
+  flex-direction: row;
+  gap: var(--tg-gap);
+  width: 100%;
+  perspective: 1400px;
+  perspective-origin: 50% 50%;
+}
+.mk.mk.mk-site .tg-panel {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: var(--card-radius);
+  cursor: pointer;
+  display: block;
+  outline: none;
+  transform-style: preserve-3d;
+  transform-origin: center center;
+  background: var(--mk-ink);
+  will-change: flex-grow, transform;
+  -webkit-tap-highlight-color: transparent;
+}
+.mk.mk.mk-site .tg-panel:focus-visible {
+  box-shadow: 0 0 0 2px var(--tg-accent), 0 0 0 4px var(--mk-bg);
+}
+.mk.mk.mk-site .tg-frame {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+}
+/* THE MEDIA IS THE PANEL'S OWN BOX PLUS A MARGIN, not a fixed width shared by every panel.
+   See the note in TerrainGallery.tsx: sizing it to the EXPANDED panel left four collapsed panels
+   showing 19% of an image whose subject floats in the middle, which read as blank rectangles.
+   `-45px` on each side (half of the component's 90px `mediaMargin`) is the slack the parallax
+   drift moves into, and it is why no bare edge can appear at the extremes of the drift. */
+.mk.mk.mk-site .tg-media {
+  --tg-gray: 1;
+  --tg-dim: 0.35;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -45px;
+  right: -45px;
+  filter: grayscale(var(--tg-gray));
+  will-change: transform, filter;
+}
+.mk.mk.mk-site .tg-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.mk.mk.mk-site .tg-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, transparent 45%, color-mix(in srgb, var(--tg-overlay) 78%, transparent) 100%),
+    color-mix(in srgb, var(--tg-overlay) calc(var(--tg-dim, 0.35) * 100%), transparent);
+}
+/* THE COLLAPSED PANELS CARRY THEIR NAME, AND THAT IS A FIX.
+
+   The original fades the label out on every inactive panel, which is right when the panels are a
+   decorative photo strip: the label belongs to the one you are looking at. It is wrong here, and
+   vision caught it on the built page — "the copy promises 'read the numbers' yet no numbers,
+   captions or labels appear on any collapsed panel, so that instruction cannot be followed."
+
+   The numbers ARE the point of this section: 78 m against 979 m is what makes five terrain blocks
+   worth more than five pictures of hills. Hiding them until hover means the reader has to hunt for
+   the one fact the section exists to state. So the collapsed panels keep their name, set small and
+   turned on their side down the panel, which is how a shelf of survey sheets is labelled and the
+   only orientation that fits in a 150px column.
+
+   The ACTIVE panel keeps the horizontal label with its accent bar, because that one has the width
+   for it and is the one being read. */
+.mk.mk.mk-site .tg-label {
+  position: absolute;
+  left: 20px;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  pointer-events: none;
+  z-index: 2;
+}
+/* The collapsed label: a vertical strip at the panel's left edge, rotated so the name reads
+   bottom-to-top. `writing-mode` rather than a `rotate()` transform, because a rotated box still
+   occupies its unrotated layout space and would be clipped by the panel's overflow at this width. */
+.mk.mk.mk-site .tg-panel:not(.is-active) .tg-label {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: 0;
+  align-items: flex-end;
+  justify-content: flex-start;
+  padding: 0 0 20px 14px;
+}
+.mk.mk.mk-site .tg-panel:not(.is-active) .tg-text {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  opacity: 1;
+}
+.mk.mk.mk-site .tg-panel:not(.is-active) .tg-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #E8EEF7;
+}
+.mk.mk.mk-site .tg-panel:not(.is-active) .tg-note {
+  display: none;
+}
+.mk.mk.mk-site .tg-bar {
+  flex: 0 0 auto;
+  width: 3px;
+  height: 30px;
+  border-radius: 3px;
+  background: var(--tg-accent);
+  opacity: 0;
+}
+.mk.mk.mk-site .tg-panel:not(.is-active) .tg-bar {
+  opacity: 0;
+}
+.mk.mk.mk-site .tg-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: #FFFFFF;
+  opacity: 0;
+  overflow: hidden;
+  min-width: 0;
+}
+.mk.mk.mk-site .tg-name {
+  font-family: var(--gf-display);
+  font-weight: 700;
+  font-size: clamp(15px, 1.2vw, 19px);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, .55);
+}
+.mk.mk.mk-site .tg-note {
+  font-size: 12.5px;
+  color: #D8E2F0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, .55);
+}
+/* BELOW 720px THE ROW BECOMES A COLUMN, and the active panel is the tall one. A horizontal row
+   of five panels on a phone leaves each one about 60px wide — too narrow to read a label in and
+   too narrow to show any of the terrain. Stacked, each panel keeps the full width and the
+   active one simply takes more of the height. */
+@media (max-width: 720px) {
+  .mk.mk.mk-site .tg-gallery {
+    flex-direction: column;
+    perspective: none;
+    height: auto !important;
+  }
+  .mk.mk.mk-site .tg-panel {
+    min-height: 96px;
+    flex: 1 1 auto;
+    transform: none !important;
+  }
+  .mk.mk.mk-site .tg-panel.is-active {
+    min-height: 300px;
+  }
+  .mk.mk.mk-site .tg-media {
+    left: -45px;
+    right: -45px;
+  }
+  .mk.mk.mk-site .tg-label {
+    left: 16px;
+    bottom: 14px;
+    right: 16px;
+  }
+  .mk.mk.mk-site .tg-text {
+    opacity: 1;
+  }
+  .mk.mk.mk-site .tg-bar {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mk.mk.mk-site .tg-panel,
+  .mk.mk.mk-site .tg-media {
+    will-change: auto;
+  }
+}

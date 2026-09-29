@@ -1,0 +1,112 @@
+[
+  {
+    "file": "panel-1.png",
+    "id": "basin",
+    "label": {
+      "id": "Cekungan kerja · relief 357 m",
+      "en": "The working basin · relief 357 m"
+    },
+    "note": {
+      "id": "Dataran rendah Sintang",
+      "en": "The Sintang lowland"
+    },
+    "centre": {
+      "lat": -0.12,
+      "lon": 111.28
+    },
+    "stats": {
+      "p2": 21,
+      "p50": 40,
+      "p98": 378,
+      "relief": 357
+    }
+  },
+  {
+    "file": "panel-2.png",
+    "id": "lowland",
+    "label": {
+      "id": "Dataran utara · relief 78 m",
+      "en": "Northern lowland · relief 78 m"
+    },
+    "note": {
+      "id": "Rawa dan sungai kecil",
+      "en": "Swamp and minor rivers"
+    },
+    "centre": {
+      "lat": 0.35,
+      "lon": 111.55
+    },
+    "stats": {
+      "p2": 22,
+      "p50": 34,
+      "p98": 100,
+      "relief": 78
+    }
+  },
+  {
+    "file": "panel-3.png",
+    "id": "front",
+    "label": {
+      "id": "Kaki pegunungan · relief 657 m",
+      "en": "Highland front · relief 657 m"
+    },
+    "note": {
+      "id": "Relief mulai naik",
+      "en": "Where the relief begins"
+    },
+    "centre": {
+      "lat": -0.62,
+      "lon": 111.72
+    },
+    "stats": {
+      "p2": 47,
+      "p50": 148,
+      "p98": 703,
+      "relief": 657
+    }
+  },
+  {
+    "file": "panel-4.png",
+    "id": "range",
+    "label": {
+      "id": "Punggungan selatan · relief 551 m",
+      "en": "Southern range · relief 551 m"
+    },
+    "note": {
+      "id": "Punggungan perbatasan",
+      "en": "The border range"
+    },
+    "centre": {
+      "lat": -1.05,
+      "lon": 112.05
+    },
+    "stats": {
+      "p2": 116,
+      "p50": 172,
+      "p98": 667,
+      "relief": 551
+    }
+  },
+  {
+    "file": "panel-5.png",
+    "id": "summit",
+    "label": {
+      "id": "Pegunungan tinggi · relief 979 m",
+      "en": "High country · relief 979 m"
+    },
+    "note": {
+      "id": "Puncak tertinggi di set ini",
+      "en": "The tallest ground here"
+    },
+    "centre": {
+      "lat": -0.38,
+      "lon": 110.85
+    },
+    "stats": {
+      "p2": 49,
+      "p50": 118,
+      "p98": 1028,
+      "relief": 979
+    }
+  }
+]
