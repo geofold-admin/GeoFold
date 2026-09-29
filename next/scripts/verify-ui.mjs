@@ -104,13 +104,17 @@ try {
       priceFig: pick('.pg-price-fig'),
     }
   })
-  check('hero uses Archivo', /archivo/i.test(fonts.hero ?? ''), fonts.hero)
-  check('body uses Barlow', /barlow/i.test(fonts.body ?? ''), fonts.body)
-  check('micro-label uses Barlow Condensed', /barlow_?condensed|barlow condensed/i.test(fonts.micro ?? ''), fonts.micro)
-  check('numbers use Barlow Condensed', /barlow_?condensed|barlow condensed/i.test(fonts.num ?? ''), fonts.num)
+  /* THE TYPE CONTRACT WAS REPLACED. The brief before this one named Archivo / Barlow / Barlow
+     Condensed / Space Mono; the current one names exactly two faces — Plus Jakarta Sans for
+     headings, Inter for body and data. The assertions are re-pointed rather than deleted, so a
+     regression that puts Archivo back on a heading still fails here. */
+  check('hero uses Plus Jakarta Sans', /jakarta/i.test(fonts.hero ?? ''), fonts.hero)
+  check('body uses Inter', /inter/i.test(fonts.body ?? ''), fonts.body)
+  check('micro-label uses Inter', /inter/i.test(fonts.micro ?? ''), fonts.micro)
+  check('numbers use Inter', /inter/i.test(fonts.num ?? ''), fonts.num)
   check('coordinate uses Space Mono', /space_?mono|space mono/i.test(fonts.coord ?? ''), fonts.coord)
-  check('coord label uses Barlow Condensed', /barlow_?condensed|barlow condensed/i.test(fonts.coordLabel ?? ''), fonts.coordLabel)
-  check('price figure uses Barlow Condensed', /barlow_?condensed|barlow condensed/i.test(fonts.priceFig ?? ''), fonts.priceFig)
+  check('coord label uses Inter', /inter/i.test(fonts.coordLabel ?? ''), fonts.coordLabel)
+  check('price figure uses Plus Jakarta Sans', /jakarta/i.test(fonts.priceFig ?? ''), fonts.priceFig)
 
   /* -------------------------------------------------- THE SHAPE CONTRACT, BACK TO A WORKING RADIUS
      This check has now asserted three different shape contracts, one per client brief, which is
@@ -147,8 +151,12 @@ try {
     return out
   })
   check('surfaces use the working 8px radius', radii.card === '8px', `card=${radii.card}`)
-  check('controls use the working 4px radius', radii.btn === '4px', `btn=${radii.btn}`)
-  check('the nav pill is the only 999px control', radii.pill === '999px', `portal=${radii.pill}`)
+  /* THE SHAPE CONTRACT WAS REPLACED TWICE. The brief two rounds ago wanted 0px square corners;
+     the one before this wanted 4px controls and one 999px pill. The current brief names a single
+     radius — "Semua kartu, input, dan tombol menggunakan radius 8px" — and explicitly retires
+     both the square corner AND the capsule. So: 8px on every control, and NO 999px anywhere. */
+  check('controls use the brief\'s 8px radius', radii.btn === '8px', `btn=${radii.btn}`)
+  check('no control is a 999px pill any more (the brief retires it)', radii.pill !== '999px', `portal=${radii.pill}`)
   check('no retired 20px/50px radius survives', radii.wrong.length === 0,
     radii.wrong.length ? JSON.stringify(radii.wrong.slice(0, 6)) : 'all within the three steps')
 
@@ -164,7 +172,7 @@ try {
      each screen is entitled to its own call to action, so what matters is how many compete inside
      ONE viewport — what a visitor actually sees at once. */
   const accents = await page.evaluate(() => {
-    const ORANGE = 'rgb(243, 93, 25)'
+    const ORANGE = 'rgb(250, 95, 31)'   /* the brief's #FA5F1F, not the retired #F35D19 */
     const EMERALD = 'rgb(0, 255, 135)'
     const CYAN = 'rgb(0, 242, 254)'
     const vh = window.innerHeight
@@ -180,7 +188,7 @@ try {
     }
     return { orange, emerald, cyan }
   })
-  check('the accent is the brand orange #F35D19', accents.orange.length > 0,
+  check('the accent is the brief\'s orange #FA5F1F', accents.orange.length > 0,
     `${accents.orange.length} orange elements: ${accents.orange.slice(0, 3).join(', ')}`)
   check('the retired Neon emerald is gone', accents.emerald === 0, `${accents.emerald} in view`)
   check('the retired Cyber cyan is gone', accents.cyan === 0, `${accents.cyan} in view`)

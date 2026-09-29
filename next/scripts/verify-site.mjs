@@ -68,12 +68,19 @@ const tok = await page.evaluate(() => {
    compare fails on a correct value — a probe bug that would have sent me editing working CSS. */
 const hex = (s) => { const v = s.trim().toLowerCase(); const m = /^#([0-9a-f]{3})$/.exec(v);
   return m ? '#' + m[1].split('').map((c) => c + c).join('') : v }
-check('ink is #111827 (the normal heading black)', hex(tok.ink) === '#111827', tok.ink)
-check('structural blue is GEOFOLD Blue #014AB5', hex(tok.blue) === '#014ab5', tok.blue)
-check('conversion accent is GEOFOLD Orange #F35D19', hex(tok.marker) === '#f35d19', tok.marker)
-check('ground is white and paper is #F3F4F6',
-  hex(tok.ground) === '#ffffff' && hex(tok.raise) === '#f3f4f6', `${tok.ground} / ${tok.raise}`)
-check('hero plate is Blue Deep #0A192F', hex(tok.deep) === '#0a192f', tok.deep)
+/* REWRITTEN FOR THE "CORPORATE MINIMALIST" BRIEF (2026-09-29).
+   The five values below are the PREVIOUS brief's (#111827 / #014AB5 / #F35D19 / #F3F4F6 /
+   #0A192F) and this suite failed on a correct page until they were re-pointed. Per this
+   project's own rule: when a brief is replaced, the assertions are REWRITTEN to the new
+   contract rather than deleted — a deleted check stops catching regressions.
+   The current brief: #0F172A heading, #0246B1 primary, #FA5F1F accent, #FFFFFF ground,
+   #F8FAFC surface, and the argument band in the brand blue rather than a midnight plate. */
+check('ink is #0F172A (the brief\'s Slate 900)', hex(tok.ink) === '#0f172a', tok.ink)
+check('structural blue is GeoFold Blue #0246B1', hex(tok.blue) === '#0246b1', tok.blue)
+check('conversion accent is GeoFold Orange #FA5F1F', hex(tok.marker) === '#fa5f1f', tok.marker)
+check('ground is white and surface is #F8FAFC',
+  hex(tok.ground) === '#ffffff' && hex(tok.raise) === '#f8fafc', `${tok.ground} / ${tok.raise}`)
+check('the argument band is the brand blue #0246B1', hex(tok.deep) === '#0246b1', tok.deep)
 
 /* The retired Neon palette, by its own signature values. */
 const NEON = { 'Cyber Cyan #00F2FE': [0, 242, 254], 'Neon Emerald #00FF87': [0, 255, 135],
@@ -186,7 +193,7 @@ check('the retired crosshair marks are gone', marks.length === 0,
 /* And the hero's replacement texture is the STATIC graticule: a repeating-linear-gradient with
    no animation. If the animated field ever came back it would arrive as a canvas, not as this. */
 const heroAfter = secs.find((s) => /pg-hero|mk-hero/.test(s.cls))
-check('the hero carries the static graticule instead', !!heroAfter && /repeating-linear-gradient/.test(heroAfter.afterBgImg),
+check('the hero carries NO background texture (the brief asks for a plain white page)', !heroAfter || !/gradient|url\(/.test(heroAfter.afterBgImg || ''),
   heroAfter ? heroAfter.afterBgImg.slice(0, 70) : '')
 
 /* =====================================================================================
@@ -212,9 +219,13 @@ const hero = await page.evaluate(() => {
   }
 })
 check('the hero exists and is a full-height plate', hero && hero.h > 400, hero ? `${hero.h}px` : 'not found')
-check('the hero plate is Blue Deep #0A192F', hero && near(hero.beforeBg.match(/\d+/g).map(Number), [10, 25, 47], 2),
+/* A transparent colour stringifies as `rgba(0, 0, 0, 0)`, which CONTAINS the substring `rgb` —
+     so the obvious test `!/rgb/` failed on a correct page. What actually matters is that the
+     plate paints nothing: no background colour with alpha, and no background image. */
+  check('the hero has no dark plate (the brief puts the hero on white)',
+    hero && (/^(none|transparent)$/.test((hero.beforeBg || 'none').trim()) || /rgba\(0,\s*0,\s*0,\s*0\)/.test(hero.beforeBg || '')),
   hero ? hero.beforeBg : '')
-check('the hero heading is white ink on the plate', hero && hero.h1Color === 'rgb(255, 255, 255)', hero ? hero.h1Color : '')
+check('the hero heading is the brief\'s dark ink on white', hero && hero.h1Color === 'rgb(15, 23, 42)', hero ? hero.h1Color : '')
 check('the heading has NO gradient text', hero && (!hero.h1BgImg || hero.h1BgImg === 'none'),
   hero ? hero.h1BgImg : '')
 
@@ -286,7 +297,11 @@ const globe = await page.evaluate(() => {
 })
 check('the globe is on the page and square', globe && globe.w > 200 && Math.abs(globe.w - globe.h) <= 2,
   globe ? `${globe.w}x${globe.h}` : 'not found')
-check('the survey pin is GEOFOLD Orange', globe && /f35d19/i.test(globe.accent), globe ? globe.accent : '')
+/* THE PIN IS GONE. The client asked for it twice — "pada globe ... dot orange hilangkan saja" —
+     and it is removed from SurveyGlobe entirely, so this suite must NOT demand it. What replaces
+     it as the assertion is the stronger fact: the globe draws NO orange at all, which is what
+     the client asked for and what a regression would break. */
+check('the globe draws no orange pin (removed at the client\'s request)', globe && !/fa5f1f|f35d19/i.test(globe.accent || ''), globe ? globe.accent : '')
 check('the land fill token is defined (not empty)', globe && globe.land.length > 0 && globe.body.length > 0,
   globe ? `land=${globe.land} body=${globe.body}` : '')
 
@@ -339,7 +354,7 @@ const landPct = (ink.land / ink.total) * 100
    set from the measurements with room on both sides. */
 check('the globe draws real land (not a bare wireframe)', landPct > 6 && landPct < 45,
   `${ink.land} land px = ${landPct.toFixed(1)}% of the canvas, sea ${(ink.sea / ink.total * 100).toFixed(1)}%`)
-check('the globe draws the orange survey pin', ink.pin > 40,
+check('the globe draws NO orange pixels at all', ink.pin <= 40,
   `${ink.pin} orange px`)
 
 /* =====================================================================================

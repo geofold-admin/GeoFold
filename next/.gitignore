@@ -13,10 +13,14 @@
 # testing
 /coverage
 
-# screenshots written by the verification scripts (verify-ui, verify-app, verify-neo,
-# audit-colour, audit-headline, shots-neo). Generated output, ~4MB per run — regenerated on
-# demand, never a source of truth.
+# screenshots written by the verification scripts (verify-ui, verify-app, verify-site,
+# verify-contrast, audit-colour, audit-headline). Generated output, ~4MB per run — regenerated
+# on demand, never a source of truth.
 /shots
+
+# the elevation tiles `scripts/build-terrain.mjs` downloads. Cached so a re-run costs nothing;
+# ~2MB of public-domain DEM that is fetched on demand and must not be committed.
+/.cache
 
 # next.js
 /.next/

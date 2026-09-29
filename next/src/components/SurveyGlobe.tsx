@@ -5,7 +5,7 @@ import { SITE_LOCATION } from '@/lib/business'
 import { LAND_RINGS } from './land'
 
 /**
- * A globe with real coastlines and one lit marker, drawn in canvas 2D.
+ * A globe with real coastlines, drawn in canvas 2D. No marker: see the note in draw().
  *
  * ADAPTED FROM REACT BITS. The reference the brief pointed at — `reactbits-starter/globe-tw` — is a
  * paid Pro block whose source is not distributable, and the free library ships no globe at all.
@@ -24,9 +24,14 @@ import { LAND_RINGS } from './land'
  * which is all a 380px globe can resolve.
  *
  * WHY THIS IS NOT DECORATION (the skill's rule: an effect must carry a fact). A globe spinning for
- * its own sake is noise. This one marks the actual location the business operates from — Sintang,
- * West Kalimantan — at its real latitude and longitude, and the caption beside it names the place.
- * The dot is the information; the continents are what make the dot legible as a place on Earth.
+ * its own sake is noise. This one is ORIENTED to the actual location the business operates from —
+ * Sintang, West Kalimantan — so the region it works in faces the viewer on load, and the caption
+ * beside it names the place. The orientation is the information.
+ *
+ * THE DOT IS GONE. The client asked for it twice: "dot orange hilangkan saja". It used to be a
+ * reticle in the conversion orange, which was right on a dark sphere and wrong on this one — the
+ * band is now the brand's own blue, and an orange target on it read as an alarm. The fact the dot
+ * carried (this is where we work) survives in the orientation and the caption.
  *
  * HOW IT IS DRAWN. Each point is rotated around Y (spin) then X (tilt) and projected by dropping
  * Z. Coastlines are filled as closed paths per ring, with the far hemisphere drawn first at low
@@ -34,9 +39,10 @@ import { LAND_RINGS } from './land'
  * positive rotated Z are behind the sphere and are skipped — without that test the far continents
  * would draw on top of the near ones and the ball would flatten.
  *
- * BEHAVIOUR. Cursor steers tilt and spin speed, damped, and the rotation returns to idle when the
- * pointer leaves. It pauses off-screen and on a hidden tab, skips all cursor work on touch, and
- * under `prefers-reduced-motion` draws exactly one static frame.
+ * BEHAVIOUR. It rotates slowly on its own. Cursor steering, damping and the hover speed-up were
+ * removed with the previous skin, because the current brief bans heavy interaction on decorative
+ * objects and this is decoration around a caption. It still pauses off-screen and on a hidden tab,
+ * and under `prefers-reduced-motion` it draws exactly one static frame.
  */
 
 /** The place this marks. Read from the one source of truth in lib/business.ts, so the hero's
@@ -76,7 +82,6 @@ export function SurveyGlobe({ className }: { className?: string }) {
 
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)')
     const canHover = window.matchMedia('(hover: hover) and (pointer: fine)')
-    const accent = getComputedStyle(canvas).getPropertyValue('--globe-accent').trim() || '#F35D19'
     const line = getComputedStyle(canvas).getPropertyValue('--globe-line').trim() || '#9DB4D4'
     /* The two pigments that used to be literals. They were `rgba(127,168,232,…)` and
        `rgba(10,25,47,.55)` — an atmosphere and a body disc tuned for a midnight band. On the
@@ -85,7 +90,6 @@ export function SurveyGlobe({ className }: { className?: string }) {
        component renders identically on the previous skin and correctly on this one. */
     const body = getComputedStyle(canvas).getPropertyValue('--globe-body').trim() || 'rgba(10, 25, 47, .55)'
     const haloInk = getComputedStyle(canvas).getPropertyValue('--globe-halo').trim() || 'rgba(127, 168, 232, .085)'
-    const pip = getComputedStyle(canvas).getPropertyValue('--globe-pip').trim() || 'rgba(255,255,255,.9)'
     /* THE LAND. Two more tokens, and they are what turned this from a diagram of a sphere into a
        diagram of the Earth. Defaults keep the old dark-ground values so the component is still
        self-consistent if it is ever dropped back onto a dark band. */
@@ -316,51 +320,22 @@ export function SurveyGlobe({ className }: { className?: string }) {
       drawLand(false)
       drawLand(true)
 
-      // The marker: the one lit thing on the sphere, and the reason it exists.
-      const m = project(latLonToXYZ(MARKER.lat, MARKER.lon), cosT, sinT)
-      if (m.z <= 0) {
-        const mx = cx + m.x * radius
-        const my = cy + m.y * radius
-        const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 700)
+      /* ==================================================================================
+         THE MARKER IS GONE, AND THE CLIENT ASKED FOR IT TWICE OVER.
 
-        /* THE RETICLE. A survey instrument marks a point with a ring and four ticks, not with
-           a bare dot — the ticks are what make it read as "measured here" rather than as a
-           bullet on a map. Ticks are drawn on the two axes only: eight arms turn the mark
-           into a snowflake at 3px. */
-        ctx.globalAlpha = 0.5 + 0.3 * pulse
-        ctx.beginPath()
-        ctx.arc(mx, my, 10.5, 0, Math.PI * 2)
-        ctx.strokeStyle = accent
-        ctx.lineWidth = 1
-        ctx.stroke()
+         "pada globe sepertinya belum benar benar sempurna dan dot orange hilangkan saja" —
+         remove the orange dot. It was a reticle: a ring, four ticks, a breathing fill and a
+         white pip, drawn in the conversion orange. On the previous skin it was the one lit
+         thing on a dark sphere and it earned its place. On this skin the band is the brand's
+         own blue and the globe is a light instrument, so an orange target reticle reads as an
+         alarm rather than as a location, and it was the only orange anywhere near the section.
 
-        ctx.globalAlpha = 0.85
-        ctx.beginPath()
-        ctx.moveTo(mx - 15.5, my); ctx.lineTo(mx - 7.5, my)
-        ctx.moveTo(mx + 7.5, my); ctx.lineTo(mx + 15.5, my)
-        ctx.moveTo(mx, my - 15.5); ctx.lineTo(mx, my - 7.5)
-        ctx.moveTo(mx, my + 7.5); ctx.lineTo(mx, my + 15.5)
-        ctx.lineWidth = 1
-        ctx.stroke()
-
-        // The fill, on a slower breath than the reticle so the two do not pulse as one blob.
-        ctx.globalAlpha = 0.16 * (0.6 + 0.4 * pulse)
-        ctx.beginPath()
-        ctx.arc(mx, my, 15 + 5 * pulse, 0, Math.PI * 2)
-        ctx.fillStyle = accent
-        ctx.fill()
-
-        ctx.globalAlpha = 1
-        ctx.beginPath()
-        ctx.arc(mx, my, 3.4, 0, Math.PI * 2)
-        ctx.fillStyle = accent
-        ctx.fill()
-        // A white pip inside the dot: at 3px on a navy field the orange alone is a smudge.
-        ctx.beginPath()
-        ctx.arc(mx - 0.9, my - 0.9, 1.15, 0, Math.PI * 2)
-        ctx.fillStyle = pip
-        ctx.fill()
-      }
+         WHAT STILL SAYS "HERE" WITHOUT A DOT. The globe is still ORIENTED to the operating
+         region — `spin` is seeded from the site's own coordinates above, so the part of the
+         world the business works in faces the viewer on load. The caption beside it names the
+         place. So the fact survives the mark, which is the part that mattered; what is gone is
+         the pin, and the pin was the thing the client pointed at.
+         ================================================================================== */
 
       ctx.globalAlpha = 1
     }

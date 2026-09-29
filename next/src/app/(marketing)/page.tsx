@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
-import { FigAerial, FigCapture, FigExport, FigHero, FigMap, FigOffline } from './Figures'
+import { FigAerial, FigCapture, FigExport, FigMap, FigOffline } from './Figures'
 import { SurveyGlobe } from '@/components/SurveyGlobe'
 import SpecularEdge from '@/components/SpecularEdge'
 import { DitherVeil } from '@/components/DitherVeil'
@@ -443,14 +443,40 @@ export default async function HomePage() {
               </p>
             </div>
 
-            {/* The hero's own figure, and it is NOT capability row 01's. Both used to be
-                `FigCapture`, which put the identical schematic twice within one screen of
-                scrolling at 1440px — and below 1000px the hero's copy is hidden, so the hero
-                lost its art while the row kept it. `FigHero` draws the act (a handset taking the
-                point, and the stamp it writes); `FigCapture` stays the close-up on row 01. */}
-            <div className="pg-row-art" data-parallax="-6" aria-hidden="true">
-              <FigHero locale={locale} />
-            </div>
+            {/* ================= the 3D map block =================
+                THE CLIENT'S REQUEST: "untuk di bagian atas di hero section berikan gambar peta
+                3D ikuti refrensi foto yang saya berikan." Both reference photos are terrain
+                blocks — a slice of ground lifted out of the earth, corner-on, with the cut side
+                walls visible — so this is that form, built from REAL elevation for this part of
+                West Kalimantan by `scripts/build-terrain.mjs`.
+
+                It is an <img> with alt text, not a CSS background: the picture carries a fact
+                about where the business works, and a fact a screen reader cannot reach is
+                decoration. The alt names the place and what the picture is, because "3D map" on
+                its own tells a non-sighted reader nothing they can use.
+
+                The caption under it is not decorative either: it is the only thing on the page
+                that says the block is a real place rather than a stock render, and it reads its
+                place name from the same constant the coordinate readout and the globe use. */}
+            <figure className="pg-hero-art">
+              {/* eslint-disable-next-line @next/next/no-img-element -- a static, fixed-size,
+                  already-optimised PNG of a generated asset; next/image would add a loader and
+                  a layout box for an image whose dimensions are known at build time. */}
+              <img
+                className="pg-hero-map"
+                src="/hero-terrain.png"
+                alt={`A 3D terrain map block of the country around ${SITE_LOCATION.place.id}, built from satellite elevation data`}
+                width={1200}
+                height={880}
+                // Above the fold on the landing page: without this the browser discovers it late
+                // and the hero paints as an empty column first.
+                fetchPriority="high"
+                decoding="async"
+              />
+              <figcaption className="pg-hero-map-cap">
+                {c.globePlace} · {c.globeSub}
+              </figcaption>
+            </figure>
           </div>
 
           <dl className="pg-stats" data-anim="stagger">

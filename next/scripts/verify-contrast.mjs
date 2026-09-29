@@ -63,14 +63,22 @@ for(const path of PAGES){
     const x0=Math.max(0,Math.floor(e.x)), y0=Math.max(0,Math.floor(e.y))
     const x1=Math.min(png.width,Math.ceil(e.x+e.w)), y1=Math.min(png.height,Math.ceil(e.y+e.h))
     if(x1-x0<3||y1-y0<3) continue
+    /* THE GROUND IS COUNTED AT FULL 8-BIT PRECISION, NOT IN 4-BIT BUCKETS.
+       This counted colours bucketed to 16 levels per channel and then reported the BUCKET
+       CENTRE as the ground. On a white page every white pixel landed in bucket 15 and came back
+       as rgb(248,248,248) — a ground 7 luminance units darker than the real one. That is enough
+       to turn a genuine 4.76:1 into a reported 4.48:1 and fail an element that passes, which is
+       the worst kind of check: it trains people to ignore the output.
+       Counting the exact RGB triple costs one more Map key width and removes the error
+       entirely. Ties are broken by first-seen, which for a flat ground is the ground itself. */
     const hist=new Map()
     for(let y=y0;y<y1;y++) for(let x=x0;x<x1;x++){
       const i=(png.width*y+x)<<2
-      const k=((png.data[i]>>4)<<8)|((png.data[i+1]>>4)<<4)|(png.data[i+2]>>4)
+      const k=(png.data[i]<<16)|(png.data[i+1]<<8)|png.data[i+2]
       hist.set(k,(hist.get(k)||0)+1)
     }
     const sorted=[...hist.entries()].sort((a,b)=>b[1]-a[1])
-    const toRGB=(k)=>[((k>>8)&15)*16+8,((k>>4)&15)*16+8,(k&15)*16+8]
+    const toRGB=(k)=>[(k>>16)&255,(k>>8)&255,k&255]
     const ink=parseC(e.color)
     let ground=toRGB(sorted[0][0])
     const near=(a,b2)=>a.every((v,i)=>Math.abs(v-b2[i])<20)

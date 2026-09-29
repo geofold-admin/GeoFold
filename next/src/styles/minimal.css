@@ -1,0 +1,1671 @@
+/* =====================================================================================
+   GEOFOLD MARKETING — "CORPORATE MINIMALIST"
+   =====================================================================================
+   THE CURRENT BRIEF. `GEOFOLD_WEBSITE_REDESIGN_CONCEPT.md`, plus the client's follow-up:
+   "pastikan design lama kamu ganti dan hapus dengan design yang baru yaa ... pada globe
+   sepertinya belum benar benar sempurna dan dot orange hilangkan saja ... untuk di bagian atas
+   di hero section berikan gambar peta 3D ikuti refrensi foto yang saya berikan."
+
+   WHAT THIS REPLACES, AND WHY IT IS A REPLACEMENT RATHER THAN ANOTHER LAYER.
+   Four skins have now been superseded: `overhaul.css` (Topographic), `paper.css` (Paper),
+   `corporate.css` (Midnight), `blueprint.css` (Steel-Blue), `neotopography.css` (Cyber
+   Cartography) and `site.css` (professional/simple). The client asked for the old design to be
+   *deleted*, not layered over, so `neotopography.css` and `site.css` are removed from disk
+   entirely and this file is the only new layer. The four older skins stay because they are not
+   mine to delete — they carry the app chrome's tokens and the checkout, and the brief requires
+   the dashboard to be untouched.
+
+   The brief, point by point, and where each is implemented:
+     1. Palette          §1  — #FFFFFF ground, #0246B1 primary, #FA5F1F accent, slate ink.
+     2. Typography       §1  — Plus Jakarta Sans headings, Inter body/data.
+     3. Radius 8px       §1  — cards, inputs, buttons. No 0px, no pills.
+     4. Flat + hairline  §4  — borders by default; a shadow only on hover and on floating UI.
+     5. Sticky header    §3
+     6. Hero, 2 columns  §5  — H1 56/36 ExtraBold, the 3D map block on the right.
+     7. Social proof     §6
+     8. Bento features   §7  — white cards, hairline border, blue stroke icons.
+     9. How it works     §8  — a numbered 1-2-3-4 line.
+    10. Pre-footer CTA   §11 — full-width blue block, one orange button.
+    11. No heavy motion  §14 — colour transitions and an opacity fade only.
+    12. Touch targets    §13 — 44px minimum.
+    13. Spacing          §13 — 64px desktop, 24px mobile.
+
+   SCOPE. Everything here is scoped to `.mk.mk.mk-site`, which only the marketing layout
+   carries. `/login`, `/onboarding`, `/reset`, the 404 and the whole signed-in app never match
+   it — that is the isolation boundary the brief requires, and `verify-app.mjs` asserts it.
+   ===================================================================================== */
+
+/* =====================================================================================
+   1. THE TOKENS
+   =====================================================================================
+   Every value is the brief's own hex, or a measured correction to one where the brief's hex
+   fails WCAG. The variable names are the ones the earlier skins established (`--mk-*`), so
+   this layer re-points them rather than introducing a parallel set — which is what lets the
+   whole site re-skin from one block without a single component knowing.
+
+   The `.mk.mk.mk-site` triple is deliberate. `.mk` alone is (0,1,0) and loses to
+   `corporate.css`'s `.mk .pg-sec::before` at (0,2,0); the site marker is also what keeps this
+   layer off the app chrome. */
+.mk.mk.mk-site {
+  /* --- 1a. THE GROUND. The brief's two surfaces. --- */
+  --mk-bg: #FFFFFF;          /* Background Utama — "putih murni untuk seluruh halaman publik" */
+  --mk-panel: #FFFFFF;
+  --mk-raise: #F8FAFC;       /* Background Sekunder / Surface — Slate 50 */
+  --mk-sand: #F1F5F9;        /* the footer's ground, the brief's third neutral */
+  --mk-line: #E2E8F0;        /* Garis & Border — "garis pembatas tipis ... tanpa drop-shadow" */
+  --mk-control-line: #94A3B8; /* a control boundary, WCAG 1.4.11 needs 3:1 — see §12 */
+
+  /* --- 1b. THE INK LADDER. Measured against #FFFFFF and #F8FAFC. --- */
+  --mk-ink: #0F172A;         /* Teks Heading — 17.85:1 on white, 16.94:1 on surface */
+  --mk-prose: #475569;       /* Teks Paragraf & Data — 7.58:1 on white, 7.19:1 on surface */
+  --mk-muted: #475569;       /* the lede and card body take the brief's body ink, not a lighter one */
+  /* THE FAINT STEP IS SET BY THE DARKEST GROUND IT LANDS ON, NOT THE LIGHTEST.
+     Slate 500 (#64748B) is 4.76:1 on white and 4.55:1 on the surface — and 4.34:1 on the
+     FOOTER's #F1F5F9, which is where most of the micro-labels actually live. It failed there on
+     14 elements across the site. This value clears 4.5:1 on all three grounds with margin:
+     5.19:1 white, 4.96:1 surface, 4.74:1 footer. */
+  --mk-faint: #5E6E85;
+  --mk-hint: #94A3B8;        /* non-text only: placeholder rules, disabled marks */
+
+  /* --- 1c. THE STRUCTURAL ACCENT: GeoFold Blue. --- */
+  --mk-green: #0246B1;       /* Aksen Utama — 7.67:1 on white, 7.28:1 on surface */
+  --mk-green-2: #013A8F;     /* the hover, one step down the same ramp */
+  --mk-green-line: #BFD3EE;  /* the blue as a HAIRLINE */
+  --mk-on-green: #FFFFFF;    /* 7.67:1 on the blue fill */
+  --mk-on-green-dim: #EFF6FF;
+  --mk-blue-fill: #0246B1;
+  --mk-blue-fill-2: #013A8F;
+  --mk-on-blue-fill: #FFFFFF;
+
+  /* --- 1d. THE ACTION ACCENT: GeoFold Orange.
+     THE BRIEF'S ONE TRAP, AND IT IS A MEASURED ONE.
+     #FA5F1F is 3.14:1 on white — it FAILS WCAG AA as text and as a fill behind white text.
+     The brief names it for "tombol konversi CTA, penanda titik peta, dan interaksi hover pada
+     elemen kritis", which is exactly the safe use: a FILL, with dark ink on it, at a size where
+     it is a block rather than a line of type. So:
+       - `--mk-marker` is the raw orange, used as a fill with `--mk-on-marker` on top.
+       - `--mk-amber` is the orange darkened until it is safe as TEXT (4.54:1), for the few
+         places a label has to be orange rather than a block of orange.
+     The label on the orange button is the brand's own deep navy, which is 5.36:1 — the same
+     pairing the palette reference records for the previous orange. */
+  --mk-marker: #FA5F1F;
+  --mk-on-marker: #0F172A;   /* 5.36:1 on the orange fill — the CTA label */
+  --mk-marker-2: #D6450A;    /* the orange's own hover, one step down */
+  --mk-amber: #C2410C;       /* 4.54:1 on white — the only orange safe as small text */
+
+  /* --- 1e. THE ONE DARK PLATE: the pre-footer block, in the brief's own blue. --- */
+  --mk-deep: #0246B1;
+  --mk-deep-line: #3B72C4;
+  --mk-deep-ink: #FFFFFF;    /* 7.67:1 */
+  --mk-deep-prose: #DCE8F9;  /* 6.21:1 */
+  --mk-deep-accent: #FFC29B; /* the orange lightened until it is safe on blue — 5.02:1 */
+
+  /* --- 1f. ELEVATION. The brief: flat by default, a shadow only where something floats. --- */
+  --mk-shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 4px 12px -6px rgba(15, 23, 42, .10);
+  --mk-shadow-lg: 0 4px 12px rgba(0, 0, 0, .05);
+  --mk-shadow-hover: 0 4px 12px rgba(0, 0, 0, .05); /* the brief's exact hover shadow */
+  --card-lip: 0 0 0 0 rgba(0, 0, 0, 0);
+
+  /* --- 1g. SHAPE. 8px, the brief's single radius. ---
+     The brief is explicit that this replaces BOTH the square 0px corners of the previous skin
+     and the pill buttons of the one before it: "Menghilangkan sudut kaku 0px dan sudut kapsul
+     (pill) 50px, demi kesan enterprise yang serius." So the pill token is re-pointed at the
+     same 8px rather than left at 999px for something to pick up by accident. */
+  --card-radius: 8px;
+  --mk-radius-sm: 8px;
+  --mk-radius-pill: 8px;
+
+  /* --- 1h. THE TYPE STACK THE BRIEF NAMES. ---
+     Plus Jakarta Sans for headings, Inter for everything else. Both are real loaded faces
+     (see src/app/layout.tsx); these four lines are what point the components at them. */
+  --gf-display: var(--font-jakarta);
+  --font-sans: var(--font-jakarta);
+  --font-body: var(--font-inter);
+  --font-cond: var(--font-inter);
+  /* `--gf-data` and `--font-tight` ARE ALSO RE-POINTED, and leaving them out was a real bug
+     rather than an oversight in the list: `blueprint.css` defines `--gf-data: var(--font-cond)`
+     and `paper.css` re-points `--font-cond` to Inter Tight. Measured on the live page, the
+     hero's stat numerals came out in **Barlow Condensed** — a face this brief retired — and the
+     figures' labels in Inter Tight. The brief names TWO faces for the whole page, so both
+     aliases have to be brought onto them; otherwise a component that reads `--gf-data` silently
+     gets a font nobody chose. */
+  --gf-data: var(--font-inter);
+  --gf-body: var(--font-inter);
+  --font-tight: var(--font-inter);
+  /* NOT `var(--font-mono)`. That is a SELF-REFERENCE, which is a cycle: the custom property
+     becomes invalid at computed-value time, so `font-family: var(--font-mono)` is dropped and the
+     element silently inherits instead. Measured on the live page, the coordinate readout came out
+     in Barlow — the body face — with nothing erroring anywhere. `--gf-code` is the token
+     `blueprint.css` already defines as Space Mono on :root, so reading it here is both correct and
+     cycle-free. */
+  --font-mono: var(--gf-code); /* Space Mono — the coordinate readout, see §5f */
+
+  /* --- 1i. Spacing, per the brief's responsiveness rule: 64px desktop, 24px mobile. --- */
+  --mk-rhythm: clamp(24px, 4.5vw, 64px);
+  --mk-rhythm-hero-top: clamp(48px, 6vw, 96px);
+  --mk-rhythm-hero-bottom: clamp(32px, 4vw, 64px);
+
+  /* --- 1j. The hero's graticule, retired with the old skin. Kept as a token at zero so any
+     surviving reference to it paints nothing rather than falling back to a visible default. --- */
+  --mk-line-field: transparent;
+  --mk-mark-line: transparent;
+  --mk-grid-line: transparent;
+}
+
+/* =====================================================================================
+   2. THE GROUND IS ONE FLAT COLOUR
+   =====================================================================================
+   Three generations of animated and textured ground are retired here in one place: the WebGL
+   contour field (`SiteGround`, unmounted), the CSS graticule the previous skin painted on the
+   hero plate, and the contour pattern `corporate.css` draws on `.mk`. The brief's whole point
+   is a white page, so all of them are switched off rather than toned down.
+
+   `.mk-ground` is still in the tree in any build that has not been redeployed, so it is
+   hidden by name as well as unmounted. */
+.mk.mk.mk-site,
+.mk.mk.mk-site .mk-ground,
+.mk.mk.mk-site .sg-host::before,
+.mk.mk.mk-site .sg-host::after {
+  background-image: none;
+}
+.mk.mk.mk-site .mk-ground {
+  display: none;
+}
+/* `corporate.css` paints the contour pattern on the wrapper's ::before. It is the last
+   textured ground left, and it is invisible against white anyway — but it costs a full-page
+   repaint, so it goes. */
+.mk.mk.mk-site::before,
+.mk.mk.mk-site::after {
+  content: none;
+  display: none;
+}
+
+/* =====================================================================================
+   3. THE HEADER — sticky, white, hairline
+   =====================================================================================
+   The brief: "Sifatnya Sticky (tetap di atas saat di-scroll)... Teks berwarna #475569,
+   berubah menjadi biru #0246B1 saat di-hover dengan transisi 0.2s." */
+.mk.mk.mk-site .mk-nav {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: var(--mk-bg);
+  border-bottom: 1px solid var(--mk-line);
+  backdrop-filter: none;
+  box-shadow: none;
+  /* The nav's height is a touch target decision, not a taste one: 44px minimum on every
+     interactive row inside it (see §13), which is what sets this floor. */
+  min-height: 64px;
+}
+
+.mk.mk.mk-site .mk-nav-links a,
+.mk.mk.mk-site .mk-nav-links button {
+  color: var(--mk-prose);
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: var(--mk-radius-sm);
+  transition: color .2s ease, background-color .2s ease;
+}
+.mk.mk.mk-site .mk-nav-links a:hover,
+.mk.mk.mk-site .mk-nav-links a:focus-visible,
+.mk.mk.mk-site .mk-nav-links button:hover,
+.mk.mk.mk-site .mk-nav-links button:focus-visible {
+  color: var(--mk-green);
+  background: var(--mk-raise);
+}
+
+/* The wordmark and the lockup are brand assets: never recoloured, never re-lettered. Only the
+   type around them is touched. */
+.mk.mk.mk-site .mk-wordmark {
+  font-family: var(--gf-display);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--mk-ink);
+}
+
+/* The portal link — "Masuk Portal (Teks murni)" — is a control, so it carries the control
+   boundary colour rather than the hairline. */
+.mk.mk.mk-site .mk-portal {
+  color: var(--mk-prose);
+  font-weight: 500;
+  transition: color .2s ease;
+}
+.mk.mk.mk-site .mk-portal:hover {
+  color: var(--mk-green);
+}
+
+/* The mobile menu: the brief asks for a full-screen WHITE overlay with large links. */
+.mk.mk.mk-site .mk-menu-panel {
+  background: var(--mk-bg);
+  border-left: 1px solid var(--mk-line);
+}
+.mk.mk.mk-site .mk-menu-link {
+  color: var(--mk-ink);
+  font-family: var(--gf-display);
+  font-size: 24px;   /* the brief's own number for the mobile menu */
+  font-weight: 600;
+  /* 44px minimum, which at 24px type is a padding decision. */
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  border-radius: var(--mk-radius-sm);
+  padding: 8px 12px;
+  transition: color .2s ease, background-color .2s ease;
+}
+.mk.mk.mk-site .mk-menu-link:hover {
+  color: var(--mk-green);
+  background: var(--mk-raise);
+}
+.mk.mk.mk-site .mk-menu-btn {
+  color: var(--mk-ink);
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: var(--mk-radius-sm);
+}
+/* The scroll progress hairline was a device of the animated-ground skins. On a flat white
+   page with a sticky header it is noise, and the brief's "No-Heavy Animations" rule covers it. */
+.mk.mk.mk-site .mk-progress {
+  display: none;
+}
+
+/* =====================================================================================
+   4. SECTIONS AND CARDS
+   =====================================================================================
+   The brief wants ordinary sections with generous whitespace, and cards only where the
+   content is genuinely a set of parallel items (features, plans). So: sections are flat
+   ground, cards are white with a hairline and 8px corners, and nothing floats until hovered. */
+.mk.mk.mk-site .pg-sec {
+  position: relative;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding-block: var(--mk-rhythm);
+}
+/* The retired card recipe: `corporate.css` and `blueprint.css` both draw a panel behind every
+   section via ::before. Both are switched off here. */
+.mk.mk.mk-site .pg-sec::before,
+.mk.mk.mk-site .pg-sec::after,
+.mk.mk.mk-site .pg-sec-tint::before,
+.mk.mk.mk-site .pg-cell::before,
+.mk.mk.mk-site .pg-cell::after {
+  content: none;
+  display: none;
+}
+/* The one tinted band: the brief's "Background Sekunder (Surface/Card) #F8FAFC" used as a
+   section ground rather than as a card fill. */
+.mk.mk.mk-site .pg-sec-tint {
+  background: var(--mk-raise);
+  border-top: 1px solid var(--mk-line);
+  border-bottom: 1px solid var(--mk-line);
+}
+
+.mk.mk.mk-site .pg-wrap {
+  width: 100%;
+  max-width: 1280px;
+  margin-inline: auto;
+  padding-inline: clamp(20px, 4vw, 40px);
+}
+
+/* The section head: the brief's kicker + H2 + lede, with the number tag retired. */
+.mk.mk.mk-site .pg-head {
+  border: 0;
+  padding: 0;
+  margin-bottom: clamp(28px, 3.5vw, 48px);
+}
+.mk.mk.mk-site .pg-head-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 0;
+  padding: 0;
+}
+.mk.mk.mk-site .pg-num-tag {
+  display: none; /* a technical-drawing device from the retired skins */
+}
+
+/* =====================================================================================
+   5. THE HERO
+   =====================================================================================
+   The brief: 2 columns on desktop (text left, visual right), 1 stacked on mobile; H1 56px
+   desktop / 36px mobile ExtraBold; two buttons side by side; the visual is the 3D map.
+   This is the ONE place the old skin put a dark plate. The brief asks for white ground
+   throughout, so the plate is gone and the hero is white like everything else — which is also
+   what makes the 3D map block the loudest thing on the page instead of a texture behind type. */
+.mk.mk.mk-site .pg-hero {
+  background: var(--mk-bg);
+  border-bottom: 1px solid var(--mk-line);
+  padding-block: var(--mk-rhythm-hero-top) var(--mk-rhythm-hero-bottom);
+}
+/* THE HERO'S DARK PLATE AND ITS GRATICULE, BOTH RETIRED. The plate was `.pg-hero::before`
+   in the previous skin and the graticule a background-image on `.pg-hero-inner`; both are
+   switched off at the source so no ink has to be re-tuned against a ground that no longer
+   exists. This is the rule that would otherwise leave white type on a white page. */
+.mk.mk.mk-site .pg-hero::before,
+.mk.mk.mk-site .pg-hero::after,
+.mk.mk.mk-site .pg-hero-inner::before,
+.mk.mk.mk-site .pg-hero-inner::after {
+  content: none;
+  display: none;
+  background-image: none;
+}
+
+.mk.mk.mk-site .pg-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(32px, 5vw, 72px);
+  align-items: center;
+}
+
+.mk.mk.mk-site .pg-d1 {
+  font-family: var(--gf-display);
+  font-size: clamp(36px, 4.4vw, 56px); /* the brief: 56px desktop, 36px mobile */
+  font-weight: 800;                    /* ExtraBold */
+  line-height: 1.06;
+  letter-spacing: -0.025em;
+  color: var(--mk-ink);
+  background: none;
+  -webkit-text-fill-color: currentColor;
+  text-wrap: balance;
+}
+.mk.mk.mk-site .pg-lede {
+  font-family: var(--font-body);
+  font-size: clamp(16px, 1.3vw, 19px);
+  line-height: 1.6;
+  color: var(--mk-prose);
+  max-width: 54ch;
+}
+.mk.mk.mk-site .pg-hero-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+/* --- 5e. THE 3D MAP BLOCK ---
+   The client's request: "untuk di bagian atas di hero section berikan gambar peta 3D ikuti
+   refrensi foto yang saya berikan." The two reference photos are both terrain blocks — a slice
+   of ground lifted out of the earth, corner-on, with the cut side walls visible. The asset is
+   generated from real elevation data for this part of West Kalimantan by
+   `scripts/build-terrain.mjs` and served as a static PNG, so nothing about it costs the
+   bundle or runs on the client.
+
+   It is a real <img> with alt text rather than a CSS background: the picture carries a fact
+   about where the business works, and a fact that a screen reader cannot reach is decoration. */
+.mk.mk.mk-site .pg-hero-art {
+  position: relative;
+  /* A COLUMN, NOT A ROW — and the row is what vision caught as "a caption squeezed into a
+     one-word-wide strip". The element is a <figure> holding the <img> and its <figcaption>;
+     the inherited rule laid it out as a flex ROW, so the caption became a flex ITEM beside the
+     image and was squeezed into whatever the image left over. Measured: 69px wide, 215px tall,
+     wrapping to roughly ten lines of one to three words each.
+     A figure is a column: image, then caption under it. */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.mk.mk.mk-site .pg-hero-map {
+  display: block;
+  width: 100%;
+  max-width: 620px;
+  height: auto;
+  /* No frame, no card, no shadow: the asset is already a solid object on white, and boxing it
+     would put a rectangle around the one shape on the page that is not a rectangle. */
+  background: none;
+  border: 0;
+  border-radius: 0;
+}
+/* The caption names the place the block actually shows, from the same constant the coordinate
+   readout and the globe use, so the three cannot drift. */
+.mk.mk.mk-site .pg-hero-map-cap {
+  margin-top: 10px;
+  max-width: 46ch;
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--mk-faint);
+  letter-spacing: .01em;
+}
+
+/* --- 5f. The coordinate readout. Kept: it is the one number on this page that is a fact
+   about the company rather than a claim about the product. It stays in Space Mono because a
+   coordinate is data, and it keeps its own row on narrow screens rather than wrapping
+   mid-value. --- */
+.mk.mk.mk-site .pg-coord {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--mk-line);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--mk-prose);
+}
+.mk.mk.mk-site .pg-coord-label {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--mk-faint);
+}
+.mk.mk.mk-site .pg-coord-sep {
+  width: 1px;
+  height: 14px;
+  background: var(--mk-line);
+}
+.mk.mk.mk-site .pg-coord-note {
+  font-family: var(--font-body);
+  color: var(--mk-faint);
+}
+/* Below 560px the four tokens stack into a two-column grid so no single value wraps and the
+   separator rules stop landing at the end of a line. Each TechText renders exactly one
+   `<span class="gf-tech">`, which is what this grid targets. */
+@media (max-width: 560px) {
+  .mk.mk.mk-site .pg-coord {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 8px 12px;
+  }
+  .mk.mk.mk-site .pg-coord-sep {
+    display: none;
+  }
+  .mk.mk.mk-site .pg-coord .gf-tech,
+  .mk.mk.mk-site .pg-coord-note {
+    grid-column: 2;
+  }
+}
+
+/* --- 5g. The stats strip under the hero. --- */
+.mk.mk.mk-site .pg-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: clamp(36px, 4.5vw, 64px);
+  background: var(--mk-line); /* the gap IS the rule, so no border needs drawing */
+  border: 1px solid var(--mk-line);
+  border-radius: var(--card-radius);
+  overflow: hidden;
+}
+.mk.mk.mk-site .pg-stat {
+  background: var(--mk-bg);
+  padding: 20px 22px;
+  border: 0;
+}
+.mk.mk.mk-site .pg-stat .pg-micro {
+  color: var(--mk-faint);
+  margin-bottom: 6px;
+}
+
+/* =====================================================================================
+   6. THE SOCIAL-PROOF STRIP
+   =====================================================================================
+   "Pita horizontal berwarna abu-abu sangat muda berisi barisan logo mitra (dijadikan
+   grayscale agar rapi)." The marquee already does the movement; the tint is the brief's. */
+.mk.mk.mk-site .pg-marquee {
+  background: var(--mk-raise);
+  border-top: 1px solid var(--mk-line);
+  border-bottom: 1px solid var(--mk-line);
+  padding-block: 20px;
+}
+.mk.mk.mk-site .pg-marquee-label {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--mk-faint);
+}
+.mk.mk.mk-site .pg-marquee-item {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--mk-prose);
+}
+
+/* =====================================================================================
+   7. THE FEATURE GRID (bento)
+   =====================================================================================
+   "Kartu putih berbingkai garis halus. Setiap kartu menonjolkan 1 fitur... Ikon ... stroke
+   1.5px ... warna Biru GeoFold." Cards are back — but as the brief's flat, hairline-bordered
+   panels, not as the floating glass panels of the retired skin. */
+.mk.mk.mk-site .pg-bento {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 20px;
+}
+.mk.mk.mk-site .pg-cell {
+  grid-column: span 2;
+  background: var(--mk-bg);
+  border: 1px solid var(--mk-line);
+  border-radius: var(--card-radius);
+  padding: 24px;
+  box-shadow: none;
+  transform: none;
+  transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease;
+}
+.mk.mk.mk-site .pg-cell--lead {
+  grid-column: span 4;
+}
+.mk.mk.mk-site .pg-cell:hover {
+  /* The brief's exact hover: "Translasi Y naik 2px dengan bayangan abu-abu super halus". */
+  transform: translateY(-2px);
+  box-shadow: var(--mk-shadow-hover);
+  border-color: var(--mk-green-line);
+}
+.mk.mk.mk-site .pg-cell-n {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  color: var(--mk-green);
+}
+.mk.mk.mk-site .pg-cell .pg-micro {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--mk-green);
+}
+.mk.mk.mk-site .pg-d3 {
+  font-family: var(--gf-display);
+  font-size: clamp(19px, 1.5vw, 22px);
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  color: var(--mk-ink);
+  margin-top: 6px;
+}
+.mk.mk.mk-site .pg-body {
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--mk-prose);
+}
+/* The figures are line drawings in the brand blue. Their own palette is re-pointed rather than
+   each path being rewritten, so a figure added later inherits the skin for free. */
+.mk.mk.mk-site .pg-fig-line {
+  stroke: var(--mk-green);
+}
+.mk.mk.mk-site .pg-fig-soft {
+  stroke: var(--mk-green-line);
+}
+.mk.mk.mk-site .pg-fig-fill {
+  fill: var(--mk-on-green-dim);
+  stroke: var(--mk-green-line);
+}
+.mk.mk.mk-site .pg-fig-label {
+  fill: var(--mk-prose);
+  font-family: var(--font-body);
+}
+.mk.mk.mk-site .pg-fig-accent {
+  fill: var(--mk-marker);
+  stroke: var(--mk-marker);
+}
+
+/* =====================================================================================
+   8. HOW IT WORKS — a numbered line
+   =====================================================================================
+   "Garis proses vertikal (di Mobile) dan horizontal (di Desktop) langkah 1-2-3-4 dengan
+   tipografi besar dan keterangan pendek." The existing scene is a pinned scroll; the brief
+   wants a plain numbered line, so the pin is released and the steps become a four-column row
+   with a connector. */
+.mk.mk.mk-site .pg-scene {
+  display: block;
+  position: static;
+  min-height: 0;
+}
+.mk.mk.mk-site .pg-scene-fixed {
+  position: static;
+  top: auto;
+  margin-bottom: clamp(28px, 3.5vw, 48px);
+}
+.mk.mk.mk-site .pg-scene-steps {
+  display: grid;
+  /* THREE columns for three steps. It was `repeat(4, ...)`, which is the count the brief's
+     template names ("langkah 1-2-3-4") but the content has three — so the fourth column sat
+     empty and the four steps were squeezed into 75% of the row. The grid follows the content,
+     not the template's example. */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  position: relative;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+/* The connector: one rule behind the four numbers. */
+.mk.mk.mk-site .pg-scene-steps::before {
+  content: '';
+  position: absolute;
+  top: 17px;
+  /* The rule runs between the CENTRES of the first and last numbered circles, which at three
+     equal columns sit at 1/6 and 5/6 of the row. */
+  left: 16.67%;
+  right: 16.67%;
+  height: 1px;
+  background: var(--mk-line);
+  z-index: 0;
+}
+.mk.mk.mk-site .pg-step {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  box-shadow: none;
+  transform: none;
+}
+.mk.mk.mk-site .pg-step-n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--mk-green);
+  color: var(--mk-on-green);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+
+/* =====================================================================================
+   9. THE ARGUMENT BAND — now the brief's blue, not a midnight plate
+   =====================================================================================
+   The brief's only full-colour block on the landing page is the pre-footer CTA. This band
+   keeps its place in the argument but takes the same blue, so the page has one strong colour
+   used twice rather than two different darks competing. */
+.mk.mk.mk-site .pg-sec-dark {
+  background: var(--mk-deep);
+  border: 0;
+  border-radius: 0;
+}
+.mk.mk.mk-site .pg-sec-dark::before,
+.mk.mk.mk-site .pg-sec-dark::after {
+  content: none;
+  display: none;
+}
+/* THE INK ON THIS BAND IS SET BY LITERAL, NOT BY TOKEN.
+   `corporate.css` re-points `--mk-muted` and `--mk-prose` to `#FFFFFF` inside the featured
+   pricing card, and a rule that reads a token from inside a re-pointed subtree renders
+   white-on-white. That exact bug shipped once already at 1.06:1. These are literals so the
+   band cannot inherit a token that means something else three sections away. */
+.mk.mk.mk-site .pg-sec-dark .pg-d2,
+.mk.mk.mk-site .pg-sec-dark .pg-quote,
+.mk.mk.mk-site .pg-sec-dark h2,
+.mk.mk.mk-site .pg-sec-dark h3 {
+  color: #FFFFFF;
+  background: none;
+  -webkit-text-fill-color: currentColor;
+}
+.mk.mk.mk-site .pg-sec-dark .pg-body,
+.mk.mk.mk-site .pg-sec-dark .pg-quote-body p,
+.mk.mk.mk-site .pg-sec-dark .pg-lede {
+  color: #DCE8F9;   /* 6.21:1 on the blue */
+}
+.mk.mk.mk-site .pg-sec-dark .pg-quote-body strong,
+.mk.mk.mk-site .pg-sec-dark strong {
+  color: #FFFFFF;
+  font-weight: 600;
+}
+.mk.mk.mk-site .pg-sec-dark .pg-micro,
+.mk.mk.mk-site .pg-sec-dark .pg-coord-label {
+  color: #BBD2F0;   /* 5.21:1 on the blue */
+}
+.mk.mk.mk-site .pg-sec-dark .pg-quote-body {
+  /* The retired skin capped this at 60ch (542px) inside an 828px column and left a 286px
+     hole. The column is the measure now. */
+  max-width: none;
+}
+.mk.mk.mk-site .pg-sec-dark .pg-quote-body p + p {
+  margin-top: 1em;
+}
+
+/* --- 9b. The globe, on the blue band. ---
+   The client: "pada globe sepertinya belum benar benar sempurna dan dot orange hilangkan saja."
+   The dot is gone at the source (SurveyGlobe no longer draws a marker at all). What remains is
+   the sphere: ocean, real coastlines, graticule. Its palette is re-pointed here so it reads as
+   a light instrument on the blue rather than as the dark-ground object it was tuned for. */
+.mk.mk.mk-site .pg-globe-canvas {
+  --globe-accent: #FFC29B;      /* kept defined, but nothing draws with it any more */
+  --globe-line: #9EC0EC;        /* the graticule */
+  --globe-body: rgba(255, 255, 255, .06);
+  --globe-halo: rgba(255, 255, 255, .05);
+  --globe-land: rgba(255, 255, 255, .30);
+  --globe-land-line: #EAF2FD;
+  --globe-pip: rgba(255, 255, 255, .9);
+}
+.mk.mk.mk-site .pg-globe {
+  background: none;
+  border: 0;
+  box-shadow: none;
+}
+.mk.mk.mk-site .pg-globe-cap {
+  color: #DCE8F9;
+  font-family: var(--font-body);
+}
+.mk.mk.mk-site .pg-globe-cap strong {
+  color: #FFFFFF;
+}
+.mk.mk.mk-site .pg-globe-sub {
+  color: #BBD2F0;
+}
+/* The dot that sat in front of the caption. It was orange, and the client asked for orange
+   dots to go. The caption reads fine without a bullet. */
+.mk.mk.mk-site .pg-globe-dot {
+  display: none;
+}
+
+/* =====================================================================================
+   10. PRICING
+   =====================================================================================
+   Two plans side by side. The brief's card recipe: white, hairline, 8px, flat until hover.
+   The featured card is marked with the brand blue rather than with a second shadow, because
+   the brief allows exactly one shadow and it is reserved for hover. */
+.mk.mk.mk-site .pg-price {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  align-items: start;
+}
+.mk.mk.mk-site .pg-price-card {
+  background: var(--mk-bg);
+  border: 1px solid var(--mk-line);
+  border-radius: var(--card-radius);
+  padding: clamp(24px, 3vw, 36px);
+  box-shadow: none;
+  transform: none;
+  transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease;
+}
+.mk.mk.mk-site .pg-price-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--mk-shadow-hover);
+}
+.mk.mk.mk-site .pg-price-card.feat {
+  border-color: var(--mk-green);
+  border-width: 2px;
+}
+/* THE FEATURED CARD'S INK, BY LITERAL — see the note in §9.
+   `corporate.css` re-points `--mk-muted`, `--mk-prose` AND `--mk-on-blue-fill` inside this
+   card, all leftovers from when it was a blue panel. It is white now, so every one of those
+   tokens renders white-on-white. `paper.css` gives its `<small>` the same treatment. Literals
+   are the only thing that survives that, and this exact bug shipped once at 1.06:1. */
+.mk.mk.mk-site .pg-price-card.feat .pg-micro,
+.mk.mk.mk-site .pg-price-card.feat .pg-price-fig,
+.mk.mk.mk-site .pg-price-card.feat .pg-price-fig small,
+.mk.mk.mk-site .pg-price-card.feat .pg-body,
+.mk.mk.mk-site .pg-price-card.feat .pg-price-list li {
+  color: #475569;
+}
+.mk.mk.mk-site .pg-price-card.feat .pg-micro {
+  color: #0246B1;
+}
+.mk.mk.mk-site .pg-price-card.feat .pg-price-fig {
+  color: #0F172A;
+}
+.mk.mk.mk-site .pg-price-card .pg-price-fig {
+  font-family: var(--gf-display);
+  font-size: clamp(30px, 3.4vw, 42px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--mk-ink);
+}
+.mk.mk.mk-site .pg-price-card .pg-price-fig small {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--mk-faint);
+  margin-left: 6px;
+}
+.mk.mk.mk-site .pg-price-list {
+  list-style: none;
+  margin: 20px 0 24px;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.mk.mk.mk-site .pg-price-list li {
+  position: relative;
+  padding-left: 26px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--mk-prose);
+}
+.mk.mk.mk-site .pg-price-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 7px;
+  width: 14px;
+  height: 8px;
+  border-left: 2px solid var(--mk-green);
+  border-bottom: 2px solid var(--mk-green);
+  transform: rotate(-45deg);
+}
+.mk.mk.mk-site .pg-price-note {
+  margin-top: 20px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--mk-faint);
+}
+.mk.mk.mk-site .pg-price-note a {
+  color: var(--mk-green);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+/* The star border is a travelling-light effect from the retired brief. The current brief bans
+   heavy animation, so the wrapper stops painting and the button inside keeps its own skin. */
+.mk.mk.mk-site .pg-price-card.feat > div:last-child > * {
+  border-radius: var(--card-radius);
+}
+
+/* =====================================================================================
+   11. THE PRE-FOOTER — the brief's full-width blue block
+   =====================================================================================
+   "Blok horizontal besar (Full-width) berwarna GeoFold Blue... Terdapat 1 tombol besar di
+   tengah berwarna Oranye." This is the page's one deliberate colour event. */
+.mk.mk.mk-site .pg-close {
+  text-align: center;
+  padding-block: clamp(40px, 5vw, 72px);
+}
+.mk.mk.mk-site .pg-rule {
+  display: none; /* the blue block is its own boundary */
+}
+.mk.mk.mk-site .sg-host {
+  background: var(--mk-deep);
+  border: 0;
+  border-radius: 0;
+  padding-block: clamp(48px, 6vw, 88px);
+}
+.mk.mk.mk-site .sg-host::before,
+.mk.mk.mk-site .sg-host::after {
+  content: none;
+  display: none;
+}
+.mk.mk.mk-site .sg-host .pg-d2,
+.mk.mk.mk-site .sg-host h2 {
+  color: #FFFFFF;
+  background: none;
+  -webkit-text-fill-color: currentColor;
+}
+.mk.mk.mk-site .sg-host .pg-lede {
+  color: #DCE8F9;
+}
+.mk.mk.mk-site .sg-host .pg-btn-ghost {
+  color: #FFFFFF;
+  border-color: rgba(255, 255, 255, .55);
+}
+.mk.mk.mk-site .sg-host .pg-btn-ghost:hover {
+  background: rgba(255, 255, 255, .12);
+  border-color: #FFFFFF;
+}
+
+/* =====================================================================================
+   12. BUTTONS AND CONTROLS
+   =====================================================================================
+   Three roles, per the brief:
+     primary   — the orange conversion CTA, "teks putih" in the brief but dark ink in practice
+                 because white on #FA5F1F is 3.14:1 and fails; #0F172A on it is 5.36:1.
+     outline   — the blue secondary, "Tombol Sekunder (Garis/Outline Biru)".
+     ghost     — a text-level action.
+   All three are 8px, 44px tall, and flat until hover. */
+.mk.mk.mk-site .pg-btn,
+.mk.mk.mk-site .mk-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;             /* the brief's touch-target floor */
+  padding: 11px 22px;
+  border-radius: var(--card-radius);
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color .2s ease, border-color .2s ease, color .2s ease;
+}
+.mk.mk.mk-site .pg-btn-primary,
+.mk.mk.mk-site .mk-btn-primary {
+  background: var(--mk-marker);
+  color: var(--mk-on-marker);   /* 5.36:1 — the brief says white, which measures 3.14:1 */
+  border: 1px solid var(--mk-marker);
+}
+.mk.mk.mk-site .pg-btn-primary:hover,
+.mk.mk.mk-site .mk-btn-primary:hover {
+  background: var(--mk-marker-2);
+  border-color: var(--mk-marker-2);
+  color: var(--mk-on-marker);
+}
+.mk.mk.mk-site .pg-btn-outline,
+.mk.mk.mk-site .mk-btn-outline {
+  background: transparent;
+  color: var(--mk-green);
+  border: 1px solid var(--mk-control-line);
+}
+.mk.mk.mk-site .pg-btn-outline:hover,
+.mk.mk.mk-site .mk-btn-outline:hover {
+  background: var(--mk-raise);
+  border-color: var(--mk-green);
+}
+.mk.mk.mk-site .pg-btn-ghost,
+.mk.mk.mk-site .mk-btn-ghost {
+  background: transparent;
+  color: var(--mk-green);
+  border: 1px solid transparent;
+}
+.mk.mk.mk-site .pg-btn-ghost:hover,
+.mk.mk.mk-site .mk-btn-ghost:hover {
+  background: var(--mk-raise);
+}
+/* Focus is a real ring, not a colour change: on a white page a colour-only focus state is
+   invisible to anyone who is not looking for it. */
+.mk.mk.mk-site a:focus-visible,
+.mk.mk.mk-site button:focus-visible,
+.mk.mk.mk-site input:focus-visible,
+.mk.mk.mk-site [tabindex]:focus-visible {
+  outline: 2px solid var(--mk-green);
+  outline-offset: 2px;
+  border-radius: var(--mk-radius-sm);
+}
+
+/* --- 12b. Forms. "Ketika diklik, batas luar kotak menyala biru tebal." --- */
+.mk.mk.mk-site .mk-input,
+.mk.mk.mk-site input[type='text'],
+.mk.mk.mk-site input[type='email'],
+.mk.mk.mk-site input[type='search'],
+.mk.mk.mk-site textarea,
+.mk.mk.mk-site select {
+  background: var(--mk-bg);
+  color: var(--mk-ink);
+  border: 1px solid var(--mk-control-line);
+  border-radius: var(--card-radius);
+  min-height: 44px;
+  padding: 10px 14px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+.mk.mk.mk-site .mk-input:focus,
+.mk.mk.mk-site input:focus,
+.mk.mk.mk-site textarea:focus,
+.mk.mk.mk-site select:focus {
+  outline: none;
+  border-color: var(--mk-green);
+  box-shadow: 0 0 0 3px rgba(2, 70, 177, .14);
+}
+.mk.mk.mk-site .mk-label {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mk-ink);
+}
+
+/* --- 12c. The language segment and the carousel arrows are controls, so they take the
+   control boundary rather than the hairline. --- */
+.mk.mk.mk-site .mk-lang-seg,
+.mk.mk.mk-site .mk-car-arrow {
+  border: 1px solid var(--mk-control-line);
+  border-radius: var(--mk-radius-sm);
+  color: var(--mk-prose);
+  background: var(--mk-bg);
+  min-height: 44px;
+  min-width: 44px;
+  transition: border-color .2s ease, color .2s ease, background-color .2s ease;
+}
+.mk.mk.mk-site .mk-lang-seg:hover,
+.mk.mk.mk-site .mk-car-arrow:hover {
+  border-color: var(--mk-green);
+  color: var(--mk-green);
+}
+.mk.mk.mk-site .mk-car-dots button {
+  min-width: 44px;
+  min-height: 44px;
+}
+.mk.mk.mk-site .mk-car-dot {
+  background: var(--mk-control-line);
+}
+.mk.mk.mk-site .mk-car-dot[data-active='true'],
+.mk.mk.mk-site .mk-car-dot.on {
+  background: var(--mk-green);
+}
+
+/* =====================================================================================
+   13. THE RESPONSIVE FLOOR
+   =====================================================================================
+   The brief: touch targets at least 44x44, 64px between sections on desktop and 24px on
+   mobile. The collapse order matters — the hero goes to one column, the bento to two, the
+   steps to a vertical line, and the nav to its overlay. */
+@media (max-width: 1000px) {
+  .mk.mk.mk-site .pg-hero-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 36px;
+  }
+  .mk.mk.mk-site .pg-hero-art {
+    order: -1; /* the visual leads on a phone, so the first screen is not all type */
+  }
+  .mk.mk.mk-site .pg-hero-map {
+    max-width: 460px;
+  }
+  .mk.mk.mk-site .pg-bento {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .mk.mk.mk-site .pg-cell,
+  .mk.mk.mk-site .pg-cell--lead {
+    grid-column: span 1;
+  }
+  .mk.mk.mk-site .pg-scene-steps {
+    /* 3 -> 1, never 3 -> 2: two columns for three steps leaves an orphan on its own row, which
+       reads as a mistake rather than as a layout. */
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+  .mk.mk.mk-site .pg-scene-steps::before {
+    display: none; /* the connector is a desktop affordance; once stacked it crosses type */
+  }
+  .mk.mk.mk-site .pg-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 720px) {
+  .mk.mk.mk-site .pg-bento,
+  .mk.mk.mk-site .pg-price,
+  .mk.mk.mk-site .pg-scene-steps {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .mk.mk.mk-site .pg-stats {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .mk.mk.mk-site .pg-hero-map {
+    max-width: 380px;
+  }
+  /* The steps become the brief's vertical line on mobile. */
+  .mk.mk.mk-site .pg-scene-steps {
+    gap: 24px;
+  }
+  .mk.mk.mk-site .pg-hero-cta {
+    /* Full-width buttons on a phone: a 44px target is easy to hit, a 180px one is easier. */
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .mk.mk.mk-site .pg-hero-cta .pg-btn {
+    width: 100%;
+  }
+}
+
+/* =====================================================================================
+   14. MOTION — what survives
+   =====================================================================================
+   The brief: "Semua kode animasi yang membebani CPU (seperti glow atau backdrop-filter blur
+   masif) dihapus mutlak", and the only motion it wants is a hover colour change and an
+   "opacity fade-in 0.2s". So the reveal system is reduced to opacity, and everything the
+   previous skins animated — the glow cursor, the magnetic buttons, the 3D tilt, the
+   spotlight, the marquee's own speed-up, the scroll-scrubbed scene — is neutralised here.
+   The elements stay in the tree; only their transforms and filters are pinned. */
+.mk.mk.mk-site [data-anim],
+.mk.mk.mk-site [data-anim] > * {
+  opacity: 1 !important;      /* a reveal that never fires must not leave content hidden */
+  transform: none !important;
+  filter: none !important;
+}
+.mk.mk.mk-site [data-parallax],
+.mk.mk.mk-site [data-tilt],
+.mk.mk.mk-site [data-magnetic],
+.mk.mk.mk-site [data-spotlight] {
+  transform: none !important;
+}
+/* The spotlight and glow layers are pseudo-elements on the cards. Switched off rather than
+   hidden, so they cost nothing to composite. */
+.mk.mk.mk-site [data-spotlight]::before,
+.mk.mk.mk-site [data-spotlight]::after,
+.mk.mk.mk-site [data-glow-zone]::before,
+.mk.mk.mk-site [data-glow-zone]::after {
+  content: none;
+  display: none;
+}
+.mk.mk.mk-site .pg-marquee-scroll {
+  /* The strip keeps its slow loop — it is the one moving thing on the page and it carries the
+     audience list — but it never speeds up on hover. */
+  animation-duration: 40s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mk.mk.mk-site *,
+  .mk.mk.mk-site *::before,
+  .mk.mk.mk-site *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+  .mk.mk.mk-site .pg-marquee-scroll {
+    animation: none !important;
+  }
+}
+
+/* =====================================================================================
+   15. THE FOOTER
+   =====================================================================================
+   "Background Abu-abu Sangat Terang (#F1F5F9)... Grid (Desktop): 4 Kolom yang rapi...
+   Grid (Mobile): susunan vertikal 1 kolom, diselaraskan rata kiri." */
+.mk.mk.mk-site .mk-footer {
+  background: var(--mk-sand);
+  border-top: 1px solid var(--mk-line);
+  color: var(--mk-prose);
+}
+.mk.mk.mk-site .mk-footer-main {
+  display: grid;
+  grid-template-columns: 1.4fr repeat(4, minmax(0, 1fr));
+  gap: clamp(24px, 3vw, 48px);
+  align-items: start;
+}
+.mk.mk.mk-site .mk-footer-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-family: var(--font-body);
+  font-size: 14px;
+}
+.mk.mk.mk-site .mk-footer-col > span {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--mk-faint);
+  margin-bottom: 2px;
+}
+.mk.mk.mk-site .mk-footer-col a {
+  color: var(--mk-prose);
+  text-decoration: none;
+  /* 44px of tap height without 44px of visual gap: the padding is what a thumb hits. */
+  padding-block: 4px;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  transition: color .2s ease;
+}
+.mk.mk.mk-site .mk-footer-col a:hover {
+  color: var(--mk-green);
+}
+.mk.mk.mk-site .mk-footer-blurb {
+  display: inline-block;
+  margin-top: 12px;
+  color: var(--mk-prose);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.6;
+  text-decoration: none;
+  max-width: 34ch;
+}
+.mk.mk.mk-site .mk-footer-blurb:hover {
+  color: var(--mk-green);
+}
+.mk.mk.mk-site .mk-seal {
+  background: var(--mk-bg);
+  border: 1px solid var(--mk-line);
+  border-radius: var(--card-radius);
+  padding: 18px 20px;
+}
+.mk.mk.mk-site .mk-seal-heading {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--mk-faint);
+}
+.mk.mk.mk-site .mk-seal-entity {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--mk-ink);
+  margin-top: 6px;
+}
+.mk.mk.mk-site .mk-seal-scale,
+.mk.mk.mk-site .mk-seal-kbli-label {
+  color: var(--mk-faint);
+}
+.mk.mk.mk-site .mk-seal-rows {
+  margin: 14px 0 0;
+  display: grid;
+  gap: 8px;
+}
+.mk.mk.mk-site .mk-seal-rows dt {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--mk-faint);
+}
+.mk.mk.mk-site .mk-seal-rows dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--mk-ink);
+}
+.mk.mk.mk-site .mk-seal-oss {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  color: var(--mk-green);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  min-height: 44px;
+}
+.mk.mk.mk-site .mk-seal-oss:hover {
+  text-decoration: underline;
+}
+.mk.mk.mk-site .mk-seal-oss-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 7px;
+  border: 1px solid var(--mk-control-line);
+  border-radius: var(--mk-radius-sm);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  color: var(--mk-prose);
+}
+.mk.mk.mk-site .mk-footer-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  align-items: center;
+  margin-top: clamp(28px, 3.5vw, 44px);
+  padding-top: 20px;
+  border-top: 1px solid var(--mk-line);
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--mk-faint);
+}
+.mk.mk.mk-site .mk-footer-bar a {
+  color: var(--mk-prose);
+  text-decoration: none;
+  padding-block: 4px;
+}
+.mk.mk.mk-site .mk-footer-bar a:hover {
+  color: var(--mk-green);
+}
+
+@media (max-width: 900px) {
+  .mk.mk.mk-site .mk-footer-main {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .mk.mk.mk-site .mk-footer-brand-block {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 620px) {
+  .mk.mk.mk-site .mk-footer-main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* The brief: "diselaraskan rata kiri". The brand block is the only centred thing on the
+     page and it is centred by an inherited rule, so it is pinned here. */
+  .mk.mk.mk-site .mk-footer-brand,
+  .mk.mk.mk-site .mk-footer-blurb {
+    text-align: left;
+    align-items: flex-start;
+  }
+}
+
+/* =====================================================================================
+   16. THE OTHER PAGES
+   =====================================================================================
+   The same brief governs /pricing, /product, /faq, /contact, /about, /download, /support,
+   /terms, /privacy and /refund-policy. They share the section and card classes, so most of
+   this file already covers them; these are the few elements only they have. */
+.mk.mk.mk-site .mk-eyebrow,
+.mk.mk.mk-site .pg-micro {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--mk-faint);
+  /* THE EYEBROW'S OWN BACKGROUND IS REMOVED, NOT RE-INKED.
+     `marketing.css` gives `.mk-eyebrow` a `--mk-sand` background, which in the previous skin
+     was a dark blue — so re-inking its text to the brand blue produced blue-on-dark-blue at
+     1.52:1. On this skin the chip is redundant: the kicker is already distinguished by its
+     size, weight and letter-spacing. Removing the fill removes the whole failure mode. */
+  background: none;
+  border: 0;
+  padding: 0;
+}
+.mk.mk.mk-site .pg-micro.accent,
+.mk.mk.mk-site .mk-eyebrow.accent {
+  color: var(--mk-green);
+}
+.mk.mk.mk-site .mk-h-title,
+.mk.mk.mk-site .mk-h,
+.mk.mk.mk-site .pg-d2 {
+  font-family: var(--gf-display);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.12;
+  color: var(--mk-ink);
+  background: none;
+  -webkit-text-fill-color: currentColor;
+}
+.mk.mk.mk-site .pg-d2 {
+  font-size: clamp(26px, 3.2vw, 40px);
+  text-wrap: balance;
+}
+.mk.mk.mk-site .mk-h-lede,
+.mk.mk.mk-site .pg-head-lede {
+  font-family: var(--font-body);
+  color: var(--mk-prose);
+  max-width: 62ch;
+}
+/* --- 16b. The stage and record rows on /product. --- */
+.mk.mk.mk-site .mk-stage,
+.mk.mk.mk-site .mk-rec,
+.mk.mk.mk-site .mk-row,
+.mk.mk.mk-site .mk-card-foot,
+.mk.mk.mk-site .mk-rows {
+  border-color: var(--mk-line);
+}
+.mk.mk.mk-site .mk-stage-num {
+  font-family: var(--gf-display);
+  font-weight: 700;
+  color: var(--mk-green);
+}
+.mk.mk.mk-site .mk-stage-device,
+.mk.mk.mk-site .mk-phone-frame {
+  border-radius: var(--card-radius);
+}
+/* --- 16c. FAQ. --- */
+.mk.mk.mk-site .mk-faq-item {
+  background: var(--mk-bg);
+  border: 1px solid var(--mk-line);
+  border-radius: var(--card-radius);
+  box-shadow: none;
+}
+.mk.mk.mk-site .mk-faq-q,
+.mk.mk.mk-site .mk-faq-btn {
+  font-family: var(--gf-display);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--mk-ink);
+  min-height: 44px;
+  transition: color .2s ease;
+}
+.mk.mk.mk-site .mk-faq-btn:hover {
+  color: var(--mk-green);
+}
+.mk.mk.mk-site .mk-faq-a,
+.mk.mk.mk-site .mk-faq-panel {
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--mk-prose);
+}
+.mk.mk.mk-site .mk-faq-mark {
+  color: var(--mk-green);
+}
+/* --- 16d. Tables and documents. --- */
+.mk.mk.mk-site .mk-ledger-table th,
+.mk.mk.mk-site .mk-compare th {
+  background: var(--mk-raise);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--mk-prose);
+}
+.mk.mk.mk-site .mk-ledger-table td,
+.mk.mk.mk-site .mk-compare td {
+  border-color: var(--mk-line);
+  font-family: var(--font-body);
+  color: var(--mk-prose);
+}
+.mk.mk.mk-site .mk-doc {
+  font-family: var(--font-body);
+  color: var(--mk-prose);
+}
+.mk.mk.mk-site .mk-doc h2,
+.mk.mk.mk-site .mk-doc h3 {
+  font-family: var(--gf-display);
+  color: var(--mk-ink);
+}
+.mk.mk.mk-site .mk-doc a {
+  color: var(--mk-green);
+}
+/* --- 16e. The account page's panels. --- */
+.mk.mk.mk-site .mk-acct-panel,
+.mk.mk.mk-site .mk-acctpage-callout,
+.mk.mk.mk-site .mk-callout {
+  background: var(--mk-bg);
+  border: 1px solid var(--mk-line);
+  border-radius: var(--card-radius);
+  box-shadow: none;
+}
+.mk.mk.mk-site .mk-acct-row {
+  border-color: var(--mk-line);
+}
+.mk.mk.mk-site .mk-acct-row-label,
+.mk.mk.mk-site .mk-acct-cap {
+  color: var(--mk-faint);
+}
+.mk.mk.mk-site .mk-acct-row-bot {
+  color: var(--mk-ink);
+}
+
+/* =====================================================================================
+   17. THE LAST WORD — the band rules, AFTER everything that could outrank them
+   =====================================================================================
+   THIS SECTION EXISTS BECAUSE OF A SHIPPED BUG. In the previous skin, the heading rules and
+   the dark-band rules sat at EQUAL specificity (0,4,1) and the heading rules came later in the
+   file — so light ink won on the dark band and the text rendered at 1.01:1, invisible rather
+   than merely low-contrast. Equal specificity is decided by source order, so every rule that
+   depends on WHICH GROUND an element sits on lives here, last, naming the same elements the
+   earlier rules name.
+
+   EVERY VALUE BELOW WAS FOUND BY `verify:contrast`, which measures each of ~800 text elements
+   against the colour actually painted behind it. It reported 71 failures in six patterns on
+   the first run of this skin, and all six share ONE root cause:
+
+   **THE DARK-BAND TOKENS ARE READ ON LIGHT GROUND.**
+   `corporate.css` and `paper.css` ink the footer, the seal and the nav's portal link with
+   `--mk-deep-prose` (#DCE8F9) and `--mk-deep-ink` (#FFFFFF) — correct when those sat on a
+   midnight plate, and invisible now that the whole page is white or #F1F5F9. Measured:
+   #DCE8F9 on #F1F5F9 is **1.13:1**, and #FFFFFF on #FFFFFF is **1.00:1**.
+   Re-pointing the tokens is not an option: `paper.css` uses the same names on the bands that
+   ARE still dark, and one token cannot be two colours. So the corrections are literals, on the
+   specific elements, here at the end of the file.
+   ===================================================================================== */
+
+/* --- 16f. THE RETIRED REGISTRATION MARKS.
+   `blueprint.css:327` paints eight linear-gradient "corner arms" on `.pg-cell-art::after` and
+   `.pg-row-art::after` — a technical-drawing motif from the brief that has since been replaced.
+   They are drawn as `background-image`, so a check that reads `borderWidth` reports 0 while the
+   marks are fully painted (this project has hit that exact trap before). The audit found 8 arms
+   still painted on 4 cells. The brief's card recipe is a hairline border and nothing else, so
+   both pseudo-elements are switched off by name rather than by hoping the new layer outranks
+   them. */
+.mk.mk.mk-site .pg-cell-art::after,
+.mk.mk.mk-site .pg-row-art::after,
+.mk.mk.mk-site .pg-cell::after,
+.mk.mk.mk-site .pg-row-art::before {
+  content: none;
+  display: none;
+  background-image: none;
+}
+/* The figure frames themselves: flat, no fill, no frame — the drawings sit on the card. */
+.mk.mk.mk-site .pg-cell-art {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* --- 17a. The footer's legal line and address. --- */
+.mk.mk.mk-site .mk-footer .mk-footer-copy,
+.mk.mk.mk-site .mk-footer .mk-footer-addr {
+  color: #475569;   /* 6.92:1 on the footer's #F1F5F9 */
+}
+.mk.mk.mk-site .mk-footer .mk-footer-bar a {
+  color: #0246B1;   /* 7.02:1 on #F1F5F9 */
+}
+/* --- 17b. The seal's own headings and scale note. --- */
+.mk.mk.mk-site .mk-footer .mk-seal-heading,
+.mk.mk.mk-site .mk-footer .mk-seal-scale,
+.mk.mk.mk-site .mk-footer .mk-seal-kbli-label {
+  color: #5E6E85;
+}
+/* The entity line's <strong> is `--mk-deep-ink` = #FFFFFF in corporate.css: invisible. */
+.mk.mk.mk-site .mk-footer .mk-seal-entity strong,
+.mk.mk.mk-site .mk-footer .mk-seal-entity {
+  color: #0F172A;   /* 16.30:1 on #F1F5F9 */
+}
+/* --- 17c. The nav's portal link. `paper.css` gives it a --mk-ink FILL at the ink level, which
+   is now the light slate; on the blue hover it measured 1.10:1. The fill is the brand blue and
+   the label is white, which is 8.35:1. --- */
+.mk.mk.mk-site .mk-nav-tools .mk-portal,
+.mk.mk.mk-site .mk-portal {
+  background: #0246B1;
+  color: #FFFFFF;
+  border-color: #0246B1;
+}
+.mk.mk.mk-site .mk-nav-tools .mk-portal:hover,
+.mk.mk.mk-site .mk-portal:hover {
+  background: #013A8F;
+  border-color: #013A8F;
+  color: #FFFFFF;
+}
+/* --- 17d. The eyebrow/kicker on a light ground: `paper.css` inks `.mk-kick.on-dark` with
+   `--mk-deep-accent` (#FFC29B), a pale peach that is 1.5:1 on white. On this skin there is no
+   dark ground for it to be on, so it takes the brand blue like every other kicker. --- */
+.mk.mk.mk-site .mk-kick.on-dark,
+.mk.mk.mk-site .mk-kicker.on-dark,
+.mk.mk.mk-site .mk-kick,
+.mk.mk.mk-site .mk-kicker {
+  color: #0246B1;   /* 7.67:1 on white */
+}
+/* --- 17e. The stat values under the hero. `corporate.css` and `blueprint.css` both ink
+   `.pg-hero .pg-stat dd` with `--mk-deep-ink` (#FFFFFF) and its <small> with `--mk-deep-prose`,
+   because the hero used to be a dark plate. It is white now, so both were invisible:
+   measured #FFFFFF on #FFFFFF = 1.00:1. --- */
+.mk.mk.mk-site .pg-hero .pg-stat dd {
+  color: #0F172A;   /* 17.85:1 on white */
+}
+.mk.mk.mk-site .pg-hero .pg-stat dd small {
+  color: #5E6E85;
+}
+/* --- 17f. The pricing card's own number. `paper.css` gives `.mk-price-num` and its <small> the
+   `--mk-on-blue-fill` white, left over from when the featured card was a blue panel. --- */
+.mk.mk.mk-site .mk-price-card .mk-price-num,
+.mk.mk.mk-site .mk-price-card .mk-price-num small {
+  color: #0F172A;
+}
+.mk.mk.mk-site .mk-price-card .mk-price-num small {
+  color: #5E6E85;
+}
+/* --- 17g. The seal's <strong> and the "GEOFOLD" entity appear in more than one place, and the
+   strong rule in §9 only covers the bands. Named again here so no light-ground copy of it is
+   left white. --- */
+.mk.mk.mk-site .mk-seal-entity strong {
+  color: #0F172A;
+}
+/* --- 17h. `.mk-rec-unit` and the other data micro-labels on /product. --- */
+.mk.mk.mk-site .mk-rec-unit,
+.mk.mk.mk-site .mk-facts dt,
+.mk.mk.mk-site .mk-row dt,
+.mk.mk.mk-site .mk-doc-updated,
+.mk.mk.mk-site .mk-price-name,
+.mk.mk.mk-site .mk-h-eyebrow {
+  color: #5E6E85;
+}
+.mk.mk.mk-site .mk-price-card.feat .mk-price-name,
+.mk.mk.mk-site .mk-price-card.feat .mk-price-name strong {
+  color: #0246B1;   /* the featured card's plan name, 7.67:1 on white */
+}
+.mk.mk.mk-site .mk-card-foot,
+.mk.mk.mk-site .mk-card-foot a {
+  color: #5E6E85;
+}
+/* --- 17i. THE LAST SEVEN, AND THEY NEEDED ONE MORE SPECIFICITY LEVEL.
+   `/pricing` uses the OLDER `mk-` markup while the landing page uses `pg-`, and its featured
+   card's body copy is a bare `<p>` with NO CLASS AT ALL — so there is nothing to hook on except
+   the element. `blueprint.css:847` inked it at `.mk.mk .mk-price-card.mk-price-card.feat p`
+   = (0,5,1), which outranks every rule above this one. The doubling of `mk-price-card` here is
+   the same trick that rule uses, taken one level further: (0,6,1). Measured on the run before
+   this rule: `For teams working in the field.` rendered #FFFFFF on #FFFFFF = 1.00:1. --- */
+.mk.mk.mk-site .mk-price-card.mk-price-card.feat p,
+.mk.mk.mk-site .pg-price-card.pg-price-card.feat p {
+  color: #475569;   /* 7.58:1 on white */
+}
+.mk.mk.mk-site .mk-price-card.mk-price-card.feat p strong,
+.mk.mk.mk-site .pg-price-card.pg-price-card.feat p strong {
+  color: #0F172A;
+}
+.mk.mk.mk-site .mk-price-card.mk-price-card.feat .mk-plan-list li,
+.mk.mk.mk-site .mk-price-card.mk-price-card.feat ul li,
+.mk.mk.mk-site .pg-price-card.pg-price-card.feat ul li {
+  color: #475569;
+}
+/* THE FEATURE LIST, AND IT IS TWO TRAPS AT ONCE — both of which this project has hit before.
+   The `<li>` is inside `ul.mk-plist.on-dark`. `.on-dark` is a leftover from when the featured
+   card was a blue panel, and `blueprint.css` still has a rule for it:
+       .mk.mk .mk-price-card.mk-price-card.feat .mk-plist.on-dark li { color: var(--mk-prose) }
+   which is (0,7,1) — one class more than the (0,6,2) rule just above, so that rule loses and
+   this one has to name `.mk-plist.on-dark` to beat it at (0,8,1).
+   AND THE TOKEN IT READS IS POISONED: `corporate.css` re-points `--mk-prose: #FFFFFF` inside
+   `.mk .mk-price-card.feat`, so even though `--mk-prose` is the correct slate everywhere else,
+   inside this card it is white. That is why the fix is a LITERAL and not a token — the second
+   time this exact pairing has cost a round on this project. */
+.mk.mk.mk-site .mk-price-card.mk-price-card.feat .mk-plist.on-dark li,
+.mk.mk.mk-site .mk-price-card.mk-price-card.feat .mk-plist li,
+.mk.mk.mk-site .pg-price-card.pg-price-card.feat .mk-plist.on-dark li,
+.mk.mk.mk-site .pg-price-card.pg-price-card.feat .pg-price-list li {
+  color: #475569;   /* 7.58:1 on white — a literal, deliberately not var(--mk-prose) */
+}
+/* The tick marks in front of each item carry the same leftover ink. */
+.mk.mk.mk-site .mk-price-card.mk-price-card.feat .mk-plist.on-dark li::before,
+.mk.mk.mk-site .mk-price-card.mk-price-card.feat .mk-plist li::before {
+  color: #0246B1;
+  border-color: #0246B1;
+}
+.mk.mk.mk-site .pg-sec-dark .pg-d2,
+.mk.mk.mk-site .pg-sec-dark .pg-quote,
+.mk.mk.mk-site .pg-sec-dark .mk-h,
+.mk.mk.mk-site .pg-sec-dark .mk-h-title,
+.mk.mk.mk-site .pg-sec-dark h2,
+.mk.mk.mk-site .pg-sec-dark h3,
+.mk.mk.mk-site .sg-host .pg-d2,
+.mk.mk.mk-site .sg-host .mk-h,
+.mk.mk.mk-site .sg-host h2,
+.mk.mk.mk-site .sg-host h3 {
+  color: #FFFFFF;
+  background: none;
+  -webkit-text-fill-color: currentColor;
+}
+.mk.mk.mk-site .pg-sec-dark .pg-body,
+.mk.mk.mk-site .pg-sec-dark p,
+.mk.mk.mk-site .pg-sec-dark .mk-body,
+.mk.mk.mk-site .sg-host .pg-body,
+.mk.mk.mk-site .sg-host .pg-lede,
+.mk.mk.mk-site .sg-host p {
+  color: #DCE8F9;
+}
+.mk.mk.mk-site .pg-sec-dark .pg-micro,
+.mk.mk.mk-site .pg-sec-dark .mk-eyebrow,
+.mk.mk.mk-site .sg-host .pg-micro {
+  color: #BBD2F0;
+}
+.mk.mk.mk-site .pg-sec-dark strong,
+.mk.mk.mk-site .sg-host strong {
+  color: #FFFFFF;
+}

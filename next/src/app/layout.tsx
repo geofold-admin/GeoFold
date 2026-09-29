@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Archivo, Barlow, Barlow_Condensed, Inter, Inter_Tight, Space_Mono } from 'next/font/google'
+import { Archivo, Barlow, Barlow_Condensed, Inter, Inter_Tight, Plus_Jakarta_Sans, Space_Mono } from 'next/font/google'
 import './globals.css'
 import { Providers } from './providers'
 import { BUSINESS } from '@/lib/business'
@@ -57,6 +57,22 @@ const inter = Inter({
   weight: ['400', '500', '600'],
 })
 
+// THE CURRENT MARKETING BRIEF'S TWO FACES (Corporate Minimalist, 2026-09-29).
+//
+// The client's specification names exactly two: Plus Jakarta Sans for headings, Inter for body
+// and data. Inter is already loaded above, so only this one is new.
+//
+// Plus Jakarta Sans is a geometric sans with a taller x-height and more open apertures than the
+// Archivo it displaces, which is what the brief is buying: at 56px ExtraBold it reads as an
+// institution rather than as a poster. The weights are the ones the brief's scale needs —
+// 600 for section heads, 700 for the H1 and the price numerals, 800 reserved for the H1 so the
+// ExtraBold it asks for is a real weight rather than a synthesised bold.
+const jakarta = Plus_Jakarta_Sans({
+  variable: '--font-jakarta',
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+})
+
 export const metadata: Metadata = {
   /* THE BASE IS REQUIRED, and its absence was silent. Without it Next.js writes `og:image` as a
      relative path, and every social crawler drops the preview card — no error, no warning, just a
@@ -92,7 +108,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html
       lang="en"
-      className={`${archivo.variable} ${barlow.variable} ${barlowCondensed.variable} ${spaceMono.variable} ${interTight.variable} ${inter.variable}`}
+      className={`${archivo.variable} ${barlow.variable} ${barlowCondensed.variable} ${spaceMono.variable} ${interTight.variable} ${inter.variable} ${jakarta.variable}`}
       suppressHydrationWarning
     >
       {/* NO THEME SCRIPT, and no `data-theme` attribute. The site ships one theme now, so there is

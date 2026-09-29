@@ -28,18 +28,21 @@ import '@/styles/blueprint.css'
 // The in-page checkout. Loaded here as well as in the app chrome because the pricing page is
 // reachable signed-out, and the modal opens on top of the marketing site.
 import '@/styles/checkout.css'
-// ★ THE SITE LAYER — 2026-09-29. The client's correction: "terlalu berlebihan, saya mau di buat
-// profesional simple saja, jadi section tidak berbentuk card lagi tapi section pada umumnya dan
-// latar belakang hapus saja ... gunakan color palet normal nya saja".
+// ★ THE MINIMAL LAYER — 2026-09-29, the current brief. `GEOFOLD_WEBSITE_REDESIGN_CONCEPT.md`
+// plus the client's follow-up: "pastikan design lama kamu ganti dan hapus dengan design yang
+// baru yaa ... pada globe ... dot orange hilangkan saja ... di hero section berikan gambar peta
+// 3D ikuti refrensi foto yang saya berikan."
 //
-// So this is the Blueprint palette (GEOFOLD Blue #014AB5, GEOFOLD Orange #F35D19, white paper)
-// applied to PLAIN SECTIONS: no card pseudo-elements, no animated WebGL ground, no glow cursor,
-// no gradient headings. See the file header for the full list of what it retires and why.
+// Corporate Minimalist: #FFFFFF ground, GeoFold Blue #0246B1, orange #FA5F1F reserved for the
+// conversion CTA, Plus Jakarta Sans headings over Inter body, 8px everywhere, flat with a
+// hairline until hovered, no heavy motion.
 //
-// It replaces `neotopography.css` (the dark Cyber-Cartography skin), which is no longer imported.
-// That file is still on disk and still self-consistent: swapping this one line back restores the
-// dark design in full, which is the same switch discipline every skin before it has used.
-import '@/styles/site.css'
+// THE OLD DESIGN IS DELETED, NOT LAYERED OVER. This round the client asked for the previous
+// skin to be *removed*, so `site.css` and `neotopography.css` are gone from disk. The four
+// layers above stay because they are not mine to delete: they carry the app chrome's tokens
+// and the in-page checkout, and the brief requires the dashboard to be untouched. Every rule
+// in minimal.css is scoped to `.mk.mk.mk-site`, which only this layout carries.
+import '@/styles/minimal.css'
 import { ADDRESS_ONE_LINE, BUSINESS, LEGAL, OPERATOR } from '@/lib/business'
 import { chrome } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'
@@ -125,9 +128,10 @@ export default async function MarketingLayout({ children }: { children: ReactNod
           client asked for it directly: "latar belakang hapus saja ... tidak ada latar belakang
           bergerak di namis lagi". The page is now one flat ground.
 
-          The component and its stylesheet are still on disk, and the hero keeps a static
-          graticule drawn in CSS (see site.css section 4) so the page still reads as a survey
-          document rather than as blank paper. Restoring the field is putting this line back. */}
+          The component and its stylesheet are still on disk. The hero no longer draws a
+          graticule either: this round's brief is a clean white page, and the 3D terrain map
+          carries the surveying idea instead of a background texture. Restoring the field is
+          putting this line back. */}
       {/* <SiteGround /> */}
       {/* The motion system, mounted once for the whole marketing site. It was inside the landing
           page, which meant every effect it owns existed on `/` and nowhere else: the other ten
