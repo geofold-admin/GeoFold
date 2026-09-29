@@ -2981,11 +2981,27 @@
 .mk.mk.mk-site .tg-panel:focus-visible {
   box-shadow: 0 0 0 2px var(--tg-accent), 0 0 0 4px var(--mk-bg);
 }
+/* THE HOVER IS AN AFFORDANCE, AND THE BUILT PAGE SHOWED IT WAS MISSING.
+   The collapsed panels are clickable and keyboard-focusable but carried no visual cue that they
+   are — vision read the row as "five images, one bigger" rather than as a control.
+
+   THE COLOUR HALF OF IT LIVES IN THE COMPONENT, NOT HERE, AND THAT IS DELIBERATE. GSAP writes
+   `--tg-gray` and `--tg-dim` to the media as inline styles on every layout change, and an inline
+   style beats any stylesheet rule — a `:hover { --tg-gray: 0.5 }` here would silently do nothing.
+   So the tween carries the hover value (see `isHovered` in TerrainGallery.tsx) and CSS only does
+   the parts GSAP does not own: the border tint and the lift. */
+.mk.mk.mk-site .tg-panel:not(.is-active):hover {
+  border-color: color-mix(in srgb, var(--tg-accent) 55%, transparent);
+}
+.mk.mk.mk-site .tg-panel:not(.is-active):hover .tg-frame {
+  transform: translateY(-6px);
+}
 .mk.mk.mk-site .tg-frame {
   position: absolute;
   inset: 0;
   overflow: hidden;
   border-radius: inherit;
+  transition: transform 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 /* THE MEDIA IS THE PANEL'S OWN BOX PLUS A MARGIN, not a fixed width shared by every panel.
    See the note in TerrainGallery.tsx: sizing it to the EXPANDED panel left four collapsed panels
@@ -3001,6 +3017,12 @@
   left: -45px;
   right: -45px;
   filter: grayscale(var(--tg-gray));
+  /* NO `transition: filter` HERE, DELIBERATELY. GSAP animates --tg-gray and --tg-dim as numbers
+     (see the applyLayout timeline in TerrainGallery.tsx), and a CSS transition on the same
+     property would run a second, slower interpolation on top of it — the hover would lag behind
+     the click by the transition's duration and the two would fight on rapid pointer moves. The
+     hover's own --tg-gray / --tg-dim change is a discrete state change and is meant to be
+     instant; the smooth version is the one GSAP writes. */
   will-change: transform, filter;
 }
 .mk.mk.mk-site .tg-media img {

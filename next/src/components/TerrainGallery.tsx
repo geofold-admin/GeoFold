@@ -97,6 +97,14 @@ export function TerrainGallery({
   const count = panels.length
   const [active, setActive] = useState(Math.min(Math.max(defaultIndex, 0), Math.max(count - 1, 0)))
 
+  /* THE HOVER IS TRACKED IN STATE, NOT ONLY IN CSS, AND THAT IS A FIX.
+     GSAP writes `--tg-gray` and `--tg-dim` to the media as INLINE styles on every layout change
+     (see applyLayout below). An inline style beats a stylesheet rule, so a `:hover { --tg-gray }`
+     in minimal.css could never win — the hover would silently do nothing to the media and the
+     built page would look exactly as before. Tracking the hovered index here lets the tween carry
+     the hover value, so the CSS variables stay GSAP's to own. */
+  const [hovered, setHovered] = useState<number | null>(null)
+
   /* THE LAYOUT IS ONE TIMELINE FOR ALL PANELS, which is what the original does and what keeps
      them in step. Per-panel tweens would each get their own start time and the row would ripple
      out of alignment on a fast pointer. */
@@ -136,12 +144,17 @@ export function TerrainGallery({
              the margin means every panel moves by the same amount of available slack. */
           const drift = Math.max(-1.5, Math.min(1.5, active - i))
           const shift = drift * parallax * mediaMargin * 0.5
+          /* The hover lifts the panel out of the grey: a collapsed panel under the pointer reads
+             as the next thing the reader can look at, which is the affordance the built page was
+             missing. It only applies to non-active panels, so it cannot compete with the active
+             panel's own colour. */
+          const isHovered = hovered === i && !isActive
           tl.to(
             media,
             {
               x: isActive ? 0 : shift,
-              '--tg-gray': isActive ? 0 : 1,
-              '--tg-dim': isActive ? 0 : 0.35,
+              '--tg-gray': isActive || isHovered ? 0 : 1,
+              '--tg-dim': isActive ? 0 : isHovered ? 0.12 : 0.35,
               duration: dur,
               ease,
             },
@@ -167,7 +180,7 @@ export function TerrainGallery({
 
       tlRef.current = tl
     },
-    [active, count, expandRatio, duration, ease, tilt, parallax, stagger],
+    [active, hovered, count, expandRatio, duration, ease, tilt, parallax, stagger],
   )
 
   /* ==========================================================================================
@@ -219,9 +232,11 @@ export function TerrainGallery({
             key={p.id}
             ref={(el) => { panelRefs.current[i] = el }}
             className={`tg-panel${isActive ? ' is-active' : ''}`}
-            onMouseEnter={() => { if (trigger === 'hover') setActive(i) }}
+            onMouseEnter={() => { setHovered(i); if (trigger === 'hover') setActive(i) }}
+            onMouseLeave={() => setHovered((h) => (h === i ? null : h))}
             onClick={() => { if (i !== active) setActive(i) }}
-            onFocus={() => setActive(i)}
+            onFocus={() => { setHovered(i); setActive(i) }}
+            onBlur={() => setHovered((h) => (h === i ? null : h))}
             onKeyDown={(e) => onKeyDown(i, e)}
             role="listitem"
             tabIndex={0}

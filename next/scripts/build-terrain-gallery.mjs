@@ -129,7 +129,24 @@ const ZHI = Number(process.env.TERRAIN_ZHI ?? 1650)
    Kept identical to build-terrain.mjs on purpose. A second, prettier ramp for the gallery would
    make the two surfaces look like two products, and the client's brief is one identity.
    ========================================================================================== */
-const CANVAS = { w: 900, h: 1100 }
+/* THE CANVAS ASPECT IS THE ACTIVE PANEL'S ASPECT, AND THAT IS A MEASURED FIX.
+
+   The first version rendered 900x1100 — portrait — while the terrain block is landscape
+   (766x578 world units, 1.33:1). The block therefore filled only 57% of the frame's height, and
+   the alpha coverage measured 30% of the frame: rows 28..77%, cols 4..96%.
+
+   That was invisible in the expanded panel, which is 645x460 (1.40:1): object-fit: cover scaled
+   the source to 645x789 and showed rows 21..79% — which happens to be almost exactly the block.
+   THE COLLAPSED PANELS GOT THE OTHER SIDE OF THAT COIN. At 149x463 they show 100% of the height,
+   so 43% of every collapsed panel was empty navy above and below the block, and the painted
+   median luminance measured 23.1 — the panel's own background colour (#0A192F is L 23.4). Half of
+   each collapsed panel was literally nothing.
+
+   Rendering at 1400x1000 (1.40:1, the active panel's ratio) with the same 4% pad makes the block
+   fill ~87% of the width and ~92% of the height, so every crop of it lands on terrain. The
+   collapsed panel then shows a 23%-wide vertical slice of the block at full height instead of a
+   narrow slice surrounded by empty space. */
+const CANVAS = { w: 1400, h: 1000 }
 const SS = 2
 const SY = 0.5
 const RELIEF_FRACTION = 0.42
