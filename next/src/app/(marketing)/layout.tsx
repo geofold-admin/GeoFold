@@ -28,25 +28,27 @@ import '@/styles/blueprint.css'
 // The in-page checkout. Loaded here as well as in the app chrome because the pricing page is
 // reachable signed-out, and the modal opens on top of the marketing site.
 import '@/styles/checkout.css'
-// ★ THE NEOTOPOGRAPHY LAYER — 2026-09-29. The client's GEOFOLD_WEBSITE_REDESIGN_CONCEPT.md:
-// Deep Space ground, frosted glass surfaces, fluid 20px/50px corners, and the three AI-driven
-// keyframes (cyberBreathe, gradientShift) on the hero, the bento grid and the pricing cards.
+// ★ THE SITE LAYER — 2026-09-29. The client's correction: "terlalu berlebihan, saya mau di buat
+// profesional simple saja, jadi section tidak berbentuk card lagi tapi section pada umumnya dan
+// latar belakang hapus saja ... gunakan color palet normal nya saja".
 //
-// Loaded last, as the brief specifies, so it re-points the token layer over every skin above
-// it. This supersedes blueprint.css the same way that superseded corporate.css: this one line
-// is the whole switch, and commenting it out restores the Blueprint design exactly.
+// So this is the Blueprint palette (GEOFOLD Blue #014AB5, GEOFOLD Orange #F35D19, white paper)
+// applied to PLAIN SECTIONS: no card pseudo-elements, no animated WebGL ground, no glow cursor,
+// no gradient headings. See the file header for the full list of what it retires and why.
 //
-// It is scoped to `.mk.mk-site` — three classes — which is why the app shell and the four
-// insulated screens (/login, /onboarding, /reset, the 404) are untouched by it. The brief
-// requires that isolation ("tidak menyentuh/mengganggu aplikasi"); the class is how it is
-// enforced rather than merely intended. See the file header.
-import '@/styles/neotopography.css'
+// It replaces `neotopography.css` (the dark Cyber-Cartography skin), which is no longer imported.
+// That file is still on disk and still self-consistent: swapping this one line back restores the
+// dark design in full, which is the same switch discipline every skin before it has used.
+import '@/styles/site.css'
 import { ADDRESS_ONE_LINE, BUSINESS, LEGAL, OPERATOR } from '@/lib/business'
 import { chrome } from '@/lib/i18n'
 import { getLocale } from '@/lib/i18n.server'
 import { organizationJsonLd } from '@/lib/seo'
 import { LogoLockup } from '@/components/Logo'
-import { SiteGround } from '@/components/SiteGround'
+// `SiteGround` is no longer mounted — the client asked for the animated background to go. The
+// import is removed rather than left unused, because an unused import is a lint error and a
+// comment explaining a dead import is worse than no import at all. The component file is still
+// on disk; see the note where it used to be rendered.
 import { MarketingNav } from './MarketingNav'
 import { Motion } from './Motion'
 
@@ -118,12 +120,15 @@ export default async function MarketingLayout({ children }: { children: ReactNod
         <span />
       </div>
       <MarketingNav locale={locale} />
-      {/* THE ONE GROUND. A single contour field, fixed to the viewport, behind every page in this
-          subtree — the same background at every scroll position and on every page. It replaces
-          four per-section effects (the hero's graticule, the how-it-works contours, the argument
-          band's magnet lines, the closing grid) so that sections are no longer coloured bands but
-          cards sitting on one continuous ground. See SiteGround.tsx. */}
-      <SiteGround />
+      {/* THE MOVING GROUND IS GONE. This was `<SiteGround />` — a full-viewport WebGL contour
+          field that repainted continuously for as long as the visitor stayed on the site. The
+          client asked for it directly: "latar belakang hapus saja ... tidak ada latar belakang
+          bergerak di namis lagi". The page is now one flat ground.
+
+          The component and its stylesheet are still on disk, and the hero keeps a static
+          graticule drawn in CSS (see site.css section 4) so the page still reads as a survey
+          document rather than as blank paper. Restoring the field is putting this line back. */}
+      {/* <SiteGround /> */}
       {/* The motion system, mounted once for the whole marketing site. It was inside the landing
           page, which meant every effect it owns existed on `/` and nowhere else: the other ten
           pages had a progress bar that never filled and a nav that never condensed. See the

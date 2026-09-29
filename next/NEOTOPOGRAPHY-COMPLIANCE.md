@@ -1,3 +1,14 @@
+> ⚠️ **CATATAN HISTORIS — DOKUMEN INI SUDAH TIDAK BERLAKU.**
+> Laporan ini mendokumentasikan desain **Neo-Topography** (latar AMOLED gelap, kaca buram, teks
+> gradien), yang oleh klien dihentikan dengan alasan *"terlalu berlebihan"*. Perintah verifikasi
+> yang disebut di bawah (`verify:neo`, dan `verify:all` dengan 88 pemeriksaan) **sudah tidak ada** —
+> `verify-neo.mjs` dihapus dan digantikan `verify-site.mjs`.
+>
+> Desain yang berlaku sekarang adalah **profesional sederhana**: palet normal, section polos, tanpa
+> latar bergerak. Laporan yang berlaku ada di **`SITE-COMPLIANCE.md`**.
+>
+> Dokumen ini dipertahankan hanya sebagai catatan sejarah — jangan dipakai sebagai acuan verifikasi.
+
 # Neo-Topography — laporan kepatuhan
 
 Laporan ini menyatakan apa yang **diukur**, bukan apa yang diniatkan. Setiap angka di bawah

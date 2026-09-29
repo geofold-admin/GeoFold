@@ -2,32 +2,41 @@
 
 import { useEffect, useRef } from 'react'
 import { SITE_LOCATION } from '@/lib/business'
+import { LAND_RINGS } from './land'
 
 /**
- * A wireframe globe with one lit marker, drawn in canvas 2D.
+ * A globe with real coastlines and one lit marker, drawn in canvas 2D.
  *
  * ADAPTED FROM REACT BITS. The reference the brief pointed at — `reactbits-starter/globe-tw` — is a
  * paid Pro block whose source is not distributable, and the free library ships no globe at all.
  * The React Bits skill's own guidance covers this case: when the real source is not available,
  * read the effect and rebuild it in the project's stack rather than pulling a renderer in. The
- * common React Bits globe needs three.js and `@react-three/fiber`; this is ~150 lines of canvas 2D
- * with no new dependency, which for one decorative-but-factual object on a marketing page is the
- * right trade — three.js would add roughly 600 KB to the bundle to draw circles.
+ * common React Bits globe needs three.js and `@react-three/fiber`; this is canvas 2D with no new
+ * dependency, which for one decorative-but-factual object on a marketing page is the right trade —
+ * three.js would add roughly 600 KB to the bundle to draw circles.
+ *
+ * WHAT CHANGED, AND WHY. The first version drew a bare graticule: latitude rings and longitude
+ * meridians, with nothing on them. A sphere with no land on it is a diagram of a sphere — it tells
+ * a reader "this is a globe" and nothing else, which is why it read as generic. The client asked
+ * for it to be better, and the honest fix was not more glow: it was to draw the ACTUAL Earth, so
+ * the one marked point sits on a recognisable continent. The coastlines come from Natural Earth's
+ * 110m land polygons, simplified and inlined by `scripts/build-land.mjs` — about 1,450 points,
+ * which is all a 380px globe can resolve.
  *
  * WHY THIS IS NOT DECORATION (the skill's rule: an effect must carry a fact). A globe spinning for
  * its own sake is noise. This one marks the actual location the business operates from — Sintang,
  * West Kalimantan — at its real latitude and longitude, and the caption beside it names the place.
- * The dot is the information; the sphere is what makes the dot legible as a place on Earth.
+ * The dot is the information; the continents are what make the dot legible as a place on Earth.
  *
- * HOW IT IS DRAWN. Latitude rings and longitude meridians are ellipses. Each point is rotated
- * around Y (spin) then X (tilt) and projected by dropping Z. The far hemisphere is drawn first at
- * low alpha, then the near one, so the sphere reads as solid without a shader. Points with a
- * positive rotated Z are behind the sphere and are skipped — without that test the wireframe looks
- * like a flat tangle instead of a ball.
+ * HOW IT IS DRAWN. Each point is rotated around Y (spin) then X (tilt) and projected by dropping
+ * Z. Coastlines are filled as closed paths per ring, with the far hemisphere drawn first at low
+ * alpha and the near one over it, so the sphere reads as solid without a shader. Points with a
+ * positive rotated Z are behind the sphere and are skipped — without that test the far continents
+ * would draw on top of the near ones and the ball would flatten.
  *
  * BEHAVIOUR. Cursor steers tilt and spin speed, damped, and the rotation returns to idle when the
- * pointer leaves. It pauses off-screen and on a hidden tab, idles when nothing is moving, skips all
- * cursor work on touch, and under `prefers-reduced-motion` draws exactly one static frame.
+ * pointer leaves. It pauses off-screen and on a hidden tab, skips all cursor work on touch, and
+ * under `prefers-reduced-motion` draws exactly one static frame.
  */
 
 /** The place this marks. Read from the one source of truth in lib/business.ts, so the hero's
@@ -47,6 +56,14 @@ function latLonToXYZ(lat: number, lon: number) {
     z: Math.sin(phi) * Math.sin(theta),
   }
 }
+
+/* The land rings arrive as flat [lon, lat, lon, lat, ...] arrays. Converted once at module scope
+   rather than per frame: this runs 60 times a second for as long as the globe is on screen. */
+const LAND = LAND_RINGS.map((ring) => {
+  const out: { x: number; y: number; z: number }[] = []
+  for (let i = 0; i < ring.length; i += 2) out.push(latLonToXYZ(ring[i + 1], ring[i]))
+  return out
+})
 
 export function SurveyGlobe({ className }: { className?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -69,6 +86,11 @@ export function SurveyGlobe({ className }: { className?: string }) {
     const body = getComputedStyle(canvas).getPropertyValue('--globe-body').trim() || 'rgba(10, 25, 47, .55)'
     const haloInk = getComputedStyle(canvas).getPropertyValue('--globe-halo').trim() || 'rgba(127, 168, 232, .085)'
     const pip = getComputedStyle(canvas).getPropertyValue('--globe-pip').trim() || 'rgba(255,255,255,.9)'
+    /* THE LAND. Two more tokens, and they are what turned this from a diagram of a sphere into a
+       diagram of the Earth. Defaults keep the old dark-ground values so the component is still
+       self-consistent if it is ever dropped back onto a dark band. */
+    const landFill = getComputedStyle(canvas).getPropertyValue('--globe-land').trim() || 'rgba(127, 168, 232, .16)'
+    const landLine = getComputedStyle(canvas).getPropertyValue('--globe-land-line').trim() || 'rgba(157, 180, 212, .55)'
 
     let w = 0
     let h = 0
@@ -140,28 +162,39 @@ export function SurveyGlobe({ className }: { className?: string }) {
       ctx.fillStyle = halo
       ctx.fill()
 
-      /* The body: a barely-there disc under the wire, so the far-side lines read as BEHIND
-         the sphere instead of crossing in front of it. Without this the far meridians and the
-         near ones are the same navy and the ball flattens into a tangle. */
+      /* THE OCEAN. A wash rather than a solid disc, so the sphere reads as a body without becoming
+         a hole in the page. The colour comes from `--globe-body`, which site.css sets per ground:
+         the globe sits on the dark argument band, where it is a faint white lift, and the token
+         block also carries a light-ground set in case it is ever moved onto paper. */
       ctx.beginPath()
       ctx.arc(cx, cy, radius, 0, Math.PI * 2)
       ctx.fillStyle = body
       ctx.fill()
 
-      // Sphere silhouette, so the ball reads as a body even where no line falls.
+      // Sphere silhouette, so the ball reads as a body even where no coastline falls.
       ctx.beginPath()
       ctx.arc(cx, cy, radius, 0, Math.PI * 2)
       ctx.strokeStyle = line
-      ctx.globalAlpha = 0.3
+      ctx.globalAlpha = 0.42
       ctx.lineWidth = 1
       ctx.stroke()
 
-      const drawSegments = (points: { x: number; y: number; z: number }[], near: boolean) => {
+      /* THE GRATICULE, and it is now the QUIET layer rather than the subject. It used to be the
+         entire drawing; with coastlines on top it becomes the surveyor's reference under them, so
+         it is drawn at low alpha and never competes. Every 30 degrees, which is the interval a
+         real sheet uses, not the 12 meridians the old version drew for symmetry. */
+      const GRAT_STEP = 30
+      const SEGMENTS = 90
+      const gratPoints = (
+        points: { x: number; y: number; z: number }[],
+        near: boolean,
+        strength = 1,
+      ) => {
         ctx.beginPath()
         let started = false
         for (const p of points) {
           const r = project(p, cosT, sinT)
-          // z > 0 is the far side; skip it so the wireframe does not read as a flat tangle.
+          // z > 0 is the far side; skip it so the far lines do not draw over the near ones.
           if (near ? r.z > 0 : r.z <= 0) {
             started = false
             continue
@@ -174,67 +207,114 @@ export function SurveyGlobe({ className }: { className?: string }) {
           } else ctx.lineTo(sx, sy)
         }
         ctx.strokeStyle = line
-        ctx.globalAlpha = near ? 0.5 : 0.14
-        ctx.lineWidth = near ? 1 : 0.75
+        ctx.globalAlpha = (near ? 0.26 : 0.10) * strength
+        ctx.lineWidth = 0.75
         ctx.stroke()
       }
-
-      const RINGS = 7
-      const MERIDIANS = 12
-      const SEGMENTS = 90
-      /* The equator is index ring 4 of 7 (−90 + 180·i/8 = 0 at i=4). It is drawn again after
-         the others at higher alpha, the way a printed sheet picks out the prime line — the
-         one piece of hierarchy that makes the sphere read as a globe and not a ball of yarn. */
-      const EQUATOR = 4
-
       for (const near of [false, true]) {
-        // latitude rings
-        for (let i = 1; i <= RINGS; i++) {
-          const lat = -90 + (180 * i) / (RINGS + 1)
+        for (let lat = -60; lat <= 60; lat += GRAT_STEP) {
+          if (lat === 0) continue // drawn below, heavier
           const pts = []
-          for (let s = 0; s <= SEGMENTS; s++) {
-            pts.push(latLonToXYZ(lat, -180 + (360 * s) / SEGMENTS))
-          }
-          drawSegments(pts, near)
+          for (let s = 0; s <= SEGMENTS; s++) pts.push(latLonToXYZ(lat, -180 + (360 * s) / SEGMENTS))
+          gratPoints(pts, near)
         }
-        // longitude meridians
-        for (let i = 0; i < MERIDIANS; i++) {
-          const lon = -180 + (360 * i) / MERIDIANS
+        for (let lon = -180; lon < 180; lon += GRAT_STEP) {
           const pts = []
-          for (let s = 0; s <= SEGMENTS; s++) {
-            pts.push(latLonToXYZ(-90 + (180 * s) / SEGMENTS, lon))
-          }
-          drawSegments(pts, near)
+          for (let s = 0; s <= SEGMENTS; s++) pts.push(latLonToXYZ(-90 + (180 * s) / SEGMENTS, lon))
+          gratPoints(pts, near)
         }
       }
 
-      // The index ring, redrawn on top of its own pass.
+      /* THE EQUATOR, picked out heavier. It is the one line on the sphere that is a fact rather
+         than a reference, and drawing it stronger is how a printed sheet signals the same thing.
+         `strength` rather than a second code path, so the two passes cannot drift apart. */
       for (const near of [false, true]) {
-        const lat = -90 + (180 * EQUATOR) / (RINGS + 1)
         const pts = []
-        for (let s = 0; s <= SEGMENTS; s++) {
-          pts.push(latLonToXYZ(lat, -180 + (360 * s) / SEGMENTS))
-        }
-        ctx.beginPath()
-        let started = false
-        for (const p of pts) {
-          const r = project(p, cosT, sinT)
-          if (near ? r.z > 0 : r.z <= 0) {
-            started = false
-            continue
-          }
-          const sx = cx + r.x * radius
-          const sy = cy + r.y * radius
-          if (!started) {
-            ctx.moveTo(sx, sy)
-            started = true
-          } else ctx.lineTo(sx, sy)
-        }
-        ctx.strokeStyle = line
-        ctx.globalAlpha = near ? 0.78 : 0.2
-        ctx.lineWidth = near ? 1.15 : 0.75
-        ctx.stroke()
+        for (let s = 0; s <= SEGMENTS; s++) pts.push(latLonToXYZ(0, -180 + (360 * s) / SEGMENTS))
+        gratPoints(pts, near, 3)
       }
+
+      /* ==================================================================================
+         THE CONTINENTS.
+         ==================================================================================
+         Each ring is projected, clipped to the visible hemisphere, and filled. The far side is
+         drawn first at low alpha so it reads as being behind the sphere, then the near side over
+         it — the same two-pass trick the graticule uses, and the reason the ball reads as solid
+         without a depth buffer.
+
+         THE CLIPPING IS THE WHOLE PROBLEM. A coastline ring crosses the limb of the sphere, so
+         part of it is on the far side and part on the near. Skipping the far points (as the
+         graticule does) would cut a continent in half at the horizon with a hard straight edge.
+         Instead each point is projected and then PUSHED ONTO THE LIMB: a point on the far side
+         has its x/y normalised out to the sphere's edge, which is exactly where a sphere's
+         silhouette sits. The result is a continent that wraps around the horizon and disappears
+         over it, which is what a real globe does.
+
+         Rings that end up entirely behind the sphere are skipped outright — otherwise Antarctica
+         would draw as a band across the front of the ball. */
+      const drawLand = (near: boolean) => {
+        for (const ring of LAND) {
+          /* Pass one: the FILL. A point on the hidden hemisphere is pulled out to the limb, so the
+             silhouette wraps around the sphere's edge instead of ending on a straight chord through
+             the middle. This is what makes a filled continent look like it goes over the horizon. */
+          const fillPts: { x: number; y: number; z: number }[] = []
+          let anyVisible = false
+          for (const p of ring) {
+            const r = project(p, cosT, sinT)
+            const visible = near ? r.z <= 0 : r.z > 0
+            if (visible) {
+              anyVisible = true
+              fillPts.push(r)
+            } else {
+              const d = Math.hypot(r.x, r.y) || 1
+              fillPts.push({ x: r.x / d, y: r.y / d, z: r.z })
+            }
+          }
+          if (!anyVisible || fillPts.length < 3) continue
+
+          ctx.beginPath()
+          for (let i = 0; i < fillPts.length; i++) {
+            const sx = cx + fillPts[i].x * radius
+            const sy = cy + fillPts[i].y * radius
+            if (i === 0) ctx.moveTo(sx, sy)
+            else ctx.lineTo(sx, sy)
+          }
+          ctx.closePath()
+          ctx.globalAlpha = near ? 1 : 0.30
+          ctx.fillStyle = landFill
+          ctx.fill()
+
+          /* Pass two: the STROKE, and it CANNOT use the collapsed path above.
+             This was a real bug, caught by counting bright pixels on the canvas rather than by
+             looking at it: the collapsed path is right for a fill but wrong for a stroke, because
+             the segment from a hidden point's real position out to the limb is a straight line
+             across the face of the sphere. Stroking it drew chords from every coastline to the
+             edge — measured at 22% of the canvas in bright pixels, where real coastlines are a
+             few percent. The stroke therefore walks the ring again and only ever draws contiguous
+             runs of VISIBLE points, breaking the path wherever the ring goes over the horizon. */
+          ctx.beginPath()
+          let started = false
+          for (const p of ring) {
+            const r = project(p, cosT, sinT)
+            if (near ? r.z > 0 : r.z <= 0) {
+              started = false
+              continue
+            }
+            const sx = cx + r.x * radius
+            const sy = cy + r.y * radius
+            if (!started) {
+              ctx.moveTo(sx, sy)
+              started = true
+            } else ctx.lineTo(sx, sy)
+          }
+          ctx.globalAlpha = near ? 0.9 : 0.24
+          ctx.strokeStyle = landLine
+          ctx.lineWidth = near ? 0.9 : 0.6
+          ctx.stroke()
+        }
+      }
+      drawLand(false)
+      drawLand(true)
 
       // The marker: the one lit thing on the sphere, and the reason it exists.
       const m = project(latLonToXYZ(MARKER.lat, MARKER.lon), cosT, sinT)

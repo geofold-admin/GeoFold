@@ -26,29 +26,29 @@ const ROUTES = [
   ['product', '/product'],
 ]
 
-/* The reference colours, tagged by the brief's own 60-30-10 buckets.
+/* The reference colours, tagged by the client's own 60-30-10 buckets.
  *
- * UPDATED FOR NEOTOPOGRAPHY. The Blueprint palette this table used to describe (a light canvas,
- * a brand blue and a conversion orange) is retired by the client's new document, and leaving the
- * old references in place would have produced a meaningless report: every pixel of a Deep Space
- * page would classify as "primary" because near-black is nearest to #0A192F in the old list.
+ * BACK TO THE NORMAL PALETTE, and this table has now been rewritten three times for three briefs.
+ * That is worth stating plainly: leaving the previous skin's references in place does not produce
+ * a slightly-wrong report, it produces a MEANINGLESS one. When this table held Deep Space and
+ * Cyber Cyan, every pixel of the current white page classified as "primary" simply because white
+ * is nearest to a pale cyan in the list — a confident wrong answer.
  *
- * The new buckets, read the same way the previous ones were — the ground is the 60, the cyan/sky
- * pair is the 30, emerald is the 10:
- *   60  the Deep Space ground and the glass ladder above it
- *   30  Cyber Cyan and the gradient's sky stop
- *   10  Neon Emerald
+ * The buckets, read as the Blueprint brief defined them (the one whose palette is now in use):
+ *   60  the neutrals — white panels, the #F3F4F6 canvas, the hairlines, the ink ladder
+ *   30  GEOFOLD Blue and its hover/soft/deep family
+ *   10  GEOFOLD Orange, the conversion accent
  */
 const REFS = [
-  /* neutrals — the 60. Deep Space, the glass steps, the silver ink ladder, the hairlines. */
-  ['neutral', '#020617'], ['neutral', '#070D1F'], ['neutral', '#0B1224'], ['neutral', '#0D1427'],
-  ['neutral', '#0F172A'], ['neutral', '#1E293B'], ['neutral', '#202535'],
-  ['neutral', '#94A3B8'], ['neutral', '#CBD5E1'], ['neutral', '#F8FAFC'],
-  /* primary — the 30. The accent pair and its gradient. */
-  ['primary', '#00F2FE'], ['primary', '#4FACFE'], ['primary', '#6FF6FF'],
-  ['primary', '#7CC0FF'], ['primary', '#0E4A5C'], ['primary', '#0A3A52'],
-  /* accent — the 10. */
-  ['accent', '#00FF87'], ['accent', '#00CC6C'],
+  /* neutrals — the 60. Panel, canvas, line, and the four ink steps. */
+  ['neutral', '#FFFFFF'], ['neutral', '#F3F4F6'], ['neutral', '#E5E7EB'], ['neutral', '#F9FAFB'],
+  ['neutral', '#111827'], ['neutral', '#1F2937'], ['neutral', '#4B5563'],
+  ['neutral', '#6B7280'], ['neutral', '#9CA3AF'], ['neutral', '#D1D5DB'],
+  /* primary — the 30. GEOFOLD Blue and the steps derived from it. */
+  ['primary', '#014AB5'], ['primary', '#013A8F'], ['primary', '#EFF5FF'],
+  ['primary', '#0A192F'], ['primary', '#1B2F52'], ['primary', '#C7D7EE'],
+  /* accent — the 10. GEOFOLD Orange, and the one darker step used for small text. */
+  ['accent', '#F35D19'], ['accent', '#D6450A'], ['accent', '#C2410C'],
 ]
 const REF_RGB = REFS.map(([k, h]) => [k, [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]])
 
@@ -104,29 +104,28 @@ for (const [name, route] of ROUTES) {
   const pct = (n) => ((n / sampled) * 100).toFixed(1)
   rows.push({ name, route, docHeight: full, sampled, counts, pct })
   console.log(`\n=== ${name}  (${route})  doc ${full}px, ${sampled} pixels sampled ===`)
-  console.log(`  ground+glass (the 60) : ${pct(counts.neutral).padStart(5)}%`)
-  console.log(`  cyan/sky     (the 30) : ${pct(counts.primary).padStart(5)}%`)
-  console.log(`  emerald      (the 10) : ${pct(counts.accent).padStart(5)}%`)
+  console.log(`  neutral      (the 60) : ${pct(counts.neutral).padStart(5)}%`)
+  console.log(`  GEOFOLD Blue (the 30) : ${pct(counts.primary).padStart(5)}%`)
+  console.log(`  GEOFOLD Orange (10)   : ${pct(counts.accent).padStart(5)}%`)
   await page.close()
 }
 
 console.log('\n\n================ SUMMARY ================')
-console.log('  page      ground   cyan/sky   emerald')
+console.log('  page        neutral      blue    orange')
 for (const r of rows) {
   console.log(`  ${r.name.padEnd(9)} ${r.pct(r.counts.neutral).padStart(6)}% ${r.pct(r.counts.primary).padStart(9)}% ${r.pct(r.counts.accent).padStart(8)}%`)
 }
-/* THE 60-30-10 NOTE IS DELIBERATE, and it is a correction. The Blueprint brief stated that split
-   explicitly and this script used to assert it. The Neo-Topography brief does NOT mention it
-   anywhere — no "60-30-10", no ratio of any kind. It describes a single AMOLED ground, one
-   accent pair and one conversion colour, and it asks for a page that reads as premium and dark.
+/* THE 60-30-10 NOTE, AND WHY THIS IS A REPORT RATHER THAN A GATE.
+   The Blueprint brief stated the 60-30-10 split explicitly, which is where the buckets in the
+   table above come from. The Neo-Topography brief that briefly replaced it mentioned no ratio at
+   all, and the current directive is verbal — "gunakan color palet normal nya saja" — so it names
+   a palette rather than a proportion.
 
-   So this report is descriptive, not a pass/fail gate, and that is the honest framing: a design
-   whose ground is a near-black that every other element composites ON TOP OF will always measure
-   as overwhelmingly neutral, and that is the intended look rather than a miss. What the numbers
-   are actually good for is catching the opposite failure — a cyan or emerald value that has
-   leaked out of its ration, which is the thing the brief DOES constrain:
-   "Digunakan khusus untuk penanda atau highlight konversi tinggi". */
-console.log('\n  the Neo-Topography brief specifies no ratio; the accent is meant to stay rare.')
-console.log('  what matters is that emerald stays near 0% and cyan stays in single digits.\n')
+   So this stays descriptive. What the numbers are genuinely good for is catching a leak: the
+   accent is supposed to be "digunakan sangat terbatas", and a page that measured 25% orange would
+   be a defect regardless of what any brief says. A page that measures 1% is the design working. */
+console.log('\n  READ THESE AS: neutral is the page, blue is the hero plate plus the brand chrome,')
+console.log('  and orange is the conversion accent — which must stay near zero on every page,')
+console.log('  because "digunakan sangat terbatas" is the one thing the palette constrains.\n')
 
 await browser.close()

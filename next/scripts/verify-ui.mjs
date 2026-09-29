@@ -112,89 +112,78 @@ try {
   check('coord label uses Barlow Condensed', /barlow_?condensed|barlow condensed/i.test(fonts.coordLabel ?? ''), fonts.coordLabel)
   check('price figure uses Barlow Condensed', /barlow_?condensed|barlow condensed/i.test(fonts.priceFig ?? ''), fonts.priceFig)
 
-  /* -------------------------------------------------- 2. SQUARE CORNERS, EVERYWHERE
-     The brief: "sudut tajam (0px radius) untuk panel, tombol, dan gambar". Walk every element
-     that draws a boundary and assert its computed radius is zero. */
-  /* -------------------------------------------------- THE SHAPE CONTRACT, UPDATED FOR NEOTOPOGRAPHY
-     This check used to assert "every framed element is square (0px)", which was the Blueprint
-     brief's rule. The client has since retired that brief outright: "aturan desain Blueprint
-     sebelumnya memaksakan sudut 0px pada seluruh bentuk... konsep Neo-Topography menghapusnya
-     dan beralih ke desain organik dan fluid." Cards are 20px, CTAs are 50px pills.
+  /* -------------------------------------------------- THE SHAPE CONTRACT, BACK TO A WORKING RADIUS
+     This check has now asserted three different shape contracts, one per client brief, which is
+     exactly why it is worth keeping honest about which one is current:
 
-     So the assertion is inverted rather than deleted, and it now enforces the NEW contract:
-     nothing may be square on the marketing page, and the two named steps must actually be the
-     values in use. A deleted check is a check that stops catching regressions. */
+       1. Blueprint     — "sudut tajam (0px radius) untuk panel, tombol, dan gambar". Square.
+       2. Neo-Topography — "menghapusnya dan beralih ke desain organik dan fluid". 20px / 50px pills.
+       3. THIS ONE      — "profesional simple saja ... section pada umumnya". Back to plain.
+
+     The current contract is a WORKING radius, not a decorative one: 4px on controls, 8px on
+     surfaces, 999px only where a control is genuinely a pill (the nav's Portal button). The
+     check asserts the two named steps rather than the absence of any value, because "no element
+     is square" would also pass on a page where everything was 20px, which is the design the
+     client just rejected. */
   const radii = await page.evaluate(() => {
-    const out = { square: [], card: null, btn: null, coord: null }
-    const cell = document.querySelector('.pg-cell')
+    const out = { wrong: [], card: null, btn: null, pill: null }
+    const price = document.querySelector('.pg-price-card, .mk-price-card')
     const btn = document.querySelector('.pg-btn, .mk-btn')
-    const coord = document.querySelector('.pg-coord')
-    if (cell) out.card = getComputedStyle(cell).borderTopLeftRadius
+    const pill = document.querySelector('.mk-portal')
+    if (price) out.card = getComputedStyle(price).borderTopLeftRadius
     if (btn) out.btn = getComputedStyle(btn).borderTopLeftRadius
-    if (coord) out.coord = getComputedStyle(coord).borderTopLeftRadius
-    for (const el of document.querySelectorAll('button, a.pg-btn, .pg-cell, .pg-price-card, .pg-bento, figure, img, input, select, textarea, .card, .pg-coord, .gf-star')) {
-      /* SOME OF THESE ARE NOT SHAPES, and the sweep has to know which. A `border-radius` on a
-         grid container, a transparent wrapper or a border-drawing span is either meaningless or
-         actively wrong:
-
-           .pg-bento  — the GRID that lays the cards out. It paints nothing; rounding it would
-                        clip the cells at the container's corners.
-           .pg-globe  — a transparent <figure> wrapper holding the canvas and its caption.
-           .gf-star   — StarBorder's own span, which draws a conic border and inherits the
-                        button's radius. Rounding it independently would double-round the CTA.
-           img        — only the LOGO is a real image here; icons are inline SVG and carry no
-                        radius at all, so an `img` with no painted box is not a failure.
-
-         Skipping these is a correction to the check, not a weakening of it: what the brief
-         actually governs is "kartu/panel, tombol, gambar", and each of those is asserted
-         explicitly by the two named-radius checks below. */
-      const skip = el.classList.contains('pg-bento') || el.classList.contains('pg-globe') ||
-                   el.classList.contains('gf-star') || el.tagName === 'FIGURE'
-      if (skip) continue
+    if (pill) out.pill = getComputedStyle(pill).borderTopLeftRadius
+    /* The sweep: anything that draws a boundary must use one of the three steps. A stray 20px
+       left over from the previous skin is the regression this is here to catch. */
+    for (const el of document.querySelectorAll('button, a.pg-btn, .mk-btn, .pg-price-card, .mk-price-card, .pg-price-card *, input, select, textarea')) {
       const cs = getComputedStyle(el)
-      /* An image or wrapper with no painted background and no border is not a shape. */
-      const paints = cs.backgroundColor !== 'rgba(0, 0, 0, 0)' || cs.borderTopWidth !== '0px' || cs.backgroundImage !== 'none'
+      const paints = cs.backgroundColor !== 'rgba(0, 0, 0, 0)' || cs.borderTopWidth !== '0px'
       if (!paints && el.tagName !== 'BUTTON') continue
       const vals = [cs.borderTopLeftRadius, cs.borderTopRightRadius, cs.borderBottomRightRadius, cs.borderBottomLeftRadius]
-      /* 0px is now the FAILURE, not the goal. */
-      if (vals.every((v) => parseFloat(v) === 0)) {
-        out.square.push({ tag: el.tagName, cls: el.className?.toString().slice(0, 60) })
-      }
+      const px = vals.map((v) => parseFloat(v))
+      const allowed = px.every((v) => v === 0 || v === 4 || v === 8 || v === 999 || v >= 1000)
+      if (!allowed) out.wrong.push({ tag: el.tagName, cls: el.className?.toString().slice(0, 50), r: vals[0] })
     }
     return out
   })
-  check('no framed element is left square (the brief retires 0px)', radii.square.length === 0, radii.square.length ? JSON.stringify(radii.square.slice(0, 6)) : 'checked all')
-  check('cards carry the brief\'s fluid 20px radius', radii.card === '20px', `card=${radii.card}`)
-  check('CTAs are the brief\'s 50px pill', radii.btn === '50px', `btn=${radii.btn}`)
+  check('surfaces use the working 8px radius', radii.card === '8px', `card=${radii.card}`)
+  check('controls use the working 4px radius', radii.btn === '4px', `btn=${radii.btn}`)
+  check('the nav pill is the only 999px control', radii.pill === '999px', `portal=${radii.pill}`)
+  check('no retired 20px/50px radius survives', radii.wrong.length === 0,
+    radii.wrong.length ? JSON.stringify(radii.wrong.slice(0, 6)) : 'all within the three steps')
 
-  /* -------------------------------------------------- 3. THE ACCENT IS RATIONED
-     The Blueprint brief rationed ORANGE ("Digunakan sangat terbatas"). The new brief replaces
-     that accent with Neon Emerald and gives it a narrower job still: "Digunakan khusus untuk
-     penanda atau highlight konversi tinggi" — the marker, or a high-conversion highlight. So the
-     ration check is re-pointed at emerald, and the orange is now asserted ABSENT from the
-     marketing page entirely, which is a stronger statement than "rationed" and catches a
-     leftover from the previous skin.
+  /* -------------------------------------------------- 3. THE ACCENT IS GEOFOLD ORANGE AGAIN
+     The Blueprint brief rationed orange; the Neo brief replaced it with Neon Emerald and this
+     check asserted the orange was ABSENT. The client has now asked for the normal palette back
+     ("gunakan color palet sebelum ini, gunakan color palet normal nya saja"), so the assertion
+     returns to the original one: orange is present, it is the brand's own #F35D19, and it is
+     RATIONED — one instance per viewport, which is what "digunakan sangat terbatas" means in
+     practice. Emerald must be gone entirely, because it belonged to the retired skin.
 
-     Counting the whole document is the wrong measurement: the page is 12 screens tall and each
-     screen is entitled to its own marker, so what matters is how many compete inside ONE
-     viewport, which is what a visitor actually sees at once. */
+     Counting the whole document would be the wrong measurement: the page is ten screens tall and
+     each screen is entitled to its own call to action, so what matters is how many compete inside
+     ONE viewport — what a visitor actually sees at once. */
   const accents = await page.evaluate(() => {
     const ORANGE = 'rgb(243, 93, 25)'
     const EMERALD = 'rgb(0, 255, 135)'
+    const CYAN = 'rgb(0, 242, 254)'
     const vh = window.innerHeight
     const orange = []
-    let emeraldInView = 0
+    let emerald = 0, cyan = 0
     for (const el of document.querySelectorAll('body *')) {
       const cs = getComputedStyle(el)
       const r = el.getBoundingClientRect()
       const visible = r.bottom > 0 && r.top < vh
-      if (cs.backgroundColor === ORANGE) orange.push(`${el.tagName}.${el.className?.toString().slice(0, 40)}`)
-      if (visible && (cs.backgroundColor === EMERALD || cs.color === EMERALD)) emeraldInView++
+      if (cs.backgroundColor === ORANGE || cs.color === ORANGE) orange.push(`${el.tagName}.${el.className?.toString().slice(0, 34)}`)
+      if (visible && (cs.backgroundColor === EMERALD || cs.color === EMERALD)) emerald++
+      if (visible && (cs.backgroundColor === CYAN || cs.color === CYAN)) cyan++
     }
-    return { orange, emeraldInView }
+    return { orange, emerald, cyan }
   })
-  check('the old orange accent is gone from the marketing page', accents.orange.length === 0, JSON.stringify(accents.orange.slice(0, 4)))
-  check('the emerald marker is rationed inside one viewport', accents.emeraldInView <= 3, `${accents.emeraldInView} in view`)
+  check('the accent is the brand orange #F35D19', accents.orange.length > 0,
+    `${accents.orange.length} orange elements: ${accents.orange.slice(0, 3).join(', ')}`)
+  check('the retired Neon emerald is gone', accents.emerald === 0, `${accents.emerald} in view`)
+  check('the retired Cyber cyan is gone', accents.cyan === 0, `${accents.cyan} in view`)
 
   /* -------------------------------------------------- 4. THE HERO IS THE ONE DARK PLATE
      Measured from RENDERED PIXELS, not from `backgroundColor`. The hero's plate is a
@@ -212,15 +201,34 @@ try {
   })
   check('hero plate exists and is tall', !!heroPixel && heroPixel.hero.h > 300, JSON.stringify(heroPixel?.hero))
 
-  /* -------------------------------------------------- 5. THE GROUND IS DEEP SPACE
-     The Blueprint brief asked for a light Kanvas Netral and this check asserted it. The client's
-     new brief replaces that ground outright: "Page Ground | #020617 | AMOLED Deep Space. Latar
-     belakang utama yang sangat gelap." So the assertion is inverted rather than removed — the
-     page must now be DARK, and specifically the brief's colour, because "dark" alone would pass
-     for any near-black and would not catch a token that stopped resolving. */
-  const bodyBg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor)
-  check('page ground is Deep Space #020617', bodyBg === 'rgb(2, 6, 23)', bodyBg)
-  check('the light Kanvas ground is gone', lum(bodyBg.match(/\d+/g).map(Number).slice(0, 3)) < 0.15, `luminance ${lum(bodyBg.match(/\d+/g).map(Number).slice(0, 3)).toFixed(3)}`)
+  /* -------------------------------------------------- 5. THE GROUND IS PAPER AGAIN
+     Three contracts have lived here. Blueprint asked for a light Kanvas Netral; the Neo brief
+     replaced it with "Page Ground | #020617 | AMOLED Deep Space" and this check was inverted to
+     demand darkness. The client has since retired that skin outright, so the assertion returns to
+     the light ground — and it is asserted as the SPECIFIC colour, because "light" alone would
+     pass for any near-white and would not catch a token that stopped resolving.
+
+     The page's own body is white; the canvas sections are #F3F4F6. Both are checked, because the
+     page ground and the canvas are different things and the brief names both. */
+  const grounds = await page.evaluate(() => {
+    const band = document.querySelector('.pg-sec-tint, .mk-sec-tint')
+    const site = document.querySelector('.mk.mk-site')
+    return {
+      /* THE TWO GROUNDS ARE DIFFERENT LAYERS, and reading only one of them gives a wrong answer.
+         Measured: `body` is #F3F4F6 (the Kanvas Netral behind everything) and the `.mk` site
+         wrapper is #FFFFFF (the Panel Utama). That is exactly the brief's own structure —
+         "Panel Utama (Surface): #FFFFFF" and "Kanvas Netral (Paper): #F3F4F6" — so both are
+         asserted. An earlier version of this check demanded body === white and failed on a
+         correct page; the design was right and the probe was wrong. */
+      body: getComputedStyle(document.body).backgroundColor,
+      site: site ? getComputedStyle(site).backgroundColor : null,
+      band: band ? getComputedStyle(band).backgroundColor : null,
+    }
+  })
+  check('the site surface is the Panel Utama #FFFFFF', grounds.site === 'rgb(255, 255, 255)', String(grounds.site))
+  check('the ground behind it is the Kanvas Netral #F3F4F6', grounds.body === 'rgb(243, 244, 246)', grounds.body)
+  check('the Deep Space ground is gone', grounds.body !== 'rgb(2, 6, 23)', grounds.body)
+
 
   /* -------------------------------------------------- 6. MEASURED CONTRAST OF REAL TYPE
      Sampled from RENDERED PIXELS. Reading `backgroundColor` is wrong on this site because the

@@ -87,17 +87,29 @@ const pricing = await page.evaluate(() => {
 const pageGround = rgb(pricing.page)
 const freeBg = rgb(pricing.free.bg)
 
-/* THE PREMIUM-CARD CHECK, RE-POINTED. It used to assert the Blueprint brief's rule — "the Premium
-   card is highlighted in GEOFOLD Blue #014AB5". The client has retired that brief and its palette
-   outright, so the old assertion now fails on a design that is correct. Rather than delete it
-   (a deleted check stops catching regressions) it is inverted to the NEW brief's rule: the
-   featured card must be distinguished by the brief's cyan accent, and it must be a frosted-glass
-   surface, since "Seluruh container tidak menggunakan bayangan gelap biasa, melainkan menggunakan
-   backdrop-filter: blur(16px)". */
+/* THE PREMIUM-CARD CHECK, BACK TO THE NORMAL PALETTE.
+   This one check has now asserted three different things, one per client brief:
+
+     1. Blueprint      — "highlighted in GEOFOLD Blue #014AB5".
+     2. Neo-Topography — "highlighted in the brief's Cyber Cyan" + a frosted-glass surface with
+                         `backdrop-filter: blur(16px)`.
+     3. THIS ONE       — the client asked for the normal palette back and for the glass to go:
+                         "gunakan color palet sebelum ini, gunakan color palet normal nya saja".
+
+   So the featured card is distinguished by the brand's blue again, and the assertion is stronger
+   than a colour match: it requires that the card is VISUALLY DISTINCT from the free card, which
+   is the thing that actually matters. A colour alone can be right while the card still looks
+   identical — that is the regression this is here to catch. The blur assertion is inverted to
+   require the glassmorphism to be GONE, because a leftover `backdrop-filter` from the retired
+   skin would be a real defect. */
 const premBorder = rgb(pricing.premium.border)
-const isCyan = (c) => c[2] > 200 && c[1] > 180 && c[0] < 120
-check('Premium card is highlighted in the brief\'s Cyber Cyan', isCyan(premBorder), `border ${pricing.premium.border} w=${pricing.premium.borderW}`)
-check('Premium card is a frosted-glass surface (blur 16px)', /blur\(16px\)/.test(pricing.premium.blur), `backdrop-filter: ${pricing.premium.blur}`)
+/* The file already declares `isBlue` at the top — an exact match against GEOFOLD Blue, used by the
+   app-chrome checks. It is reused here rather than shadowed, so both places assert the same
+   colour: one definition, one truth. */
+check('Premium card is highlighted in GEOFOLD Blue', isBlue(premBorder), `border ${pricing.premium.border} w=${pricing.premium.borderW}`)
+check('Premium card is visually distinct from the free card', pricing.premium.border !== pricing.free.border,
+  `premium ${pricing.premium.border} vs free ${pricing.free.border}`)
+check('the retired glassmorphism is gone', !/blur/.test(pricing.premium.blur || 'none'), `backdrop-filter: ${pricing.premium.blur}`)
 check('Free card blends with the page ground', pricing.free.bg === 'rgba(0, 0, 0, 0)' || ratio(freeBg, pageGround) < 1.15, `card ${pricing.free.bg} vs page ${pricing.page}`)
 
 /* ---------------------------------------------------------------- app chrome (demo login) */

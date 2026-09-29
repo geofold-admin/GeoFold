@@ -58,22 +58,6 @@ export function Motion() {
       const mm = gsap.matchMedia()
 
     mm.add('(prefers-reduced-motion: no-preference)', () => {
-      /* Set only when the spotlight listener is attached; the cleanup below calls it if present. */
-      let spotCleanup: (() => void) | undefined
-      /* Same for the tilt listeners. */
-      let tiltCleanup: (() => void) | undefined
-      /* Same for the click-spark canvas. */
-      let sparkCleanup: (() => void) | undefined
-      /* Same for the glow cursor. */
-      let glowCleanup: (() => void) | undefined
-      /* Same for the scroll-velocity skew: it owns a settle timer as well as the transforms, so it
-         has to be able to clear both. */
-      let skewCleanup: (() => void) | undefined
-      /* Whether this device has a real pointer. Read once, here, rather than at each of the four
-         places that need it: it is a media query, and querying it four times per route change
-         both costs work and risks the four disagreeing if the device is a hybrid. */
-      const finePointer = window.matchMedia('(pointer: fine)').matches
-
       /* ---------- 1. hero headline: per-character reveal ---------- */
       const splits: SplitText[] = []
 
@@ -155,38 +139,7 @@ export function Motion() {
           .from(art, { y: 40, opacity: 0, duration: 0.8, ease: EASE }, '<0.08')
       })
 
-      /* ---------- 6. parallax, on decorative layers only ----------
-         Never on body copy or on a control: it hurts reading and it moves click targets away
-         from where the pointer expects them.
-
-         THIS WAS A CRASH. It was written with `scrub: 0.6` and nothing else: no `start`, no `end`.
-         A scrubbed trigger with no start/end is supposed to default to the element's own travel,
-         and it does, but the element here is `el.parentElement ?? el` and for the hero figure that
-         parent is a grid cell whose box is not yet laid out on the first scroll tick after
-         hydration. GSAP then resolves the trigger's end position against a target it cannot
-         measure, reads `.end` off the resulting undefined, and throws
-         `Cannot read properties of undefined (reading 'end')`.
-
-         The throw lands inside GSAP's own scroll handler, so React's error boundary catches it and
-         replaces the ENTIRE PAGE with "THIS PAGE COULDN'T LOAD". Measured: the body went from 4414
-         characters of content to 70 characters of error page, on every page that has a parallax
-         element, at every width, and it reproduced on the commit BEFORE this work as well, so it
-         was pre-existing and had simply never been caught.
-
-         The fix states the range explicitly instead of relying on the default. `start: 'top bottom'`
-         and `end: 'bottom top'` is the full travel of the element through the viewport, which is
-         what the default resolves to once layout exists, so the motion is unchanged. Stating it
-         means GSAP never has to infer a box that is not ready. */
-      document.querySelectorAll<HTMLElement>('[data-parallax]').forEach((el) => {
-        const trigger = el.parentElement ?? el
-        gsap.to(el, {
-          yPercent: Number(el.dataset.parallax ?? -8),
-          ease: 'none',
-          scrollTrigger: { trigger, start: 'top bottom', end: 'bottom top', scrub: 0.6 },
-        })
-      })
-
-      /* ---------- 7. the pinned scene ---------- */
+      /* ---------- 6. the pinned scene ---------- */
       const scene = document.querySelector<HTMLElement>('[data-scene]')
       if (scene && window.matchMedia('(min-width: 1000px)').matches) {
         const fixed = scene.querySelector<HTMLElement>('[data-scene-fixed]')
@@ -227,14 +180,13 @@ export function Motion() {
         }
       }
 
-      /* ---------- 8. counters ----------
+      /* ---------- 7. counters ----------
          Grouping separators differ between the two languages this site is served in (1.000 in
          Indonesian, 1,000 in English), so the format follows the `lang` the layout stamped on
          the marketing wrapper rather than a hard-coded 'id-ID'. Falls back to the document's own
          language if the wrapper is ever missing. */
       const numberLocale =
         document.querySelector<HTMLElement>('.mk')?.lang || document.documentElement.lang || 'en'
-      /* ---------- 8. counters ---------- */
       document.querySelectorAll<HTMLElement>('[data-count]').forEach((el) => {
         const target = Number(el.dataset.count)
         if (!Number.isFinite(target)) return
@@ -253,56 +205,7 @@ export function Motion() {
         })
       })
 
-      /* ---------- 9. the marquee ----------
-         Both rows are in the markup (the second is aria-hidden) rather than cloned here: adding
-         a node React does not know about inside a component's subtree is how a hydration
-         mismatch or a lost node on re-render happens. */
-      const marquee = document.querySelector<HTMLElement>('[data-marquee]')
-      if (marquee) {
-        const rows = marquee.querySelectorAll('.pg-marquee-row')
-        const loop = gsap.to(rows, {
-          xPercent: -100,
-          duration: 34,
-          ease: 'none',
-          repeat: -1,
-        })
-        /* Pausing while offscreen keeps a continuous animation off the compositor for most of
-           the page's life. */
-        ScrollTrigger.create({
-          trigger: marquee,
-          start: 'top bottom',
-          end: 'bottom top',
-          onToggle: (self) => (self.isActive ? loop.play() : loop.pause()),
-        })
-      }
-
-      /* ---------- 10. magnetic buttons ---------- */
-      const magnets: Array<() => void> = []
-      document.querySelectorAll<HTMLElement>('[data-magnetic]').forEach((el) => {
-        const xTo = gsap.quickTo(el, 'x', { duration: 0.5, ease: EASE_SOFT })
-        const yTo = gsap.quickTo(el, 'y', { duration: 0.5, ease: EASE_SOFT })
-
-        const move = (e: MouseEvent) => {
-          const r = el.getBoundingClientRect()
-          /* Capped at a third of the offset so the control never leaves its own hit area: a
-             button that outruns the cursor is a button you cannot click. */
-          xTo((e.clientX - (r.left + r.width / 2)) * 0.33)
-          yTo((e.clientY - (r.top + r.height / 2)) * 0.33)
-        }
-        const reset = () => {
-          xTo(0)
-          yTo(0)
-        }
-
-        el.addEventListener('mousemove', move)
-        el.addEventListener('mouseleave', reset)
-        magnets.push(() => {
-          el.removeEventListener('mousemove', move)
-          el.removeEventListener('mouseleave', reset)
-        })
-      })
-
-      /* ---------- 11. the nav condenses once the page has been scrolled ----------
+      /* ---------- 8. the nav condenses once the page has been scrolled ----------
          `end: 'max'`, not `end: 99999`. A numeric end is not one of the forms GSAP documents for
          this value, and the string keyword is the one that means "the end of the scroller". The
          number happened to work for the toggle, but it is the kind of value that turns into a
@@ -316,7 +219,7 @@ export function Motion() {
         })
       }
 
-      /* ---------- 12. scroll progress ----------
+      /* ---------- 9. scroll progress ----------
          A hairline readout of how far down the page you are. Adapted from React Bits' scroll
          progress: the original drives a motion value from a React scroll listener, which re-renders
          on every frame. This writes one CSS custom property from GSAP's own ScrollTrigger instead,
@@ -335,294 +238,14 @@ export function Motion() {
         }
       }
 
-      /* ---------- 13. spotlight cards ----------
-         A soft highlight that follows the pointer across a card's surface. Adapted from React Bits'
-         SpotlightCard: there the position is React state, which re-renders the card on every mouse
-         move: fine for one card, wasteful for a grid of them. This is one delegated listener for
-         the whole page that writes --mx/--my onto whichever card the pointer is over; the glow is a
-         radial-gradient in CSS, so the compositor does the work and React never sees the event.
-         Pointer-fine only: on touch there is no hover to follow. */
-      if (window.matchMedia('(pointer: fine)').matches) {
-        const cards = Array.from(document.querySelectorAll<HTMLElement>('[data-spotlight]'))
-
-        const onMove = (e: MouseEvent) => {
-          const card = (e.target as HTMLElement)?.closest?.('[data-spotlight]') as HTMLElement | null
-          if (!card) return
-          const r = card.getBoundingClientRect()
-          card.style.setProperty('--mx', `${e.clientX - r.left}px`)
-          card.style.setProperty('--my', `${e.clientY - r.top}px`)
-        }
-        const onLeave = (e: MouseEvent) => {
-          const card = (e.target as HTMLElement)?.closest?.('[data-spotlight]') as HTMLElement | null
-          if (!card) return
-          // Drop the highlight when the pointer leaves, so it does not stay lit under the last
-          // position the cursor happened to be in.
-          card.style.removeProperty('--mx')
-          card.style.removeProperty('--my')
-        }
-
-        document.addEventListener('mousemove', onMove, { passive: true })
-        document.addEventListener('mouseout', onLeave, { passive: true })
-        spotCleanup = () => {
-          document.removeEventListener('mousemove', onMove)
-          document.removeEventListener('mouseout', onLeave)
-          for (const c of cards) {
-            c.style.removeProperty('--mx')
-            c.style.removeProperty('--my')
-          }
-        }
-      }
-
-      /* ---------- 14. card tilt ----------
-         A few degrees of perspective tilt as the pointer crosses a card. Adapted from React Bits'
-         TiltedCard: the original maps pointer position to rotateX/rotateY in React state, which
-         re-renders per mousemove. This uses GSAP's quickTo, which writes the transform straight to
-         the element on the compositor.
-
-         CAPPED AT 4 DEGREES, and no scale. More than that reads as a toy and makes text on the
-         card harder to read at the exact moment the visitor is reading it: the tilt is there to
-         say "this surface is live", not to be the attraction. Pointer-fine only. */
-      if (window.matchMedia('(pointer: fine)').matches) {
-        const tilts: Array<() => void> = []
-        document.querySelectorAll<HTMLElement>('[data-tilt]').forEach((el) => {
-          const rxTo = gsap.quickTo(el, 'rotationX', { duration: 0.5, ease: EASE_SOFT })
-          const ryTo = gsap.quickTo(el, 'rotationY', { duration: 0.5, ease: EASE_SOFT })
-
-          const move = (e: MouseEvent) => {
-            const r = el.getBoundingClientRect()
-            const px = (e.clientX - r.left) / r.width - 0.5
-            const py = (e.clientY - r.top) / r.height - 0.5
-            ryTo(px * 8)   // ±4deg
-            rxTo(-py * 8)
-          }
-          const reset = () => { rxTo(0); ryTo(0) }
-
-          el.addEventListener('mousemove', move)
-          el.addEventListener('mouseleave', reset)
-          tilts.push(() => {
-            el.removeEventListener('mousemove', move)
-            el.removeEventListener('mouseleave', reset)
-            gsap.set(el, { rotationX: 0, rotationY: 0 })
-          })
-        })
-        tiltCleanup = () => { for (const off of tilts) off() }
-      }
-
-      /* ---------- 15. the click mark ----------
-         A short spray of survey ticks where the visitor clicks, then gone. Adapted from React
-         Bits' ClickSpark: the original wraps its children in a canvas that sizes itself to the
-         parent, which means a canvas per clickable thing. This is ONE fixed, full-viewport
-         canvas for the whole site, and the burst is drawn in screen space.
-
-         The mark is the same ranging-rod tick the rest of the site uses, not a generic star, and
-         it fires ONLY on a real activation: a click that lands on a link or a button, which is
-         the moment worth marking. A click on empty page is not a moment.
-
-         It draws to a canvas that is removed from hit-testing and from the accessibility tree, it
-         stops as soon as the sparks die, and it is skipped entirely on touch and under
-         reduced-motion (a click spark on a phone would fire on every scroll-stop tap). */
-      /* The click mark uses the shared `finePointer` read at the top of this branch, rather than
-         a second media query of its own: four queries for one fact is three too many, and on a
-         hybrid device they can disagree. */
-      if (finePointer) {
-        const canvas = document.createElement('canvas')
-        canvas.className = 'pg-spark'
-        canvas.setAttribute('aria-hidden', 'true')
-        document.body.appendChild(canvas)
-        const ctx = canvas.getContext('2d')
-
-        if (ctx) {
-          const dpr = Math.min(window.devicePixelRatio || 1, 2)
-          const size = () => {
-            canvas.width = Math.round(window.innerWidth * dpr)
-            canvas.height = Math.round(window.innerHeight * dpr)
-            canvas.style.width = `${window.innerWidth}px`
-            canvas.style.height = `${window.innerHeight}px`
-            ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-          }
-          size()
-
-          const SPARKS = 7
-          const LIFE = 460
-          const REACH = 26
-          let sparks: Array<{ x: number; y: number; a: number; born: number }> = []
-          let raf = 0
-
-          const paint = (now: number) => {
-            ctx.clearRect(0, 0, window.innerWidth, window.innerHeight)
-            const alive: typeof sparks = []
-            for (const s of sparks) {
-              const t = (now - s.born) / LIFE
-              if (t >= 1) continue
-              alive.push(s)
-              const ease = 1 - Math.pow(1 - t, 3)
-              const dist = ease * REACH
-              const alpha = 1 - t
-              const len = 7 * (1 - t * 0.55)
-              const x = s.x + Math.cos(s.a) * dist
-              const y = s.y + Math.sin(s.a) * dist
-              ctx.save()
-              ctx.translate(x, y)
-              ctx.rotate(s.a + Math.PI / 2)
-              // The site's marker orange, drawn as a short rod with a lit head.
-              ctx.strokeStyle = `rgba(243, 93, 25, ${alpha.toFixed(3)})`
-              ctx.lineWidth = 1.6
-              ctx.beginPath()
-              ctx.moveTo(0, -len / 2)
-              ctx.lineTo(0, len / 2)
-              ctx.stroke()
-              ctx.restore()
-            }
-            sparks = alive
-            if (sparks.length) {
-              raf = requestAnimationFrame(paint)
-            } else {
-              ctx.clearRect(0, 0, window.innerWidth, window.innerHeight)
-              raf = 0
-            }
-          }
-
-          const onClick = (e: MouseEvent) => {
-            // Only where it means something: an activation on a control.
-            const el = e.target as HTMLElement | null
-            if (!el?.closest?.('a, button, [role="button"], summary, label, input, select')) return
-            const born = performance.now()
-            for (let i = 0; i < SPARKS; i++) {
-              sparks.push({ x: e.clientX, y: e.clientY, a: (i / SPARKS) * Math.PI * 2, born })
-            }
-            if (!raf) raf = requestAnimationFrame(paint)
-          }
-
-          document.addEventListener('click', onClick, { passive: true })
-          window.addEventListener('resize', size)
-
-          sparkCleanup = () => {
-            document.removeEventListener('click', onClick)
-            window.removeEventListener('resize', size)
-            if (raf) cancelAnimationFrame(raf)
-            canvas.remove()
-          }
-        } else {
-          canvas.remove()
-        }
-      }
-
-      /* ---------- 16. the glow cursor ----------
-         Adapted from React Bits' GlowCursor. The original is a React component with its own
-         pointer state, which re-renders on every move. This is one fixed element for the whole
-         page, moved by a single delegated listener, so nothing re-renders and the compositor
-         does the work.
-
-         IT IS SCOPED TO A REGION, NOT TO THE PAGE. The brief asks for it "hanya aktif saat
-         pengguna mengarahkan mouse ke area interaktif seperti Bento Grid fitur" — only while the
-         pointer is over an interactive area. A light that follows the cursor everywhere is a
-         novelty; a light that appears when the cursor enters the capability grid says "this
-         region is live", which is a fact about the page rather than about the cursor.
-
-         Pointer-fine only, and never under reduced motion. On a phone there is no cursor, and
-         the whole effect is skipped rather than approximated. */
-      if (finePointer) {
-        const zones = Array.from(document.querySelectorAll<HTMLElement>('[data-glow-zone]'))
-        if (zones.length > 0) {
-          const glow = document.createElement('div')
-          glow.className = 'gf-glow'
-          glow.setAttribute('aria-hidden', 'true')
-          document.body.appendChild(glow)
-
-          const xTo = gsap.quickTo(glow, 'x', { duration: 0.45, ease: EASE_SOFT })
-          const yTo = gsap.quickTo(glow, 'y', { duration: 0.45, ease: EASE_SOFT })
-
-          const onMove = (e: MouseEvent) => {
-            const zone = (e.target as HTMLElement)?.closest?.('[data-glow-zone]')
-            if (zone) {
-              /* First entry: jump the light to the pointer before fading it in, so it does not
-                 slide in from wherever it was left last time. */
-              if (!glow.hasAttribute('data-on')) {
-                gsap.set(glow, { x: e.clientX, y: e.clientY })
-                glow.setAttribute('data-on', '')
-              }
-              xTo(e.clientX)
-              yTo(e.clientY)
-            } else if (glow.hasAttribute('data-on')) {
-              glow.removeAttribute('data-on')
-            }
-          }
-
-          document.addEventListener('mousemove', onMove, { passive: true })
-          glowCleanup = () => {
-            document.removeEventListener('mousemove', onMove)
-            glow.remove()
-          }
-        }
-      }
-
-      /* ---------- 17. scroll velocity ----------
-         Adapted from React Bits' ScrollVelocity: the surface leans with the speed of the scroll
-         and settles when it stops. The original drives this from a React scroll listener with a
-         spring; this reads the same number off GSAP's own ScrollTrigger, which is already
-         computing it, and writes one transform.
-
-         TWO SURFACES, TWO ANGLES, and the difference is deliberate. The brief asks for this effect
-         on the feature headings ("digunakan untuk heading fitur di marketing page"), and it was
-         only ever on the marquee band, which is not a heading. Both are here now:
-
-           the band  -> 3deg. It is words read in passing.
-           a heading -> 1.5deg, half as much. A section heading is the line that tells you what you
-                        are about to read, and you are reading it at the exact moment you are
-                        scrolling. The lean is a hint that the page moves with you; past that it
-                        fights the reading, which is the same argument the card tilt carries.
-
-         BOTH SETTLE TO 0, and that needs a timer rather than an event. `onUpdate` only fires while
-         the scroll position is changing, so on a hard stop — releasing a scrollbar drag, or hitting
-         the end of the page — the last velocity written would simply stay on screen and the page
-         would rest permanently skewed. The timer resets both to square 140ms after the last tick. */
-      const skewTargets = [
-        { els: Array.from(document.querySelectorAll<HTMLElement>('.pg-marquee-row')), cap: 3, div: 420, ms: 500 },
-        { els: Array.from(document.querySelectorAll<HTMLElement>('.pg-d2[data-anim="lines"]')), cap: 1.5, div: 700, ms: 550 },
-      ].filter((g) => g.els.length > 0)
-
-      if (skewTargets.length > 0) {
-        const groups = skewTargets.map((g) => ({
-          ...g,
-          write: g.els.map((el) => gsap.quickTo(el, 'skewX', { duration: g.ms / 1000, ease: EASE_SOFT })),
-        }))
-        let settle: ReturnType<typeof setTimeout> | undefined
-        const square = () => { for (const g of groups) for (const w of g.write) w(0) }
-
-        ScrollTrigger.create({
-          trigger: document.documentElement,
-          start: 'top top',
-          end: 'bottom bottom',
-          onUpdate: (self) => {
-            /* `getVelocity()` is px/second and runs into the thousands on a flick, so it is
-               normalised per group and clamped rather than used raw. */
-            const v = self.getVelocity()
-            for (const g of groups) {
-              const lean = gsap.utils.clamp(-g.cap, g.cap, v / g.div)
-              for (const w of g.write) w(lean)
-            }
-            clearTimeout(settle)
-            settle = setTimeout(square, 140)
-          },
-          onLeave: square,
-          onLeaveBack: square,
-        })
-        skewCleanup = () => { clearTimeout(settle); square() }
-      }
 
       /* Fonts change line breaking, which changes every ScrollTrigger start position measured
          before they landed. autoSplit handles the splits; this handles everything else. */
       document.fonts?.ready.then(() => ScrollTrigger.refresh())
 
       return () => {
-        for (const off of magnets) off()
         for (const s of splits) s.revert()
         if (nav) nav.classList.remove('is-stuck')
-        spotCleanup?.()
-        tiltCleanup?.()
-        sparkCleanup?.()
-        glowCleanup?.()
-        skewCleanup?.()
       }
     })
 

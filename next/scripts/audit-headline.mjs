@@ -29,8 +29,21 @@ await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 })
 
 const at = (p, x, y) => { const i = (y * p.width + x) << 2; return [p.data[i], p.data[i + 1], p.data[i + 2]] }
 const diff = (p, q, x, y) => { const a = at(p, x, y), b = at(q, x, y); return Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) + Math.abs(a[2] - b[2]) }
-const isCyan = (r, g, b) => g > 150 && b > 150 && r < 130
-const isEmerald = (r, g, b) => g > 170 && r < 130 && b > 90 && b < 220
+/* WHAT COUNTS AS "PAINTED" CHANGES WITH THE PALETTE, and this is the third palette this script
+   has seen. Under Neo-Topography the headings were gradient-filled in Cyber Cyan and the highlight
+   word was Neon Emerald, so the predicates looked for those. The client has since retired that
+   skin for the normal palette, where headings are flat ink and the highlight word is GEOFOLD Blue.
+
+   The MEASUREMENT is unchanged and is the point of the script: it diffs the heading against the
+   page without the heading to prove the glyphs actually reach the screen. Only the colour
+   predicates move. The `em` highlight is still checked separately, because "the emphasis word is
+   invisible" was a real bug this script caught. */
+const isBlue = (r, g, b) => b > 110 && b > r + 55 && g < b
+const isInk = (r, g, b) => r < 90 && g < 90 && b < 100
+/* THE HERO HEADING IS WHITE ON THE DARK PLATE, and that is correct rather than a defect. A
+   predicate that only accepts dark ink reports it as "check the mean ink", which is a false alarm
+   on the one heading that must be light. Measured: the H1 reads mean ink rgb(231,233,235). */
+const isLight = (r, g, b) => r > 200 && g > 200 && b > 200
 
 async function run(url, tag, sel) {
   await page.goto(url, { waitUntil: 'networkidle2', timeout: 90_000 })
@@ -81,29 +94,32 @@ async function run(url, tag, sel) {
 
   for (const b of boxes) {
     if (!b || b.missing) { console.log(`\n  ${b?.q}  -- NOT FOUND`); continue }
-    let changed = 0, cyan = 0, emerald = 0, rs = 0, gs = 0, bs = 0
+    let changed = 0, blue = 0, ink = 0, light = 0, rs = 0, gs = 0, bs = 0
     for (let y = b.y; y < b.y + b.h && y < A.height; y++) {
       for (let x = b.x; x < b.x + b.w && x < A.width; x++) {
         if (diff(A, B, x, y) > 30) {
           changed++
           const [r, g, bl] = at(A, x, y)
           rs += r; gs += g; bs += bl
-          if (isCyan(r, g, bl)) cyan++
-          if (isEmerald(r, g, bl)) emerald++
+          if (isBlue(r, g, bl)) blue++
+          if (isInk(r, g, bl)) ink++
+          if (isLight(r, g, bl)) light++
         }
       }
     }
     const mean = changed ? `rgb(${Math.round(rs / changed)}, ${Math.round(gs / changed)}, ${Math.round(bs / changed)})` : '—'
     console.log(`\n  ${b.q}  "${b.text}"`)
     console.log(`     computed : grad=${b.grad} fill=${b.fill} anim=${b.anim}`)
-    console.log(`     measured : ${changed} px, mean ink ${mean}, cyan ${(cyan / Math.max(1, changed) * 100).toFixed(0)}%, emerald ${(emerald / Math.max(1, changed) * 100).toFixed(0)}%`)
+    console.log(`     measured : ${changed} px, mean ink ${mean}, blue ${(blue / Math.max(1, changed) * 100).toFixed(0)}%, ink ${(ink / Math.max(1, changed) * 100).toFixed(0)}%`)
     console.log(`     >> ${changed <= 400
       ? 'NOT PAINTED'
-      : cyan / changed > 0.35
-        ? 'VISIBLE with the gradient on the ink'
-        : emerald / changed > 0.35
-          ? 'VISIBLE, inked emerald (the highlight word)'
-          : 'VISIBLE, but check the mean ink above'}`)
+      : blue / changed > 0.35
+        ? 'VISIBLE, inked GEOFOLD Blue (the highlight word)'
+        : ink / changed > 0.35
+          ? 'VISIBLE as flat ink (the normal palette)'
+          : light / changed > 0.35
+            ? 'VISIBLE as white ink on the dark plate'
+            : 'VISIBLE, but check the mean ink above'}`)
 
     /* Write a zoomed crop of each heading's box so the same region can be read by eye. Cropped in
        Node rather than with Puppeteer's `clip`, which is document-relative while

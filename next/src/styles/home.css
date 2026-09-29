@@ -300,8 +300,16 @@
 /* ---------- pricing teaser ---------- */
 /* The base is a one-column stack (phone). The gutter, not the pad: at 2560px the pad pinned this
    block to x=80 while the section headings above it had moved to x=640, so the cards read as
-   belonging to a narrower page than their own heading. See the token block in paper.css. */
-.mk-price { padding: 0 var(--mk-gutter); display: grid; gap: 12px; }
+   belonging to a narrower page than their own heading. See the token block in paper.css.
+
+   THE GAP IS 24px, raised from 12px. Measured on the served build: two 634px cards sat 12px
+   apart while each carried 40px of internal padding, so the pair read as one divided block
+   rather than as two plans side by side — and on a page whose whole job is comparing two
+   prices, the space BETWEEN them has to be legible as a boundary. The landed pricing grid
+   (`.pg-price` in paper.css) already used 20px; this brings the two pages onto the same
+   rhythm instead of leaving one at 12px because that was the value it happened to be built
+   with. */
+.mk-price { padding: 0 var(--mk-gutter); display: grid; gap: 24px; }
 .mk-price-card {
   background: var(--mk-panel); border: 1px solid var(--mk-line); border-radius: 14px; padding: 20px;
   display: flex; flex-direction: column;
