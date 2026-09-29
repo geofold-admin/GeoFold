@@ -744,6 +744,19 @@
   align-items: center;
 }
 
+/* THE ARGUMENT COLUMN FILLS ITS OWN GRID CELL.
+   paper.css gives `.pg-quote-body` a `max-width: 60ch` (542px at this size), which was correct
+   when the block sat on a full-width row. It does not any more: the argument section is a
+   two-column grid of `828px | 380px`, so the paragraph was using 542 of its 828px and leaving a
+   286px hole beside it. Measured from the live DOM: paragraph 542px inside an 828px cell.
+
+   This is the trap of a `ch`-based measure surviving a layout change — the number was right for a
+   different container. The measure is now set by the grid, and the 68ch cap in section 13 is the
+   one that governs readability, so nothing is lost. */
+.mk.mk.mk-site .pg-quote-body {
+  max-width: none;
+}
+
 /* =====================================================================================
    12. THE SECTION HEAD
    =====================================================================================
@@ -877,4 +890,117 @@
     animation: none;
     transition: none;
   }
+}
+
+/* =====================================================================================
+   16. THE DARK BANDS — LAST, AND THAT IS THE WHOLE POINT
+   =====================================================================================
+   Everything above is written for the page's light ground. This section re-inks the two
+   surfaces that are not light — `.pg-sec-dark` / `.mk-sec-dark` (the argument band) and
+   `.mk-hero` (the page hero, whose plate is painted by `::before`) — and it sits at the
+   end of the file for a reason that took several rounds to find.
+
+   THE FAILURE MODE, because it is subtle and it will recur. Section 9 sets headings to
+   `var(--mk-ink)` with `.mk.mk.mk-site .mk-sec-head h2` — four classes and a type, (0,4,1).
+   The band-aware rule that should beat it, `.mk.mk.mk-site .mk-sec-dark h2`, is ALSO
+   (0,4,1). Equal specificity means source order decides, and section 9 is later in the
+   file, so the LIGHT ink won on the DARK band. Measured from the rendered page: `#111827`
+   on `#0A192F` — **1.01:1**, a heading that is not low-contrast but invisible. The
+   argument paragraphs read 2.37:1 and the `<strong>` inside them 1.01:1.
+
+   The fix is not to inflate specificity in the earlier rules — that fights the rest of the
+   file and every future edit. It is to put the band's rules after everything that could
+   outrank them, and to name the same elements the earlier rules name, so equal specificity
+   is resolved by order in this section's favour. That is why `.mk-sec-head h2` and
+   `.mk-why p` appear below alongside `.mk-sec-dark`.
+
+   A SECOND TRAP, in the featured price card. `corporate.css` re-points the token itself:
+   `.mk .mk-price-card.feat { --mk-muted: #FFFFFF }`, because that card used to be blue.
+   It is a white card now, so any rule that says `color: var(--mk-muted)` inside it inherits
+   WHITE and renders at 1.06:1. A token is not safe to trust inside a re-pointed subtree —
+   the `<small>` below therefore takes a literal. */
+.mk.mk.mk-site .pg-sec-dark .pg-quote-body p,
+.mk.mk.mk-site .pg-sec-dark .mk-why p,
+.mk.mk.mk-site .mk-sec-dark .mk-why p,
+.mk.mk.mk-site .mk-sec-dark .pg-quote-body p {
+  color: var(--mk-deep-prose);
+}
+.mk.mk.mk-site .pg-sec-dark .pg-quote-body strong,
+.mk.mk.mk-site .pg-sec-dark .mk-why strong,
+.mk.mk.mk-site .mk-sec-dark .mk-why strong,
+.mk.mk.mk-site .mk-sec-dark .pg-quote-body strong,
+.mk.mk.mk-site .pg-sec-dark .pg-globe-cap strong {
+  color: var(--mk-deep-ink);
+}
+.mk.mk.mk-site .pg-sec-dark .pg-globe-cap,
+.mk.mk.mk-site .pg-sec-dark .pg-globe-sub {
+  color: var(--mk-deep-prose);
+}
+/* The section head on a dark band, matched at the depth section 9 uses. */
+.mk.mk.mk-site .mk-sec-dark .mk-sec-head h2,
+.mk.mk.mk-site .mk-sec-dark .mk-sec-head h3,
+.mk.mk.mk-site .mk-sec-dark h2,
+.mk.mk.mk-site .mk-sec-dark h3,
+.mk.mk.mk-site .pg-sec-dark .pg-head-top h2,
+.mk.mk.mk-site .pg-sec-dark h2,
+.mk.mk.mk-site .pg-sec-dark h3 {
+  color: var(--mk-deep-ink);
+}
+.mk.mk.mk-site .mk-sec-dark .mk-kick,
+.mk.mk.mk-site .mk-sec-dark .mk-eyebrow,
+.mk.mk.mk-site .mk-sec-dark .mk-sec-head .mk-kick {
+  color: var(--mk-deep-accent);
+}
+
+/* THE HERO. Its plate is a `::before`, so nothing about the hero's own background tells you
+   it is dark, and the light-ground rules above land on it by default. `h1` is already
+   handled in section 9; what was missing was the eyebrow, which read `--mk-green`
+   (#014AB5) on the plate — measured **2.26:1** on /faq, /contact and /download. */
+.mk.mk.mk-site .mk-hero .mk-eyebrow,
+.mk.mk.mk-site .mk-hero .mk-kick,
+.mk.mk.mk-site .mk-hero .mk-cap-kick {
+  color: var(--mk-deep-accent);
+}
+.mk.mk.mk-site .mk-hero .mk-lede {
+  color: var(--mk-deep-prose);
+}
+
+/* THE FEATURED CARD'S INK, IN LITERALS, AND THAT IS NOT LAZINESS.
+   `corporate.css` re-points three tokens inside this one subtree because the card used to be
+   blue: `--mk-muted: #FFFFFF`, `--mk-prose: #FFFFFF`, and `--mk-faint` to a pale step. The
+   card is WHITE now, so every `color: var(--mk-prose)` or `var(--mk-muted)` in here resolves
+   to white on white. Measured before this fix: "For teams working in the field." at
+   **1.06:1** and "/ 30 days" at **1.06:1**.
+
+   Two earlier attempts to fix this with tokens failed for exactly that reason — the token is
+   re-pointed at the point of use, so a rule that reads it inherits the re-pointed value no
+   matter how specific the selector is. Inside a subtree that re-points its own tokens, the
+   only reliable ink is a literal. These are the site's own steps, not new colours:
+   `#4B5563` is `--mk-prose` (9.65:1 on white) and `#6B7280` is `--mk-muted` (4.83:1). */
+/* The `<p>` wins on order. The list does not, and the reason is worth recording because the
+   class name is not what anyone would guess: the feature list is `ul.mk-plist.on-dark`, not
+   `.mk-plan-list`. `.on-dark` is a leftover from when this card was blue, and blueprint.css
+   still has `.mk .mk-price-card.feat .mk-plist.on-dark li { color: #FFFFFF }` at (0,5,1).
+   That matches and outranks a (0,5,1) rule from an earlier file, so the list stayed white on
+   white. `.mk-price-card` is repeated to reach (0,7,1) — the same technique this project
+   already uses for `.pg-price-card.pg-price-card`. */
+.mk.mk.mk-site .mk-price-card.feat p,
+.mk.mk.mk-site .mk-price-card.mk-price-card.feat .mk-plist li,
+.mk.mk.mk-site .mk-price-card.mk-price-card.feat .mk-plist.on-dark li {
+  color: #4B5563;
+}
+.mk.mk.mk-site .mk-price-card.feat .mk-price-num small {
+  color: #6B7280;
+}
+
+/* The stage index on the product page. `--mk-faint` is #6B7280 here, and #6B7280 is calibrated
+   against WHITE (4.83:1). The index sits on `.mk-sec-tint` (#E8E8E8), where the same grey
+   measures 3.95:1 — a step that passes on paper and fails on a band. Moving it to `--mk-muted`
+   changed nothing, because both tokens are that grey.
+
+   Measured on the band: #6B7280 = 3.95:1, #4B5563 = 6.17:1. The index takes the prose step,
+   which is the ink the paragraph beside it already uses, so numeral and caption read as one
+   column. A literal, because this subtree re-points its tokens (see above). */
+.mk.mk.mk-site .mk-stage-num {
+  color: #4B5563;
 }

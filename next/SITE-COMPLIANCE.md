@@ -231,13 +231,20 @@ Semua dijalankan terhadap build produksi yang disajikan di port 3100.
 | `verify:ui` | **47 lulus / 0 gagal** |
 | `verify:app` | **18 lulus / 0 gagal** |
 | `verify:site` | **29 lulus / 0 gagal** |
+| `verify:contrast` | **804 elemen teks, 0 gagal** |
 | `audit:brief` | **11 lulus / 0 gagal** |
 | `audit:colour` | laporan proporsi per halaman |
 | `audit:headline` | semua heading terbukti TERLIHAT |
 | `npx tsc --noEmit` | **exit 0** |
 | `npx next build` | bersih |
 
-**Total: 105 pemeriksaan, 0 gagal.**
+**Total: 106 pemeriksaan skrip + 804 elemen teks, 0 gagal.**
+
+`verify:contrast` adalah suite baru yang lahir dari ronde ini. Ia mengukur **setiap elemen teks di
+tujuh halaman** terhadap **warna yang paling banyak muncul di dalam kotaknya sendiri** — bukan
+terhadap deklarasi `background` leluhurnya, yang salah di mana pun ada gradien, plat
+pseudo-element (`.mk-hero::before`), atau token yang di-repoint. Ambangnya WCAG 2.1 AA: 4.5:1 untuk
+teks badan, 3:1 untuk teks besar. Lihat §9 nomor 12 untuk apa yang ia temukan.
 
 ### Tiga kontrak lama yang saya perbarui, bukan hapus
 
@@ -311,7 +318,76 @@ Ini dicatat karena masing-masing menghasilkan **jawaban salah yang terdengar mey
 11. **Pemeriksaan visual yang salah soal garis.** Ditanya apakah ada garis di dalam kotak,
     pemeriksaan visual menjawab "tidak ada" — dua kali. Pengukuran membuktikan ada. Ini kasus
     keempat di proyek ini di mana penglihatan keliru dan angka benar; perlakukan temuan visual
-    sebagai hipotesis, bukan putusan.
+    sebagai hipotesis, bukan putusan. **Tetapi kali ini penglihatan juga benar sekali** — lihat
+    nomor 12.
+
+12. **ENAM KEGAGALAN KONTRA, DUA DI ANTARANYA TAK TERLIHAT (1.01:1).** Ini temuan terbesar ronde
+    ini, dan yang paling tidak nyaman: semuanya lolos dari setiap pemeriksaan yang sudah ada.
+
+    Pemeriksaan visual melaporkan "smear karakter yang tumpang tindih" di paragraf argumen. Saya
+    hampir mengabaikannya sebagai halusinasi — sudah empat kali penglihatan keliru di proyek ini.
+    Tapi saya mengukurnya, dan yang ditemukan bukan smear: `<strong>` "into the image itself"
+    berwarna `#111827` di atas `#0A192F` = **1.01:1**. Teks itu **tidak terlihat sama sekali**,
+    bukan sekadar kurang kontras. Hal yang sama pada "Sintang, West Kalimantan" (1.01:1), paragraf
+    argumen (2.37:1), dan `.pg-globe-sub` (3.71:1).
+
+    **Penyebabnya spesifisitas, dan ini akan terulang.** §9 di `site.css` saya memberi heading
+    `var(--mk-ink)` lewat `.mk.mk.mk-site .mk-sec-head h2` — empat kelas + tipe, (0,4,1). Aturan
+    sadar-band yang seharusnya menang, `.mk.mk.mk-site .mk-sec-dark h2`, **juga (0,4,1)**.
+    Spesifisitas sama berarti urutan sumber yang menentukan, dan §9 ada **setelahnya** di file —
+    jadi tinta untuk latar terang menang di latar gelap. Tidak ada satu pun hex yang salah; yang
+    salah adalah pasangan tinta-dengan-latar.
+
+    **Kegagalan kedua, yang lebih licin: token yang di-repoint.** `corporate.css` mendefinisikan
+    ulang token di dalam satu subtree — `.mk .mk-price-card.feat { --mk-muted: #FFFFFF }` — karena
+    kartu itu dulu biru. Sekarang kartunya **putih**, jadi setiap `color: var(--mk-muted)` di
+    dalamnya mewarisi PUTIH dan tampil **1.06:1**. Dua percobaan perbaikan saya gagal karena
+    membaca token itu. **Token tidak aman dipercaya di dalam subtree yang me-repoint tokennya
+    sendiri**; di sana hanya literal yang andal.
+
+    **Enam pola yang diperbaiki**, semuanya terukur di halaman yang dirender. Angka "Sebelum"
+    adalah **yang dilaporkan suite**, yaitu terhadap ground yang tersampel dari piksel (dikuantisasi
+    ke bucket 16-lebar). Angka "Sesudah" adalah rasio terhadap ground persis. Selisih kecil di
+    antaranya bukan kesalahan: `#4B5563` di atas `#0A192F` persis adalah 2.33:1, dan suite membaca
+    2.37:1 karena ground tersampelnya `rgb(8,24,40)` — satu langkah lebih terang dari plat:
+
+    | Elemen | Sebelum | Sesudah |
+    | :--- | ---: | ---: |
+    | `<strong>` di band gelap | **1.01:1** (tak terlihat) | 17.60:1 |
+    | Paragraf argumen di band gelap | 2.37:1 | 11.05:1 |
+    | `.pg-globe-sub` | 3.71:1 | 11.05:1 |
+    | `.mk-eyebrow` (biru di atas biru, 3 halaman) | **1.52:1** | 7.27:1 |
+    | `/ 30 days` di kartu Premium (putih di atas putih) | **1.06:1** | 4.83:1 |
+    | `.mk-stage-num` di band tint | 3.95:1 | 6.17:1 |
+
+    Yang penting bukan angka desimalnya melainkan **keputusannya**: 1.01:1 dan 1.06:1 adalah teks
+    yang tidak terlihat, dan tidak satu pun dari keduanya tertangkap oleh 105 pemeriksaan yang sudah
+    ada.
+
+    Ditambah `.mk-plist li` di kartu Premium — daftar fiturnya memakai `ul.mk-plist.on-dark`, sisa
+    dari saat kartu itu biru, dan `blueprint.css` masih mewarnainya putih pada (0,5,1).
+
+    **Kenapa audit warna yang lama melewatkan semuanya:** mereka memeriksa **tangga token** ("apakah
+    `#6B7280` 4.83:1 di atas putih?") dan bukan **pasangan yang benar-benar dicat**. Setiap token di
+    sini benar secara individual. Bug-nya ada di latar mana masing-masing mendarat, dan itu hanya
+    terlihat di halaman yang dirender. Karena itu `verify:contrast` sekarang mengukur dari piksel.
+
+13. **Probe kontras pertama saya sendiri tidak bisa dipercaya.** Versi pertama menggulir ke tiap
+    elemen lalu memotret per elemen. Dengan `scroll-behavior: smooth`, gulirannya **masih
+    beranimasi saat rana terbuka** — setiap potret menangkap apa pun yang kebetulan lewat. Hasilnya
+    "49 dari 106 gagal", sebagian besar palsu. Versi yang benar mengambil **satu** screenshot
+    seluruh halaman lebih dulu, lalu menyampel dengan koordinat absolut. Koordinat absolut tidak
+    bisa kalah balapan.
+
+14. **Komentar yang salah tentang token.** Saya menulis bahwa `--mk-faint` adalah `#9CA3AF`; di
+    `site.css` nilainya `#6B7280`. Diperbaiki — komentar yang salah lebih buruk daripada tidak ada
+    komentar, karena ia dipercaya.
+
+15. **Probe `ch` yang bertahan melampaui tata letaknya.** `.pg-quote-body` masih membawa
+    `max-width: 60ch` (542px) dari `paper.css`, benar ketika blok itu selebar penuh, salah setelah
+    section menjadi grid `828px | 380px`: paragraf memakai 542 dari 828px dan menyisakan lubang
+    286px. Terukur dari DOM: paragraf 542px di dalam sel 828px. Sekarang `max-width: none`, dan
+    batas 68ch di §13 yang mengaturnya — paragraf membaca 692px.
 
 ---
 
@@ -319,13 +395,14 @@ Ini dicatat karena masing-masing menghasilkan **jawaban salah yang terdengar mey
 
 | Berkas | Status | Keterangan |
 | :--- | :--- | :--- |
-| `src/styles/site.css` | **baru** | 880 baris. Seluruh lapisan ini: token, section polos, hero, globe, kontrol, motion |
-| `src/components/land.ts` | **baru** | 90 cincin, 2.910 titik garis pantai Natural Earth |
+| `src/styles/site.css` | **baru** | 1.006 baris. Seluruh lapisan ini: token, section polos, hero, globe, kontrol, motion |
+| `src/components/land.ts` | **baru** | 90 cincin, 1.455 titik garis pantai Natural Earth |
 | `src/components/SurveyGlobe.tsx` | diubah | Menggambar benua asli; 473 baris |
 | `src/app/(marketing)/Motion.tsx` | diubah | 641 → 264 baris; efek berlebihan dihapus, bukan dimatikan |
 | `src/app/(marketing)/layout.tsx` | diubah | `site.css` diimpor terakhir; `SiteGround` dilepas |
 | `src/styles/home.css` | diubah | Gutter harga 12px → 24px |
 | `scripts/verify-site.mjs` | **baru** | 29 pemeriksaan untuk kontrak ini |
+| `scripts/verify-contrast.mjs` | **baru** | 804 elemen teks di 7 halaman, ambang AA |
 | `scripts/build-land.mjs` | **baru** | Generator satu-kali untuk `land.ts` |
 | `scripts/verify-ui.mjs` | diubah | Tiga kontrak lama diperbarui |
 | `scripts/audit-brief.mjs` | diubah | Pemeriksaan kartu Premium diperbarui |

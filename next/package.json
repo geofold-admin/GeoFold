@@ -9,11 +9,12 @@
     "verify:ui": "node scripts/verify-ui.mjs",
     "verify:app": "node scripts/verify-app.mjs",
     "verify:site": "node scripts/verify-site.mjs",
-    "verify:all": "npm run verify:ui && npm run verify:app && npm run verify:site",
+    "verify:all": "npm run verify:ui && npm run verify:app && npm run verify:site && npm run verify:contrast",
     "audit:brief": "node scripts/audit-brief.mjs",
     "audit:colour": "node scripts/audit-colour.mjs",
     "audit:headline": "node scripts/audit-headline.mjs",
-    "audit": "npm run audit:brief && npm run audit:colour && npm run audit:headline"
+    "audit": "npm run audit:brief && npm run audit:colour && npm run audit:headline",
+    "verify:contrast": "node scripts/verify-contrast.mjs"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
