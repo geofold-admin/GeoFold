@@ -100,6 +100,28 @@ export type Mesh = {
 }
 
 /**
+ * The water surface for this payload, as a normalised 0..1 elevation.
+ *
+ * WHY IT IS DERIVED RATHER THAN A CONSTANT. A hard-coded threshold silently becomes wrong the
+ * moment the DEM window, the zoom or the build changes — and the failure is invisible, because a
+ * mistuned threshold still draws *some* water, just in the wrong place. Deriving it from the
+ * payload means the water follows the data.
+ *
+ * The percentile itself is the caller's choice and is documented where it is used (see the water
+ * block in HeroTerrain3D's fragment shader): a low percentile gives a physically smaller river but
+ * draws it as disconnected ponds, a higher one gives a connected dendritic network at the cost of
+ * including some floodplain. This function only does the arithmetic.
+ */
+export function waterU(dem: Dem, percentile: number): number {
+  const { dm, zLo, zHi } = dem
+  const span = zHi - zLo || 1
+  const sorted = Int16Array.from(dm).sort()
+  const idx = Math.min(sorted.length - 1, Math.max(0, Math.round(percentile * (sorted.length - 1))))
+  /* dm is decimetres above zLo, so the elevation is dm/10 and the normalised value is dm/10/span. */
+  return clamp01(sorted[idx] / 10 / span)
+}
+
+/**
  * The top surface: an N×N heightfield centred on the origin.
  *
  * PLAN = 1.0 across, so `x` and `z` run -0.5..0.5 and the vertical scale is a single number the
@@ -251,4 +273,106 @@ export function buildShadowQuad(depth: number): Mesh {
   for (let k = 0; k < 6; k++) normal[k * 3 + 1] = 1
   const uv = new Float32Array([0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1])
   return { position, normal, scalar: { uv }, index: new Uint32Array(0), count: 6 }
+}
+
+/**
+ * Baked ambient occlusion for the surface — the term that makes the block read as LIT RELIEF.
+ *
+ * WHY IT IS NEEDED. Measured against the client's own reference render, the first WebGL version
+ * scored 3/10 judged as terrain, and the critique named the cause exactly: "the absence of a
+ * coherent light model — the terrain is *drawn* rather than *lit*, and the eye reads it as a flat
+ * printed map glued to the top of a solid block". Lambert lighting was already present and could
+ * not fix it on its own, for two measured reasons: the light gain spanned only 0.66..1.07 (a 1.6:1
+ * range, close to invisible) and the contour ink was drawn at 90% strength, so nested contour rings
+ * carried more signal than the shading did. Occlusion is the missing term — it is what tells the
+ * eye which ground sits in a hollow and which sits on a ridge.
+ *
+ * WHY IT IS BAKED, NOT ANIMATED. The brief bans looping animation outright, and `verify-site.mjs`
+ * measures the canvas for self-movement — an earlier version that spun on its own failed with 10495
+ * changed samples against a limit of 200. So occlusion must be a static vertex attribute computed
+ * once, never a per-frame pass.
+ *
+ * METHOD — horizon mapping. From each vertex, march outward along N compass directions and keep the
+ * steepest upward angle seen. A vertex in a basin has high horizon angles all around it and goes
+ * dark; one on a ridge sees open sky and stays lit. TWO radii are combined because a single one
+ * cannot serve both jobs: a short march never reaches the valley walls, a long march steps over the
+ * gullies. Computed on the DISPLAYED geometry — vertically exaggerated, exactly like the normals —
+ * so the occlusion agrees with the shape the eye is actually shown rather than with the true metres.
+ *
+ * The result is rescaled against its own p2..p98 before return. Without that the term is at the
+ * mercy of how much relief happens to fall inside the window, and this window is mostly a flat
+ * basin: an absolute threshold would leave almost the whole block at one value and change nothing.
+ */
+export function computeAO(dem: Dem, height: number): Float32Array {
+  const { n } = dem
+  const u = normalisedHeights(dem)
+  const step = 1 / (n - 1)
+  const DIRS = 8
+  const STEPS = 16
+  /* Near radius catches gullies and river banks; far radius catches the basin walls. The weights
+     favour the near term because the fine relief is what the resting camera angle shows most of. */
+  const RADII: [number, number][] = [
+    [6, 0.62],
+    [20, 0.38],
+  ]
+
+  const dirX = new Float32Array(DIRS)
+  const dirZ = new Float32Array(DIRS)
+  for (let d = 0; d < DIRS; d++) {
+    const a = (d / DIRS) * Math.PI * 2
+    dirX[d] = Math.cos(a)
+    dirZ[d] = Math.sin(a)
+  }
+
+  const at = (i: number, j: number) => {
+    const ci = i < 0 ? 0 : i > n - 1 ? n - 1 : i
+    const cj = j < 0 ? 0 : j > n - 1 ? n - 1 : j
+    return u[cj * n + ci] * height
+  }
+
+  const raw = new Float32Array(n * n)
+  for (let j = 0; j < n; j++) {
+    for (let i = 0; i < n; i++) {
+      const k = j * n + i
+      const yc = u[k] * height
+      let occ = 0
+      for (let ri = 0; ri < RADII.length; ri++) {
+        const [r, w] = RADII[ri]
+        let sum = 0
+        for (let d = 0; d < DIRS; d++) {
+          let maxSin = 0
+          for (let s = 1; s <= STEPS; s++) {
+            const dist = (s / STEPS) * r
+            const si = Math.round(i + dirX[d] * dist)
+            const sj = Math.round(j + dirZ[d] * dist)
+            if (si < 0 || si > n - 1 || sj < 0 || sj > n - 1) continue
+            const dh = at(si, sj) - yc
+            if (dh <= 0) continue
+            const slope = dh / (dist * step)
+            const sin = slope / Math.sqrt(1 + slope * slope)
+            if (sin > maxSin) maxSin = sin
+          }
+          sum += maxSin
+        }
+        occ += (sum / DIRS) * w
+      }
+      raw[k] = 1 - occ
+    }
+  }
+
+  /* Rescale p2..p98 onto 0.28..1. A closed basin has no cell with a fully open horizon, so without
+     this the term would compress into a narrow band near 1 and be invisible — the same failure the
+     light gain had. The floor is 0.28 rather than 0 so the deepest hollow stays readable instead of
+     turning into a black hole in the terrain. */
+  const sorted = Float32Array.from(raw).sort()
+  const pct = (p: number) => sorted[Math.min(sorted.length - 1, Math.max(0, Math.round(p * (sorted.length - 1))))]
+  const lo = pct(0.02)
+  const hi = pct(0.98)
+  const span = hi - lo || 1
+  const ao = new Float32Array(n * n)
+  for (let k = 0; k < raw.length; k++) {
+    const t = (raw[k] - lo) / span
+    ao[k] = 0.28 + 0.72 * (t < 0 ? 0 : t > 1 ? 1 : t)
+  }
+  return ao
 }

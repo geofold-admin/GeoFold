@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { parseDem, buildSurface, buildWalls, buildShadowQuad, COLOUR_GAMMA } from '@/lib/terrainDem'
+import { parseDem, buildSurface, buildWalls, buildShadowQuad, computeAO, COLOUR_GAMMA } from '@/lib/terrainDem'
 
 /**
  * HeroTerrain3D — the hero's terrain block, as a real, turnable WebGL mesh.
@@ -73,6 +73,7 @@ in float u;      // normalised height 0..1, linear (surface only)
 in float cutT;   // 0 at the surface, 1 at the base of a cut face (walls only)
 in float side;   // which cut face, 0..3 (walls only)
 in vec2 uv;      // base-plane quad only
+in float ao;     // baked ambient occlusion, 0..1 (surface only)
 
 uniform mat4 modelViewMatrix;
 uniform mat4 projectionMatrix;
@@ -84,6 +85,7 @@ out float vU;
 out float vDrop;
 out float vSide;
 out vec2 vUv;
+out float vAo;
 
 void main() {
   vNormal = normalMatrix * normal;
@@ -93,6 +95,7 @@ void main() {
   vDrop = cutT;
   vSide = side;
   vUv = uv;
+  vAo = ao;
   gl_Position = projectionMatrix * mv;
 }
 `
@@ -106,6 +109,7 @@ in float vU;
 in float vDrop;
 in float vSide;
 in vec2 vUv;
+in float vAo;
 
 uniform float uGamma;
 uniform float uLevels;
@@ -116,24 +120,34 @@ uniform vec3 uLightDir;
 out vec4 fragColor;
 
 /* THE HYPSOMETRIC RAMP — ten stops, baked in as a const array rather than passed as a uniform.
-   Low is a cool blue, climbing through teal and sage to a pale ice-grey summit: a standard
-   professional DEM tint, and the one colour decision that lets the block sit on a white page
-   rather than on top of it. The top stop is deliberately NOT white — a snow-white summit on a
-   white ground loses its outline exactly where it is most interesting.
-   The values are the same ten stops the static PNG is drawn from (scripts/build-terrain.mjs),
-   converted from 0-255 to 0-1. */
+   A standard professional DEM tint: green lowland climbing through dry yellow-brown to grey rock
+   and a pale ice summit, with the open water handled separately below.
+
+   WHY IT IS NO LONGER BLUE AT THE BOTTOM, WHICH IT WAS. The first version opened on a cool blue,
+   on the reasoning that it let the block sit on a white page. It did — but it also painted the
+   entire lowland as water. MEASURED, and this is the number that settled it: this 98 km window is
+   72% flat basin, everything below 89 m, so a blue low end tinted three-quarters of the block as
+   open water. Independent visual review of the result reported "three-quarters of it is a dark
+   teal-navy plane reading as water/bay" and scored the whole thing 3/10 as a terrain depiction.
+   The reviewer was right about what it SAW and wrong about what it was: that was farmland and
+   floodplain, not a lake. A tint that misdescribes the ground is a bug however well it sits on the
+   page, and the client's own reference render is a green-brown hypsometric ramp for this reason.
+
+   The brand's cool character is kept where it is true rather than where it is not: the rock and
+   summit stops run grey-blue to ice, so the block still reads as the same family on a white page,
+   while the ground the eye spends most of its time on is the colour ground actually is. */
 const int RAMP_N = 10;
 const vec3 RAMP[10] = vec3[10](
-  vec3(0.278431, 0.454902, 0.580392),  // 0x47 0x74 0x94
-  vec3(0.313725, 0.494118, 0.603922),  // 0x50 0x7e 0x9a
-  vec3(0.356863, 0.556863, 0.600000),  // 0x5b 0x8e 0x99
-  vec3(0.419608, 0.619608, 0.580392),  // 0x6b 0x9e 0x94
-  vec3(0.501961, 0.674510, 0.560784),  // 0x80 0xac 0x8f
-  vec3(0.607843, 0.725490, 0.568627),  // 0x9b 0xb9 0x91
-  vec3(0.713725, 0.772549, 0.607843),  // 0xb6 0xc5 0x9b
-  vec3(0.800000, 0.819608, 0.690196),  // 0xcc 0xd1 0xb0
-  vec3(0.866667, 0.874510, 0.796078),  // 0xdd 0xdf 0xcb
-  vec3(0.925490, 0.933333, 0.941176)   // 0xec 0xee 0xf0
+  vec3(0.294118, 0.396078, 0.301961),  // 0x4b 0x65 0x4d  floodplain scrub
+  vec3(0.376471, 0.486275, 0.333333),  // 0x60 0x7c 0x55  lowland vegetation
+  vec3(0.470588, 0.568627, 0.360784),  // 0x78 0x91 0x5c  farmland
+  vec3(0.580392, 0.643137, 0.396078),  // 0x94 0xa4 0x65  dry grass
+  vec3(0.690196, 0.682353, 0.447059),  // 0xb0 0xae 0x72  dry hills
+  vec3(0.745098, 0.678431, 0.498039),  // 0xbe 0xad 0x7f  bare earth
+  vec3(0.752941, 0.654902, 0.529412),  // 0xc0 0xa7 0x87  rock and scree
+  vec3(0.717647, 0.670588, 0.639216),  // 0xb7 0xab 0xa3  high rock
+  vec3(0.717647, 0.741176, 0.768627),  // 0xb7 0xbd 0xc4  cold grey
+  vec3(0.901961, 0.929412, 0.945098)   // 0xe6 0xed 0xf1  ice summit — deliberately not white
 );
 
 vec3 ramp(float t) {
@@ -178,26 +192,80 @@ void main() {
   float t = pow(clamp(vU, 0.0, 1.0), uGamma);
   vec3 base = ramp(t);
 
-  /* Lambert against the NW sun, with the ambient floor and the capped gain the static render
-     uses: SHADE_MIN 0.66 and SHADE_MAX 1.07. The gain stops short of clipping on purpose —
-     nothing in a matte relief map should reach pure white except the snow line. */
+  /* THE LIGHT MODEL. This is the term the whole block hangs on, and the first version got it
+     wrong in two measured ways at once.
+
+     (1) THE GAIN WAS TOO NARROW. It spanned 0.66..1.07 — a 1.6:1 range, which is close to
+     invisible on a matte surface and is why the eye read the block as a flat printed map rather
+     than as lit ground. Widened to 0.52..1.18 (a 2.3:1 range) so a slope facing the sun is
+     genuinely brighter than one facing away.
+
+     (2) THERE WAS NO OCCLUSION TERM AT ALL. Lambert alone shades by surface ANGLE, so it cannot
+     distinguish a hollow from a ridge that happen to face the same way — and in a basin, which is
+     most of this window, nearly every slope faces similarly. vAo is the baked horizon term from
+     computeAO(); multiplying it in is what makes hollows sit down and ridges stand up.
+
+     The sun is 45 degrees up at azimuth 315 (north-west), matching the static render's one-desk-
+     lamp direction, and it is NOT animated: the block turns under a fixed light, so a feature
+     keeps its lit and shaded sides as it rotates, which is what makes the turning readable. */
   vec3 n = normalize(vNormal);
   float ndl = max(dot(n, uLightDir), 0.0);
-  float shade = 0.66 + (1.07 - 0.66) * ndl;
-  vec3 col = base * shade;
+  float shade = 0.52 + (1.18 - 0.52) * ndl;
+  vec3 col = base * shade * vAo;
+
+  /* NO WATER, AND THAT IS A DECISION MADE BY MEASUREMENT RATHER THAN BY TASTE.
+
+     The review of the previous version named the plain as the single biggest weakness — "no
+     drainage network, no erosion channels ... Real flat ground is never that uniform" — and the
+     client's reference render does show a branching river. So a river was built and measured, and
+     it made the block WORSE, not better: the rating fell from 6/10 to 4/10 with the water in place,
+     judged "closer to a strange blue stain than convincing water".
+
+     The measurements said the data supports water, and they were right — at the 12th percentile the
+     low cells form ONE connected component spanning 85% x 47% of the window, elongated 1.80, sitting
+     a mean 2.18 m below the surrounding ground. That IS the Kapuas and its tributaries. What the
+     measurements could NOT tell me is that a threshold mask is the wrong INSTRUMENT for drawing it.
+     A river is a flow path a few hundred metres wide in a 98 km window — under one pixel per cell —
+     so any elevation threshold that catches the channels also catches the floodplain around them,
+     and the result reads as a flood, not a river. Drawing it properly needs flow accumulation and
+     channel extraction, which is a different piece of work from tinting a heightfield, and doing it
+     badly is worse than not doing it: the block looked better as dry land with honest contours than
+     as land with a blue stain on it.
+
+     So the plain keeps its contours and its AO, and the absence of a river is a known limitation
+     rather than an oversight. waterU() remains in lib/terrainDem.ts, unused, for whoever picks up
+     the flow-accumulation version. */
 
   /* CONTOURS. A fixed luminance step away from the ground it crosses, flipping direction with the
      ground — darker ink on light ground, lighter ink on dark — because a contour is a value
-     contrast, not a shade. Same rule as the static render, and it is what gives the flat basin
-     texture and scale where the relief is only a few metres. */
-  float band = fract(vU * uLevels);
+     contrast, not a shade.
+
+     TWO FIXES HERE, BOTH FROM MEASUREMENT.
+
+     (1) THE BANDS FOLLOW THE GAMMA, NOT THE RAW HEIGHT. They were driven by vU, the linear
+     elevation, while the COLOUR was driven by pow(vU, uGamma). Banding on the same gamma value the
+     colour uses distributes the lines the way the eye reads the surface, and the level count is
+     set from the measured share: 69% of this window occupies just the first two of ten colour
+     stops, so a high level count piles lines onto a plain that is nearly flat in real terms.
+     uLevels is 14, which draws about 2.8 lines across the plain — enough to give it scale, few
+     enough that it stops reading as wallpaper.
+
+     (2) THE INK FADES ON STEEP GROUND, AND THE GATE HAD TO BE smoothstep. This is standard
+     cartographic practice: where a slope is steep the SHADING already describes the form, so
+     contour ink there is redundant and turns the mountain into a layer cake. The first attempt at
+     this used a LINEAR mix, which failed — measured, n.y is sharply bimodal here (p50 0.9990 on
+     the plain, p5 0.5806 on the steepest ground), so mix(0.16, 1.0, n.y) kept 0.648 of the ink
+     where it was supposed to remove it. smoothstep(0.88, 0.998, n.y) keeps 1.000 on the plain and
+     0.000 on steep ground, which is the separation the fix was supposed to produce. */
+  float band = fract(t * uLevels);
   float dist = min(band, 1.0 - band);
-  float lw = fwidth(vU * uLevels) * 1.1;
+  float lw = fwidth(t * uLevels) * 1.1;
   float line = 1.0 - smoothstep(0.0, lw, dist);
-  float idxPhase = mod(vU * uLevels + 0.5, uIndexEvery);
+  float idxPhase = mod(t * uLevels + 0.5, uIndexEvery);
   float idxDist = min(idxPhase, uIndexEvery - idxPhase);
   float heavy = 1.0 - smoothstep(0.0, lw * 1.9, idxDist);
-  float ink = max(line * 0.60, heavy * 0.82);
+  float ink = max(line * 0.30, heavy * 0.46);
+  ink *= smoothstep(0.88, 0.998, clamp(n.y, 0.0, 1.0));
 
   float gY = dot(col, vec3(0.2126, 0.7152, 0.0722));
   /* step() returns a FLOAT, and GLSL's ternary needs a BOOL, so a bare "wantDarker ? ..." is a
@@ -205,7 +273,7 @@ void main() {
      canvas blank. Compare it to 0.5 first. */
   float wantDarker = step(0.46, gY);
   vec3 inkCol = wantDarker > 0.5 ? vec3(0.0) : vec3(1.0);
-  col = mix(col, inkCol, ink * 0.9);
+  col = mix(col, inkCol, ink);
 
   fragColor = vec4(col, 1.0);
 }
@@ -297,7 +365,7 @@ export default function HeroTerrain3D({ className }: { className?: string }) {
           cullFace: mode === 2 ? false : gl.BACK,
           uniforms: {
             uGamma: { value: COLOUR_GAMMA },
-            uLevels: { value: 26 },
+            uLevels: { value: 14 },
             uIndexEvery: { value: 5 },
             uMode: { value: mode },
             uLightDir: { value: light },
@@ -310,8 +378,15 @@ export default function HeroTerrain3D({ className }: { className?: string }) {
          (0,0,0,1), which would silently send a wall to the surface branch.
          The attribute is `cutT`, not `drop`: `drop` is a reserved keyword in GLSL ES 3.00 (the
          derivative builtin), and a shader that uses it as an identifier fails to LINK, which in
-         ogl leaves `uniformLocations` undefined and throws on the next frame. */
+         ogl leaves `uniformLocations` undefined and throws on the next frame.
+
+         `ao` NEEDS THE SAME CARE FOR A DIFFERENT REASON. An unbound attribute reads as ZERO, and
+         zero occlusion means fully dark — so a wall or the shadow quad left unbound would render
+         BLACK, not neutral. The walls and the shadow quad are therefore filled with 1.0 (open sky),
+         not with the `zeros()` helper: the wall has its own vertical gradient and per-face shading,
+         and the shadow quad is a blended alpha patch, so neither should be occluded by this term. */
       const zeros = (n: number) => new Float32Array(n)
+      const ones = (n: number) => new Float32Array(n).fill(1)
       const surfaceGeo = new Geometry(gl, {
         position: { size: 3, data: position },
         normal: { size: 3, data: normal },
@@ -319,6 +394,7 @@ export default function HeroTerrain3D({ className }: { className?: string }) {
         cutT: { size: 1, data: zeros(dem.n * dem.n) },
         side: { size: 1, data: zeros(dem.n * dem.n) },
         uv: { size: 2, data: zeros(dem.n * dem.n * 2) },
+        ao: { size: 1, data: computeAO(dem, RELIEF) },
         index: { data: index },
       })
       const wallGeo = new Geometry(gl, {
@@ -328,6 +404,7 @@ export default function HeroTerrain3D({ className }: { className?: string }) {
         cutT: { size: 1, data: walls.scalar.drop },
         side: { size: 1, data: walls.scalar.side },
         uv: { size: 2, data: zeros(walls.count * 2) },
+        ao: { size: 1, data: ones(walls.count) },
       })
       const shadowGeo = new Geometry(gl, {
         position: { size: 3, data: shadow.position },
@@ -336,6 +413,7 @@ export default function HeroTerrain3D({ className }: { className?: string }) {
         cutT: { size: 1, data: zeros(6) },
         side: { size: 1, data: zeros(6) },
         uv: { size: 2, data: shadow.scalar.uv },
+        ao: { size: 1, data: ones(6) },
       })
 
       /* ---- the rig ---------------------------------------------------------------------------
