@@ -1,0 +1,53 @@
+api.geofold.sayba.id {
+	# Compression: zstd preferred, gzip fallback (NOT default in Caddy — must be explicit)
+	encode zstd gzip
+
+	# --- Static picture files (content-addressed: UUID.webp, never overwritten) ---
+	# Safe to cache immutably for a year.
+	@flatview path /api/pictures/view/*.webp
+	handle @flatview {
+		rewrite * /storage/pictures/{file}
+		root * /home/deploy/app
+		file_server
+		header {
+			Content-Type image/webp
+			Cache-Control "public, max-age=31536000, immutable"
+		}
+	}
+
+	# --- Direct storage tree (path-based, user-controllable -> revalidate) ---
+	# These paths CAN be overwritten by uploads (PUT /api/storage/raw?path=...),
+	# so never cache immutably. Short TTL + revalidation.
+	@storageview path /api/storage/view*
+	handle @storageview {
+		reverse_proxy backend:3000 {
+			health_uri /health
+			health_interval 10s
+			health_timeout 3s
+			health_status 200
+		}
+		header Cache-Control "private, max-age=60, must-revalidate"
+	}
+
+	# --- Everything else -> backend ---
+	handle {
+		reverse_proxy backend:3000 {
+			health_uri /health
+			health_interval 10s
+			health_timeout 3s
+			health_status 200
+		}
+	}
+
+	# Security headers
+	header {
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+
+	# JSON access log to stdout (Docker rotates via json-file driver)
+	log {
+		output stdout
+		format json
+	}
+}
