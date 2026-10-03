@@ -15,6 +15,20 @@ function getTargetPath(relPath) {
   return path.join(STORAGE_ROOT, `${clean}.webp`);
 }
 
+// Derived PNG lives next to its source WebP: foo.webp -> foo.png.
+// Regenerated only when missing or older than the source (re-upload invalidates).
+function getPngCachePath(webpPath) {
+  return webpPath.replace(/\.webp$/i, '.png');
+}
+
+function pngCacheIsFresh(webpPath, pngPath) {
+  try {
+    return fs.statSync(pngPath).mtimeMs >= fs.statSync(webpPath).mtimeMs;
+  } catch {
+    return false;
+  }
+}
+
 // 1. Raw upload (PUT binary image, converts to WebP) — serialised
 router.put('/raw', express.raw({ type: '*/*', limit: '35mb' }), async (req, res) => {
   const relPath = req.query.path || req.headers['x-storage-path'];
@@ -31,6 +45,9 @@ router.put('/raw', express.raw({ type: '*/*', limit: '35mb' }), async (req, res)
         .webp({ quality: 82 })
         .toFile(targetPath)
     );
+
+    // Invalidate the derived PNG cache — source changed, cached PNG is stale.
+    fs.rmSync(getPngCachePath(targetPath), { force: true });
 
     const stat = fs.statSync(targetPath);
     res.json({ ok: true, sizeBytes: stat.size, format: 'webp' });
@@ -62,7 +79,9 @@ router.get('/info', (req, res) => {
   res.json({ exists: true, sizeBytes: stat.size });
 });
 
-// 3. Download (Converts WebP to PNG on-the-fly) — serialised
+// 3. Download (PNG). Resize happens at most once per image: the result is
+//    cached on disk and served directly thereafter. Never re-resize the same
+//    image twice.
 router.get('/download', (req, res) => {
   const relPath = req.query.path;
   const targetPath = getTargetPath(relPath);
@@ -74,14 +93,30 @@ router.get('/download', (req, res) => {
   res.setHeader('Content-Type', 'image/png');
   res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(originalBase)}.png"`);
 
-  enqueue(() =>
-    sharp(targetPath)
-      .png()
-      .pipe(res)
-  ).catch((err) => {
-    console.error('PNG download conversion error:', err);
-    if (!res.headersSent) res.status(500).json({ error: 'Download conversion failed' });
-  });
+  const pngPath = getPngCachePath(targetPath);
+
+  // Fast path: cached PNG is up to date — zero CPU, no queue, just stream bytes.
+  if (pngCacheIsFresh(targetPath, pngPath)) {
+    res.setHeader('Cache-Control', 'private, max-age=3600');
+    return res.sendFile(pngPath);
+  }
+
+  // Slow path: convert once, atomically cache, then serve from disk.
+  enqueue(async () => {
+    const tmp = `${pngPath}.${process.pid}.${Date.now()}.tmp`;
+    await sharp(targetPath).png().toFile(tmp);
+    fs.renameSync(tmp, pngPath); // atomic: readers never see a partial file
+    return pngPath;
+  })
+    .then((cached) => {
+      if (res.headersSent) return;
+      res.setHeader('Cache-Control', 'private, max-age=3600');
+      res.sendFile(cached);
+    })
+    .catch((err) => {
+      console.error('PNG download conversion error:', err);
+      if (!res.headersSent) res.status(500).json({ error: 'Download conversion failed' });
+    });
 });
 
 // 4. View (Native WebP) — direct file, no queue
