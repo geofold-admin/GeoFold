@@ -267,11 +267,13 @@ router.post('/notify', async (req, res) => {
 });
 
 // 3. Oversight & Inspection Endpoint (Latest API Logs & Transactions)
-router.get('/logs', async (req, res) => {
+// Admin-only: requires a valid Supabase token (was publicly exposed)
+router.get('/logs', requireAuth, async (req, res) => {
   try {
     const limit = Math.min(parseInt(req.query.limit || '50', 10), 100);
+    // Never expose full request/response bodies (they carry iPaymu signatures).
     const { rows: logs } = await pool.query(
-      `SELECT id, endpoint, method, status_code, request_ip, request_body, response_body, error_message, duration_ms, created_at
+      `SELECT id, endpoint, method, status_code, request_ip, error_message, duration_ms, created_at
        FROM api_logs
        ORDER BY created_at DESC
        LIMIT $1`,
