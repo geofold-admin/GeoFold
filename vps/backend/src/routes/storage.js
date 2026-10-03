@@ -1,12 +1,22 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const sharp = require('sharp');
 const { enqueue, stats: queueStats } = require('../imageQueue');
 
 const router = express.Router();
 
 const STORAGE_ROOT = process.env.STORAGE_PATH || '/app/storage/pictures';
+
+// PNG cache directory (derived PNGs in a flat hashed namespace).
+// Size-capped so it can't fill the disk on a 20 GB VPS.
+const PNG_CACHE_MAX_MB = parseInt(process.env.PNG_CACHE_MAX_MB || '500', 10);
+const PNG_CACHE_DIR = path.join(STORAGE_ROOT, '_png_cache');
+
+function ensureCacheDir() {
+  if (!fs.existsSync(PNG_CACHE_DIR)) fs.mkdirSync(PNG_CACHE_DIR, { recursive: true });
+}
 
 function getTargetPath(relPath) {
   if (!relPath) return null;
@@ -15,10 +25,12 @@ function getTargetPath(relPath) {
   return path.join(STORAGE_ROOT, `${clean}.webp`);
 }
 
-// Derived PNG lives next to its source WebP: foo.webp -> foo.png.
-// Regenerated only when missing or older than the source (re-upload invalidates).
+// Cache key: hash of the full source path -> flat filename in _png_cache/.
+// Avoids path conflicts and traversal in the cache dir.
 function getPngCachePath(webpPath) {
-  return webpPath.replace(/\.webp$/i, '.png');
+  const rel = path.relative(STORAGE_ROOT, webpPath);
+  const h = crypto.createHash('sha1').update(rel).digest('hex').slice(0, 16);
+  return path.join(PNG_CACHE_DIR, `${h}.png`);
 }
 
 function pngCacheIsFresh(webpPath, pngPath) {
@@ -27,6 +39,35 @@ function pngCacheIsFresh(webpPath, pngPath) {
   } catch {
     return false;
   }
+}
+
+function cacheDirSizeBytes() {
+  try {
+    let total = 0;
+    for (const f of fs.readdirSync(PNG_CACHE_DIR)) {
+      try { total += fs.statSync(path.join(PNG_CACHE_DIR, f)).size; } catch {}
+    }
+    return total;
+  } catch {
+    return 0;
+  }
+}
+
+// Evict oldest files until under the size cap. Called after each conversion.
+function evictIfNeeded() {
+  const maxBytes = PNG_CACHE_MAX_MB * 1024 * 1024;
+  let size = cacheDirSizeBytes();
+  if (size <= maxBytes) return;
+  try {
+    const files = fs.readdirSync(PNG_CACHE_DIR)
+      .map(f => ({ f, stat: fs.statSync(path.join(PNG_CACHE_DIR, f)) }))
+      .sort((a, b) => a.stat.mtimeMs - b.stat.mtimeMs); // oldest first
+    for (const { f, stat } of files) {
+      fs.unlinkSync(path.join(PNG_CACHE_DIR, f));
+      size -= stat.size;
+      if (size <= maxBytes) break;
+    }
+  } catch {}
 }
 
 // 1. Raw upload (PUT binary image, converts to WebP) — serialised
@@ -81,7 +122,7 @@ router.get('/info', (req, res) => {
 
 // 3. Download (PNG). Resize happens at most once per image: the result is
 //    cached on disk and served directly thereafter. Never re-resize the same
-//    image twice.
+//    image twice. Cache is size-capped (default 500 MB) with LRU eviction.
 router.get('/download', (req, res) => {
   const relPath = req.query.path;
   const targetPath = getTargetPath(relPath);
@@ -102,10 +143,12 @@ router.get('/download', (req, res) => {
   }
 
   // Slow path: convert once, atomically cache, then serve from disk.
+  ensureCacheDir();
   enqueue(async () => {
     const tmp = `${pngPath}.${process.pid}.${Date.now()}.tmp`;
     await sharp(targetPath).png().toFile(tmp);
     fs.renameSync(tmp, pngPath); // atomic: readers never see a partial file
+    evictIfNeeded(); // enforce size cap
     return pngPath;
   })
     .then((cached) => {
@@ -131,9 +174,16 @@ router.get('/view', (req, res) => {
   res.sendFile(targetPath);
 });
 
-// 5. Internal: queue stats
+// 5. Internal: queue + cache stats
 router.get('/_stats', (req, res) => {
-  res.json({ imageQueue: queueStats() });
+  res.json({
+    imageQueue: queueStats(),
+    pngCache: {
+      dir: PNG_CACHE_DIR,
+      maxMb: PNG_CACHE_MAX_MB,
+      currentBytes: cacheDirSizeBytes(),
+    },
+  });
 });
 
 module.exports = router;
