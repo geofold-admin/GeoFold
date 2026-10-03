@@ -53,3 +53,4 @@ next/_test.mjs
 
 # Binaries & APKs
 *.apk
+vps/backups/
