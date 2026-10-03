@@ -112,8 +112,10 @@ fi
 docker rmi -f "$TEST_IMG" >/dev/null 2>&1 || true
 
 cd "$APP"
-# Recreate ONLY the backend service. db and caddy are untouched.
-docker compose up -d backend
+# Recreate ONLY the backend service with --force-recreate so bind-mounted
+# source changes actually take effect (plain `up -d` no-ops if the container
+# is already running, silently shipping nothing). db and caddy untouched.
+docker compose up -d --force-recreate backend
 if [ "$CADDY_CHANGED" = "1" ]; then
   docker exec app-caddy-1 caddy reload --config /etc/caddy/Caddyfile || fail "Caddy reload failed"
 fi
