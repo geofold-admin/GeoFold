@@ -1,23 +1,33 @@
 api.geofold.sayba.id {
-	# Compression: zstd preferred, gzip fallback (NOT default in Caddy — must be explicit)
+	# Compression: zstd preferred, gzip fallback (explicit — not a Caddy default)
 	encode zstd gzip
 
-	# --- Static picture files (content-addressed: UUID.webp, never overwritten) ---
-	# Safe to cache immutably for a year.
-	@flatview path /api/pictures/view/*.webp
-	handle @flatview {
-		rewrite * /storage/pictures/{file}
-		root * /home/deploy/app
+	# --- Flat picture files: /api/pictures/view/<uuid>.webp ---
+	# Content-addressed (UUID filename, never overwritten) => safe to cache
+	# immutably for a year. Served straight off disk, Node not involved.
+	@picturesFlat path_regexp flat ^/api/pictures/view/[^/]+\.webp$
+	handle @picturesFlat {
+		uri strip_prefix /api/pictures/view
+		root * /home/deploy/app/storage/pictures
 		file_server
 		header {
-			Content-Type image/webp
 			Cache-Control "public, max-age=31536000, immutable"
+			Vary "Accept-Encoding"
 		}
 	}
 
-	# --- Direct storage tree (path-based, user-controllable -> revalidate) ---
-	# These paths CAN be overwritten by uploads (PUT /api/storage/raw?path=...),
-	# so never cache immutably. Short TTL + revalidation.
+	# --- Nested picture paths: /api/pictures/view/<dir>/<file>.webp ---
+	# These paths CAN be overwritten by uploads (PUT /api/storage/raw?path=...)
+	# so never cache immutably: short TTL + revalidation.
+	@picturesNested path /api/pictures/view/*
+	handle @picturesNested {
+		uri strip_prefix /api/pictures/view
+		root * /home/deploy/app/storage/pictures
+		file_server
+		header Cache-Control "private, max-age=60, must-revalidate"
+	}
+
+	# --- Storage API view (path-based, user-controllable) => revalidate ---
 	@storageview path /api/storage/view*
 	handle @storageview {
 		reverse_proxy backend:3000 {
