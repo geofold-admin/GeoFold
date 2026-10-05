@@ -101,6 +101,8 @@ export const chrome: Record<Locale, {
     scale: string
     nib: string
     kbli: string
+    /** Which edition of the KBLI the code is read from — e.g. "KBLI 2025". */
+    kbliEdition: string
     oss: string
     ossNote: string
     parentPre: string
@@ -146,6 +148,11 @@ export const chrome: Record<Locale, {
       scale: 'Usaha Mikro',
       nib: 'NIB',
       kbli: 'KBLI',
+      /* The edition marker stays "KBLI 2025" in BOTH languages, deliberately. It names the
+         Indonesian classification standard itself, and a regulation is cited by its own name
+         whatever language the page is in — translating it would make the citation harder to
+         verify, not easier. */
+      kbliEdition: 'KBLI 2025',
       oss: 'Terdaftar melalui OSS',
       ossNote: 'Nomor Induk Berusaha (NIB) diterbitkan oleh sistem Online Single Submission, Kementerian Investasi/BKPM Republik Indonesia.',
       parentPre: 'Produk dari',
@@ -197,6 +204,8 @@ export const chrome: Record<Locale, {
       scale: 'Micro Enterprise',
       nib: 'NIB',
       kbli: 'KBLI',
+      /* Same string in both languages — see the note on the Indonesian block. */
+      kbliEdition: 'KBLI 2025',
       oss: 'Registered through OSS',
       ossNote: 'The Business Identification Number (NIB) is issued by the Online Single Submission system of the Ministry of Investment/BKPM, Republic of Indonesia.',
       parentPre: 'A product of',

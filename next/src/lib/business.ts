@@ -115,14 +115,24 @@ export const SITE_LOCATION = {
  * KBLI 60390 — "Aktivitas Situs Jejaring Sosial dan Distribusi Konten Lainnya" — covers a
  * platform that distributes content and sells premium access through it, which is what the
  * Premium plan does. It is the code the operator asked for and the one that matches the activity.
+ * The client asked for it to be shown against the 2025 edition ("KBLI 2025") on 2026-XX; the
+ * edition is carried in `kbliEdition` so the footer can say which year the code is read from
+ * without the year being hard-coded into the label text in two languages.
  *
  * `ossUrl` points at the public OSS checker rather than a document. There is no per-NIB public
  * URL to link to, so the seal links to the tool where the number can actually be looked up —
  * a link that resolves is worth more than one that looks official and 404s.
  */
 export const LEGAL = {
-  nib: '6105010402050002',
+  /* CORRECTED at the client's request: the NIB on the footer was replaced with the current one.
+     This is the number a payment gateway's verification team reads and checks against the OSS
+     record, so it has to be the live one — an out-of-date NIB is read as a mismatch, not as a
+     typo. It is read by the footer seal AND by the Organization structured data in lib/seo.ts,
+     so both move together. */
+  nib: '0509260000831',
   kbli: '60390',
+  /** Which edition of the KBLI the code above is read from. Printed beside the code. */
+  kbliEdition: '2025',
   kbliLabel: {
     id: 'Aktivitas Situs Jejaring Sosial dan Distribusi Konten Lainnya',
     en: 'Social Networking Sites and Other Content Distribution Activities',

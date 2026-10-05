@@ -240,7 +240,22 @@ export default async function MarketingLayout({ children }: { children: ReactNod
               <div>
                 <dt>{c.seal.kbli}</dt>
                 <dd>
-                  {LEGAL.kbli}
+                  {/* The code and its edition are ONE unbreakable unit, and the gloss is a
+                      separate span. The client asked for the format
+                      "60390 (KBLI 2025) : Aktivitas Situs Jejaring Sosial dan Distribusi Konten
+                      Lainnya", so the edition is parenthesised immediately after the code and a
+                      colon separates it from the description.
+
+                      THE COLON AND ITS SPACES ARE WRITTEN AS `{' : '}` RATHER THAN AS BARE TEXT,
+                      and that is not cosmetic. JSX strips a line break that sits between an
+                      expression and an element, so a bare " : " written across a newline before
+                      the gloss span would silently collapse — the exact bug the `.38em` margin
+                      on `.mk-seal-kbli-label` was added to fix for the previous format. An
+                      explicit string expression cannot be collapsed away. */}
+                  <span className="mk-seal-kbli-code">
+                    {LEGAL.kbli} ({c.seal.kbliEdition})
+                  </span>
+                  {' : '}
                   <span className="mk-seal-kbli-label">{LEGAL.kbliLabel[locale]}</span>
                 </dd>
               </div>

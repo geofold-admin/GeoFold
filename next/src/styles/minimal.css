@@ -1943,7 +1943,7 @@
    laid out inline with hairline separators, and the OSS chip at the end. Same four facts,
    same numbers, same link — one row instead of six stacked lines. The `dl` keeps its
    semantics (dt/dd pairs) and only the layout changes, so a screen reader still reads
-   "NIB: 6105010402050002" as a pair. */
+   "NIB: 0509260000831" as a pair. */
 .mk.mk.mk-site .mk-footer-main {
   /* The seal is no longer a tall column, so the grid stops reserving a tall column for it:
      the brand block keeps the widest track and the seal takes a full-width row underneath,
@@ -1995,26 +1995,40 @@
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  /* THE SHORTFALL IS PAID BY THE GAP, NOT BY TRUNCATING THE GLOSS.
-     The seal row's four flex children measure 138 + 175 + 685 + 201 = 1199px, and the three
-     column gaps sit on top of that. At `18px` the row needed 1253px inside an inner width of
-     1248px — over by 5px, which was enough to wrap the OSS badge onto a second line and leave
-     the card 86px tall with a half-empty row under it.
-     Two other fixes were tried first and both were wrong:
-       * `flex-shrink` + `min-width: 0` on this `dl`. It had no effect, because with
-         `flex-wrap: wrap` the container breaks lines using each item's flex BASE size; shrink
-         only applies WITHIN a line, after the break has been decided. It also had to go on this
-         element rather than on `.mk-seal-kbli-label`, which is nested three levels down and is
-         not a flex item at all.
-       * `flex-grow: 1`. That made the `dl` grow to 898px — worse, not better — and the badge
-         still wrapped.
-     At `14px` the row needs 1199 + 42 = 1241px and fits with 7px to spare, so the whole KBLI
-     gloss still reads in full and the badge stays on the line. Below 1440 the row is allowed to
-     wrap as it always did, which is the honest behaviour when there is genuinely less width. */
+  /* THE GAP IS WHAT KEEPS THE STRIP ONE ROW, AND IT WAS MEASURED TWICE.
+     At the original 18px the seal's four children needed 1253px inside an inner width of 1248px
+     — over by 5px, which wrapped the OSS badge onto a second line and left the card 86px tall
+     with a half-empty row beneath it. `flex-shrink` + `min-width: 0` did nothing (with
+     `flex-wrap: wrap` the break is decided from flex BASE sizes, before shrink applies), and
+     `flex-grow: 1` alone made the `dl` 898px and the badge still wrapped. 14px was what fit.
+     It is kept at 14px now that the `dl` carries `flex: 1 1 0` (see that rule): the basis change
+     is what absorbs the client's added "(KBLI 2025) : " text, and there is no reason to tighten
+     the gap as well. */
   gap: 4px 14px;
   margin: 0;
-  flex: 0 1 auto;
-  min-width: 0;
+  /* `flex: 1 1 0` — AND THIS IS THE SECOND FIX TO THIS ONE ROW, MEASURED.
+
+     Adding the client's "(KBLI 2025) : " to the gloss took the row from 1199px to 1292px inside
+     an inner width of 1248px: 44px over, and the OSS badge wrapped to a second line again, which
+     is exactly the half-empty 86px card the comment above describes. Narrowing the gaps and
+     shrinking the gloss were both tried and both FAILED — measured at gaps of 10px and a 10.5px
+     gloss, the badge still wrapped, because the breaking decision uses flex BASE sizes and this
+     `dl` was `flex: 0 1 auto` (base = content width, so the line was always over).
+
+     A flex BASIS of 0 is what actually fixes it: the `dl` stops claiming its content width when
+     the line is measured, so the row fits and the free space is handed back to it. Measured:
+     seal height 86px -> 69px, the badge returns to line one, and the gloss still shows at 100%
+     of its width at 1440 — nothing is truncated to make it fit. It is the same reason
+     `flex-grow: 1` failed on its own: grow without a zero basis leaves the base size in charge.
+
+     INSIDE the `dl` the NIB and KBLI pairs now stack on two lines at 1440, and that is the
+     measured ceiling rather than an oversight. Side by side they need 132 + 632 + 14 = 778px and
+     the strip can offer 692px: 86px short. Every available saving was measured — gaps to 8px
+     (+24px), gloss to 10.5px (+20px), code to 11px (+21px) — and the total, 65px, still misses
+     by 21px, at the cost of breaking the project's rule that no marketing text goes below
+     10.5px. The two-line `dl` costs nothing in height (the strip is 69px either way) and at 1440
+     the gloss reads in full, so this is the honest version: no truncated facts, no broken rule. */
+  flex: 1 1 0;
 }
 .mk.mk.mk-site .mk-seal-rows > div {
   display: flex;
@@ -2027,6 +2041,14 @@
 }
 .mk.mk.mk-site .mk-seal-rows dd {
   margin: 0;
+}
+.mk.mk.mk-site .mk-seal-kbli-code {
+  /* THE CODE AND ITS EDITION NEVER SPLIT. "60390 (KBLI 2025)" is one citation; letting it break
+     after the code would leave the parenthesis stranded at the start of the next line and the
+     number separated from the year it belongs to. `nowrap` on this span only — the gloss beside
+     it still wraps and still truncates, so a narrow viewport degrades the explanation rather than
+     the fact. */
+  white-space: nowrap;
 }
 .mk.mk.mk-site .mk-seal-kbli-label {
   /* The KBLI's long gloss was the main reason the card was 290px tall. In a one-row strip it
@@ -2041,13 +2063,12 @@
      whether the line fits the screen. `min()` against a viewport unit is what actually
      bounds it, and the 100% is the belt to that braces for any future container. */
   display: inline-block;
-  /* THE SPACE BETWEEN THE KBLI CODE AND ITS GLOSS WAS MISSING, AND JSX ATE IT.
-     Measured in the footer: the `<dd>` held two adjacent text nodes — "60390" and the gloss —
-     with no whitespace between them, so the strip rendered "60390Social Networking Sites…" as
-     one word. The JSX is `{LEGAL.kbli}` then a newline then `<span>`, and JSX strips a line
-     break that sits between an expression and an element, so the separator never reached the
-     DOM. A margin puts the space back and, unlike a text space, cannot be collapsed away. */
-  margin-left: .38em;
+  /* THE `.38em` MARGIN THAT USED TO BE HERE IS GONE, AND THE COLON REPLACED IT.
+     It existed because the `<dd>` held two adjacent text nodes — "60390" and the gloss — with
+     no whitespace between them (JSX strips a line break between an expression and an element),
+     so the strip rendered "60390Social Networking Sites…" as one word. The markup now carries an
+     explicit `{' : '}` between the code block and this span, exactly as the client asked for the
+     format, so a margin here would double the space instead of supplying it. */
   /* THE GLOSS IS THE ONE ITEM THAT MAY GIVE UP WIDTH, AND IT HAD TO BE TOLD SO.
      Measured on the built footer: the seal's four flex children total 1199px and the three
      18px gaps add 54px, so the strip needs 1253px inside an inner width of 1248px — over by
