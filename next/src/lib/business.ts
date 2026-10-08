@@ -112,12 +112,8 @@ export const SITE_LOCATION = {
  * mismatch would be read as a red flag on. Keeping them beside the rest of the legal identity
  * means there is one file to correct and no page can quietly disagree with another.
  *
- * KBLI 60390 — "Aktivitas Situs Jejaring Sosial dan Distribusi Konten Lainnya" — covers a
- * platform that distributes content and sells premium access through it, which is what the
- * Premium plan does. It is the code the operator asked for and the one that matches the activity.
- * The client asked for it to be shown against the 2025 edition ("KBLI 2025") on 2026-XX; the
- * edition is carried in `kbliEdition` so the footer can say which year the code is read from
- * without the year being hard-coded into the label text in two languages.
+ * KBLI 62199 — "Aktivitas Pemrograman Komputer Lainnya YTDL" — is the classification
+ * requested by the operator and shown in the footer seal.
  *
  * `ossUrl` points at the public OSS checker rather than a document. There is no per-NIB public
  * URL to link to, so the seal links to the tool where the number can actually be looked up —
@@ -130,12 +126,10 @@ export const LEGAL = {
      typo. It is read by the footer seal AND by the Organization structured data in lib/seo.ts,
      so both move together. */
   nib: '0509260000831',
-  kbli: '60390',
-  /** Which edition of the KBLI the code above is read from. Printed beside the code. */
-  kbliEdition: '2025',
+  kbli: '62199',
   kbliLabel: {
-    id: 'Aktivitas Situs Jejaring Sosial dan Distribusi Konten Lainnya',
-    en: 'Social Networking Sites and Other Content Distribution Activities',
+    id: 'Aktivitas Pemrograman Komputer Lainnya YTDL',
+    en: 'Other Computer Programming Activities n.e.c.',
   },
   ossUrl: 'https://oss.go.id/informasi/kbli-berdasarkan-kbli',
   /** The parent company this product is built and operated by. */

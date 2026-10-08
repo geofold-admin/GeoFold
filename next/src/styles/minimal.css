@@ -2002,13 +2002,13 @@
      `flex-wrap: wrap` the break is decided from flex BASE sizes, before shrink applies), and
      `flex-grow: 1` alone made the `dl` 898px and the badge still wrapped. 14px was what fit.
      It is kept at 14px now that the `dl` carries `flex: 1 1 0` (see that rule): the basis change
-     is what absorbs the client's added "(KBLI 2025) : " text, and there is no reason to tighten
-     the gap as well. */
+     is what absorbs the added KBLI citation text, and there is no reason to tighten the gap
+     as well. */
   gap: 4px 14px;
   margin: 0;
   /* `flex: 1 1 0` — AND THIS IS THE SECOND FIX TO THIS ONE ROW, MEASURED.
 
-     Adding the client's "(KBLI 2025) : " to the gloss took the row from 1199px to 1292px inside
+     Adding the KBLI edition and separator to the gloss took the row from 1199px to 1292px inside
      an inner width of 1248px: 44px over, and the OSS badge wrapped to a second line again, which
      is exactly the half-empty 86px card the comment above describes. Narrowing the gaps and
      shrinking the gloss were both tried and both FAILED — measured at gaps of 10px and a 10.5px
@@ -2043,11 +2043,8 @@
   margin: 0;
 }
 .mk.mk.mk-site .mk-seal-kbli-code {
-  /* THE CODE AND ITS EDITION NEVER SPLIT. "62199 (KBLI 2025)" is one citation; letting it break
-     after the code would leave the parenthesis stranded at the start of the next line and the
-     number separated from the year it belongs to. `nowrap` on this span only — the gloss beside
-     it still wraps and still truncates, so a narrow viewport degrades the explanation rather than
-     the fact. */
+  /* Keep the classification code together; the gloss beside it still wraps and truncates, so a
+     narrow viewport degrades the explanation rather than the fact. */
   white-space: nowrap;
 }
 .mk.mk.mk-site .mk-seal-kbli-label {
