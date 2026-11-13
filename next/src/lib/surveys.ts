@@ -2,6 +2,30 @@ import sql from './db'
 import { parseSchema, validateFormData } from './validation'
 import { checkSurveyCreation, recordSurveyCreated } from './quota'
 import { ensureProfile } from './profile'
+import { createViewUrl } from './storage'
+
+/** Long enough for a list left open over lunch; a reload mints fresh ones. */
+const VIEW_URL_TTL_SECONDS = 60 * 60
+
+/**
+ * Gives every uploaded photo a ready-to-use `viewUrl` and drops the storage path it was made from.
+ *
+ * Lists used to carry photo ids only, and every thumbnail then asked the API for its own URL: a
+ * Records page with a hundred points made a hundred extra requests, each one authenticating and
+ * querying again. Signing is a local HMAC with no network call, so the list can simply hand the
+ * URLs over. The per-photo endpoint stays for the PNG the Excel export embeds.
+ */
+export async function withPhotoUrls<T extends { photos: unknown[] }>(rows: T[]): Promise<T[]> {
+  for (const row of rows) {
+    row.photos = await Promise.all(
+      (row.photos as { storagePath?: string; uploadStatus?: string }[]).map(async ({ storagePath, ...photo }) => ({
+        ...photo,
+        viewUrl: storagePath && photo.uploadStatus === 'uploaded' ? await createViewUrl(storagePath, VIEW_URL_TTL_SECONDS) : null,
+      })),
+    )
+  }
+  return rows
+}
 
 export interface UpsertSurveyInput {
   id: string
@@ -41,11 +65,15 @@ export async function surveyResponse(id: string): Promise<SurveyResponse | undef
            s."SyncedAtUtc" AS "syncedAtUtc", s."Details"::text AS "detailsJson", s."Status" AS status,
            COALESCE((
              SELECT json_agg(json_build_object(
-               'id', p."Id", 'uploadStatus', p."UploadStatus",
+               'id', p."Id", 'uploadStatus', p."UploadStatus", 'storagePath', p."StoragePath",
                'latitude', ST_Y(p."Location"::geometry), 'longitude', ST_X(p."Location"::geometry),
-               'capturedAtUtc', p."CapturedAtUtc"))
+               'capturedAtUtc', p."CapturedAtUtc")
+               -- In the order they were taken. A point can carry several photos, and every list
+               -- shows the first one as its thumbnail: unordered, that was whichever row came back.
+               ORDER BY p."CapturedAtUtc", p."Id")
              FROM survey_photos p WHERE p."SurveyId" = s."Id"), '[]') AS photos
     FROM surveys s WHERE s."Id" = ${id}`
+  if (row) await withPhotoUrls([row])
   return row
 }
 

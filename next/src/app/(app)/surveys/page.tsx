@@ -6,11 +6,13 @@ import { Download, MapPin, Camera, Search } from 'lucide-react'
 import { api } from '@/lib/api-client'
 import { csvBlob, xlsxBlob, download, type ExportRow, type XlsxImage } from '@/lib/export'
 import { buildReferences } from '@/lib/reference'
+import { renderStaticMap } from '@/lib/static-map'
 import { parseDetails, detailText, labeledValues } from '@/lib/details'
 import { parseSchema } from '@/lib/validation'
-import type { ProjectResponse, SurveyDetail } from '@/lib/types'
+import { usePhotoUrl } from '@/lib/usePhotoUrl'
+import type { ProjectResponse, SurveyDetail, SurveyPhoto } from '@/lib/types'
 
-const BASE_COLUMNS = ['Reference', 'Project', 'Latitude', 'Longitude', 'Accuracy (m)', 'Captured At (UTC)', 'Status', 'Foto']
+const BASE_COLUMNS = ['No', 'Reference', 'Project', 'Latitude', 'Longitude', 'Accuracy (m)', 'Captured At (UTC)', 'Status', 'Foto']
 
 const dayString = (iso: string) => iso.slice(0, 10)
 
@@ -28,22 +30,11 @@ async function fetchPhotoImage(surveyId: string, photoId: string): Promise<XlsxI
   }
 }
 
-function PhotoThumb({ surveyId, photoId }: { surveyId: string; photoId: string }) {
-  const [url, setUrl] = useState<string | null>(null)
-  const [failed, setFailed] = useState(false)
-
-  useEffect(() => {
-    let alive = true
-    api<{ url: string }>(`/api/surveys/${surveyId}/photos/${photoId}/url`)
-      .then((r) => alive && setUrl(r.url))
-      .catch(() => alive && setFailed(true))
-    return () => { alive = false }
-  }, [surveyId, photoId])
-
-  if (failed) return <div className="rec-thumb-ph" />
+function PhotoThumb({ surveyId, photo }: { surveyId: string; photo: SurveyPhoto }) {
+  const { url } = usePhotoUrl(surveyId, photo)
   if (!url) return <div className="rec-thumb-ph" />
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src={url} alt="Survey photo" className="rec-thumb" />
+  return <img src={url} alt="Survey photo" className="rec-thumb" loading="lazy" decoding="async" />
 }
 
 export default function SurveysPage() {
@@ -109,9 +100,11 @@ export default function SurveysPage() {
       }
     }
     const headers = [...BASE_COLUMNS, ...detailKeys]
-    const rows: ExportRow[] = filtered.map((s) => {
+    const rows: ExportRow[] = filtered.map((s, i) => {
       const details = parseDetails(s.detailsJson)
       const row: ExportRow = {
+        // The number the point carries on the Excel file's map sheet.
+        No: i + 1,
         Reference: refOf.get(s.id) ?? s.id.slice(0, 8),
         Project: projectName(s.projectId),
         Latitude: s.latitude,
@@ -135,11 +128,21 @@ export default function SurveysPage() {
   const exportXlsx = async () => {
     setPreparing(true)
     try {
-      const images = await Promise.all(
-        filtered.map((s) => (s.photos.length ? fetchPhotoImage(s.id, s.photos[0].id) : Promise.resolve(null))),
-      )
+      // The photos and the map picture are fetched side by side; either can fail without the other.
+      const [images, map] = await Promise.all([
+        Promise.all(filtered.map((s) => (s.photos.length ? fetchPhotoImage(s.id, s.photos[0].id) : Promise.resolve(null)))),
+        renderStaticMap(filtered),
+      ])
       const stamp = new Date().toISOString().slice(0, 10)
-      download(xlsxBlob(headers, rows, { imageColumn: 'Foto', images }), `geofold-surveys-${stamp}.xlsx`)
+      const picture = map && {
+        ...map,
+        title: `Survey map · ${filtered.length} point${filtered.length === 1 ? '' : 's'} · exported ${stamp}`,
+        note:
+          filtered.length <= 80
+            ? 'Each number on the map is the No. of that point in the Survey Data sheet.'
+            : 'Too many points to number. See the Survey Data sheet for coordinates.',
+      }
+      download(xlsxBlob(headers, rows, { imageColumn: 'Foto', images, map: picture }), `geofold-surveys-${stamp}.xlsx`)
     } finally {
       setPreparing(false)
     }
@@ -201,7 +204,7 @@ export default function SurveysPage() {
           </button>
           <button onClick={exportXlsx} disabled={rows.length === 0 || preparing}>
             {preparing ? <span className="spinner" style={{ marginRight: 8 }} /> : <Download size={15} style={{ verticalAlign: -3, marginRight: 6 }} />}
-            {preparing ? 'Menyiapkan…' : 'Excel + foto'}
+            {preparing ? 'Menyiapkan…' : 'Excel + foto + peta'}
           </button>
         </div>
       </div>
@@ -219,7 +222,7 @@ export default function SurveysPage() {
         const pending = s.status.toLowerCase() === 'pending'
         return (
           <Link key={s.id} href={`/surveys/${s.id}`} className={`rec lift${pending ? ' pending' : ''}`}>
-            {s.photos.length > 0 && <PhotoThumb surveyId={s.id} photoId={s.photos[0].id} />}
+            {s.photos.length > 0 && <PhotoThumb surveyId={s.id} photo={s.photos[0]} />}
             <div className="rec-body">
               <div className="rec-ref">{refOf.get(s.id) ?? s.id.slice(0, 8)}</div>
               <div className="rec-top">

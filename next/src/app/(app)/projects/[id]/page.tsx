@@ -6,7 +6,8 @@ import { useParams } from 'next/navigation'
 import { ArrowLeft, Pencil, Camera, MapPin } from 'lucide-react'
 import { api } from '@/lib/api-client'
 import { buildReferences } from '@/lib/reference'
-import type { FormField, ProjectResponse, SurveyDetail } from '@/lib/types'
+import { usePhotoUrl } from '@/lib/usePhotoUrl'
+import type { FormField, ProjectResponse, SurveyDetail, SurveyPhoto } from '@/lib/types'
 
 function parseSchema(json: string): FormField[] {
   try {
@@ -17,19 +18,11 @@ function parseSchema(json: string): FormField[] {
   }
 }
 
-function SubThumb({ surveyId, photoId }: { surveyId: string; photoId: string }) {
-  const [url, setUrl] = useState<string | null>(null)
-  const [failed, setFailed] = useState(false)
-  useEffect(() => {
-    let alive = true
-    api<{ url: string }>(`/api/surveys/${surveyId}/photos/${photoId}/url`)
-      .then((r) => alive && setUrl(r.url))
-      .catch(() => alive && setFailed(true))
-    return () => { alive = false }
-  }, [surveyId, photoId])
-  if (failed || !url) return <div className="sub-thumb-ph" />
+function SubThumb({ surveyId, photo }: { surveyId: string; photo: SurveyPhoto }) {
+  const { url } = usePhotoUrl(surveyId, photo)
+  if (!url) return <div className="sub-thumb-ph" />
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src={url} alt="" className="sub-thumb" />
+  return <img src={url} alt="" className="sub-thumb" loading="lazy" decoding="async" />
 }
 
 export default function ProjectDetailPage() {
@@ -106,7 +99,7 @@ export default function ProjectDetailPage() {
           <div className="subs">
             {recent.map((s) => (
               <Link key={s.id} href={`/surveys/${s.id}`} className="sub-row">
-                {s.photos.length > 0 ? <SubThumb surveyId={s.id} photoId={s.photos[0].id} /> : <div className="sub-thumb-ph" />}
+                {s.photos.length > 0 ? <SubThumb surveyId={s.id} photo={s.photos[0]} /> : <div className="sub-thumb-ph" />}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="rec-ref">{refs.get(s.id) ?? s.id.slice(0, 8)}</div>
                   <div className="coord mono" style={{ marginTop: 3 }}><MapPin size={12} /> {s.latitude.toFixed(5)}, {s.longitude.toFixed(5)}</div>

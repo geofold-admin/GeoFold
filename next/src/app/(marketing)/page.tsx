@@ -509,6 +509,12 @@ export default async function HomePage() {
                     already-optimised PNG of a generated asset, and now the accessible/fallback
                     layer under the canvas; next/image would add a loader and a layout box for an
                     image whose dimensions are known at build time. */}
+                {/* WebP first: the same 1200x880 picture at 47 KB instead of the PNG's 393 KB, and this
+                    is the largest thing above the fold. The PNG stays as the <img> for the few
+                    browsers without WebP. `display: contents` keeps the <picture> out of layout, so
+                    every `.pg-hero-stage .pg-hero-map` rule lands on the image exactly as before. */}
+                <picture style={{ display: 'contents' }}>
+                <source srcSet="/hero-terrain.webp" type="image/webp" />
                 <img
                   className="pg-hero-map"
                   src="/hero-terrain.png"
@@ -520,6 +526,7 @@ export default async function HomePage() {
                   fetchPriority="high"
                   decoding="async"
                 />
+                </picture>
                 <HeroTerrain3D className="pg-hero-canvas" />
               </div>
               <figcaption className="pg-hero-map-cap">

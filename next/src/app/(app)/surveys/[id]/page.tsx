@@ -8,19 +8,11 @@ import { api } from '@/lib/api-client'
 import { parseDetails, labeledValues } from '@/lib/details'
 import { parseSchema } from '@/lib/validation'
 import { buildReferences } from '@/lib/reference'
-import type { ProjectResponse, SurveyDetail } from '@/lib/types'
+import { usePhotoUrl } from '@/lib/usePhotoUrl'
+import type { ProjectResponse, SurveyDetail, SurveyPhoto } from '@/lib/types'
 
-function PhotoFull({ surveyId, photoId }: { surveyId: string; photoId: string }) {
-  const [url, setUrl] = useState<string | null>(null)
-  const [failed, setFailed] = useState(false)
-
-  useEffect(() => {
-    let alive = true
-    api<{ url: string }>(`/api/surveys/${surveyId}/photos/${photoId}/url`)
-      .then((r) => alive && setUrl(r.url))
-      .catch(() => alive && setFailed(true))
-    return () => { alive = false }
-  }, [surveyId, photoId])
+function PhotoFull({ surveyId, photo }: { surveyId: string; photo: SurveyPhoto }) {
+  const { url, failed } = usePhotoUrl(surveyId, photo)
 
   if (failed) return <div className="empty" style={{ padding: 24 }}>Foto tidak bisa dimuat.</div>
   if (!url) return <div className="rec-thumb-ph" style={{ width: '100%', height: 240 }} />
@@ -81,8 +73,8 @@ export default function SurveyDetailPage() {
 
       {survey.photos.length > 0 && (
         <div className="card" style={{ padding: 12 }}>
-          <div style={{ display: 'grid', gap: 12 }}>
-            {survey.photos.map((p) => <PhotoFull key={p.id} surveyId={survey.id} photoId={p.id} />)}
+          <div className={`photo-grid${survey.photos.length > 1 ? ' many' : ''}`}>
+            {survey.photos.map((p) => <PhotoFull key={p.id} surveyId={survey.id} photo={p} />)}
           </div>
         </div>
       )}

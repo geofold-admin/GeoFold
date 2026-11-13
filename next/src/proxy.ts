@@ -8,6 +8,23 @@ const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 const isDev = process.env.NODE_ENV === 'development'
 
 /**
+ * Where survey photos live: the GeoFold VPS (see lib/storage.ts, which reads the same variables).
+ * The portal shows those photos in <img> tags, fetches them to embed in the Excel export, and PUTs
+ * new ones there from the browser capture screen — so this origin has to be in img-src AND
+ * connect-src. It was in neither. Measured on the live site: both an image and a fetch to it were
+ * refused (`securitypolicyviolation`, img-src and connect-src), which is every thumbnail in
+ * Records, every photo on a record, the photo in a map popup, the pictures in the Excel file and
+ * the upload from the web capture screen, all failing with nothing on screen to say why.
+ */
+const storageOrigin = (() => {
+  try {
+    return new URL(process.env.VPS_STORAGE_URL || process.env.NEXT_PUBLIC_VPS_STORAGE_URL || 'https://api.geofold.sayba.id').origin
+  } catch {
+    return 'https://api.geofold.sayba.id'
+  }
+})()
+
+/**
  * Per-request CSP.
  *
  * script-src uses a fresh nonce + 'strict-dynamic' and deliberately has NO 'unsafe-inline':
@@ -31,10 +48,11 @@ function buildCsp(nonce: string) {
     // Payment endpoint, which the in-page checkout modal renders. Both hosts are required: the
     // QR is a URL to iPaymu's own storage, not an inline data URI, and without them the modal
     // shows a broken image with no error anywhere.
-    "img-src 'self' data: blob: https://*.supabase.co https://*.tile.openstreetmap.org https://server.arcgisonline.com https://api.midtrans.com https://api.sandbox.midtrans.com https://*.ipaymu.com https://storage.googleapis.com",
+    `img-src 'self' data: blob: ${storageOrigin} https://*.supabase.co https://*.tile.openstreetmap.org https://server.arcgisonline.com https://api.midtrans.com https://api.sandbox.midtrans.com https://*.ipaymu.com https://storage.googleapis.com`,
     "font-src 'self' data:",
     // wss: for Supabase realtime; the OAuth redirect itself is a top-level navigation, not a fetch.
-    "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+    // The storage origin: photo bytes for the Excel export, and the browser's own photo upload.
+    `connect-src 'self' ${storageOrigin} https://*.supabase.co wss://*.supabase.co`,
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",
@@ -63,6 +81,15 @@ export async function proxy(request: NextRequest) {
 
   // Skip the session refresh (and its network call) when Supabase isn't really configured yet.
   if (!anon || anon.includes('placeholder')) {
+    return withCsp(NextResponse.next({ request: { headers: requestHeaders } }))
+  }
+
+  /* NO SESSION COOKIE, NO SESSION TO REFRESH. The refresh below is a network round trip to
+     Supabase Auth, and it used to run for every page request from every visitor — including the
+     whole marketing site, whose readers are almost all signed out. Supabase's cookies are named
+     `sb-<project-ref>-auth-token` (chunked as `.0`, `.1`), so their absence means there is nothing
+     to refresh and the answer `getUser()` would come back with is already known. */
+  if (!request.cookies.getAll().some((c) => c.name.startsWith('sb-'))) {
     return withCsp(NextResponse.next({ request: { headers: requestHeaders } }))
   }
 

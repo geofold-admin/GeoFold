@@ -17,7 +17,9 @@ export async function createDownloadUrl(objectPath: string, expiresIn = 900): Pr
   return `${VPS_STORAGE}/api/storage/download?path=${encodeURIComponent(objectPath)}`
 }
 
-export async function createViewUrl(objectPath: string): Promise<string> {
+// `expiresIn` is accepted for the callers that pass one; links are not time-limited on this server yet.
+export async function createViewUrl(objectPath: string, expiresIn?: number): Promise<string> {
+  void expiresIn
   return `${VPS_STORAGE}/api/storage/view?path=${encodeURIComponent(objectPath)}`
 }
 
