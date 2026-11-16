@@ -1,5 +1,6 @@
 import crypto from 'node:crypto'
 import { PREMIUM_PRICE_IDR, PREMIUM_DAYS } from './pricing'
+import { proxyAuthHeaders } from './vps-auth'
 
 /**
  * iPaymu API v2 client (Redirect Payment — iPaymu's hosted checkout page).
@@ -195,10 +196,12 @@ async function post(cfg: IpaymuConfig, path: string, body: Record<string, unknow
     process.env.NEXT_PUBLIC_VPS_STORAGE_URL ||
     'https://api.geofold.sayba.id'
   if (vpsUrl) {
+    // Signed over the exact bytes sent: the VPS proxy refuses unsigned callers (vps-auth.ts).
+    const proxyBody = JSON.stringify({ path, method: 'POST', body })
     const res = await fetch(`${vpsUrl}/api/payment/proxy`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path, method: 'POST', body }),
+      headers: { 'Content-Type': 'application/json', ...proxyAuthHeaders(proxyBody) },
+      body: proxyBody,
     })
     const text = await res.text()
     let raw: IpaymuEnvelope | null = null

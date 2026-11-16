@@ -70,7 +70,8 @@ export async function GET(req: Request) {
            COALESCE((SELECT json_agg(json_build_object(
              'id', p."Id", 'uploadStatus', p."UploadStatus",
              'latitude', ST_Y(p."Location"::geometry), 'longitude', ST_X(p."Location"::geometry),
-             'capturedAtUtc', p."CapturedAtUtc"))
+             'capturedAtUtc', p."CapturedAtUtc")
+             ORDER BY p."CapturedAtUtc", p."Id")
              FROM survey_photos p WHERE p."SurveyId" = s."Id"), '[]') AS photos
     FROM surveys s
     WHERE s."UserId" = ${userId} ${since ? sql`AND s."SyncedAtUtc" > ${new Date(since)}` : sql``}

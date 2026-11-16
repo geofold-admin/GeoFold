@@ -5,12 +5,37 @@ import Link from 'next/link'
 import { Download, MapPin, Camera, Search } from 'lucide-react'
 import { api } from '@/lib/api-client'
 import { csvBlob, xlsxBlob, download, type ExportRow, type XlsxImage } from '@/lib/export'
+import { geojsonBlob, kmlBlob, shapefileZipBlob, type GeoField, type GeoTable, type GeoValue } from '@/lib/geo-export'
 import { buildReferences } from '@/lib/reference'
+import { renderStaticMap } from '@/lib/static-map'
 import { parseDetails, detailText, labeledValues } from '@/lib/details'
 import { parseSchema } from '@/lib/validation'
-import type { ProjectResponse, SurveyDetail } from '@/lib/types'
+import { usePhotoUrl } from '@/lib/usePhotoUrl'
+import type { ProjectResponse, SurveyDetail, SurveyPhoto } from '@/lib/types'
 
-const BASE_COLUMNS = ['Reference', 'Project', 'Latitude', 'Longitude', 'Accuracy (m)', 'Captured At (UTC)', 'Status', 'Foto']
+const BASE_COLUMNS = ['No', 'Reference', 'Project', 'Latitude', 'Longitude', 'Accuracy (m)', 'Captured At (UTC)', 'Status', 'Foto']
+
+// The fixed columns of the GIS exports (GeoJSON, KML, shapefile). The names are 10 characters or
+// fewer so they come out the same in all three: a shapefile's .dbf cannot hold a longer one.
+const GEO_BASE_FIELDS: GeoField[] = [
+  { key: 'PointNo', name: 'PointNo', label: 'No' },
+  { key: 'Reference', name: 'Reference', label: 'Reference' },
+  { key: 'Project', name: 'Project', label: 'Project' },
+  { key: 'Latitude', name: 'Latitude', label: 'Latitude' },
+  { key: 'Longitude', name: 'Longitude', label: 'Longitude' },
+  { key: 'Accuracy_m', name: 'Accuracy_m', label: 'Accuracy (m)' },
+  { key: 'CapturedAt', name: 'CapturedAt', label: 'Captured at (UTC)' },
+  { key: 'Status', name: 'Status', label: 'Status' },
+  { key: 'Photos', name: 'Photos', label: 'Photos' },
+  { key: 'SurveyId', name: 'SurveyId', label: 'Survey ID' },
+]
+
+// A form value as a GIS attribute: numbers stay numbers so the column can be numeric.
+function geoValue(value: unknown): GeoValue {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null
+  const text = detailText(value)
+  return text === '' ? null : text
+}
 
 const dayString = (iso: string) => iso.slice(0, 10)
 
@@ -28,22 +53,11 @@ async function fetchPhotoImage(surveyId: string, photoId: string): Promise<XlsxI
   }
 }
 
-function PhotoThumb({ surveyId, photoId }: { surveyId: string; photoId: string }) {
-  const [url, setUrl] = useState<string | null>(null)
-  const [failed, setFailed] = useState(false)
-
-  useEffect(() => {
-    let alive = true
-    api<{ url: string }>(`/api/surveys/${surveyId}/photos/${photoId}/url`)
-      .then((r) => alive && setUrl(r.url))
-      .catch(() => alive && setFailed(true))
-    return () => { alive = false }
-  }, [surveyId, photoId])
-
-  if (failed) return <div className="rec-thumb-ph" />
+function PhotoThumb({ surveyId, photo }: { surveyId: string; photo: SurveyPhoto }) {
+  const { url } = usePhotoUrl(surveyId, photo)
   if (!url) return <div className="rec-thumb-ph" />
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src={url} alt="Survey photo" className="rec-thumb" />
+  return <img src={url} alt="Survey photo" className="rec-thumb" loading="lazy" decoding="async" />
 }
 
 export default function SurveysPage() {
@@ -109,9 +123,11 @@ export default function SurveysPage() {
       }
     }
     const headers = [...BASE_COLUMNS, ...detailKeys]
-    const rows: ExportRow[] = filtered.map((s) => {
+    const rows: ExportRow[] = filtered.map((s, i) => {
       const details = parseDetails(s.detailsJson)
       const row: ExportRow = {
+        // The number the point carries on the Excel file's map sheet.
+        No: i + 1,
         Reference: refOf.get(s.id) ?? s.id.slice(0, 8),
         Project: projectName(s.projectId),
         Latitude: s.latitude,
@@ -127,19 +143,78 @@ export default function SurveysPage() {
     return { headers, rows }
   }, [filtered, projectName, refOf])
 
+  // The same filtered records as a table of points, for the GIS exports.
+  const geoTable = useMemo<GeoTable>(() => {
+    // Form fields are keyed apart from the fixed columns, so a form field called "status" cannot
+    // overwrite the survey's own status. Its label comes from the first project that defines it.
+    const formFields = new Map<string, GeoField>()
+    for (const s of filtered) {
+      const labels = new Map(fieldsOf(s.projectId).map((f) => [f.key, f.label ?? f.key]))
+      for (const k of Object.keys(parseDetails(s.detailsJson))) {
+        if (formFields.has(k)) continue
+        formFields.set(k, { key: `form:${k}`, name: k, label: labels.get(k) ?? (k === 'catatan' ? 'Catatan' : k) })
+      }
+    }
+    const points = filtered.map((s, i) => {
+      const reference = refOf.get(s.id) ?? s.id.slice(0, 8)
+      const project = projectName(s.projectId)
+      const values: Record<string, GeoValue> = {
+        PointNo: i + 1,
+        Reference: reference,
+        Project: project,
+        Latitude: s.latitude,
+        Longitude: s.longitude,
+        Accuracy_m: s.accuracyMeters,
+        CapturedAt: s.capturedAtUtc,
+        Status: s.status,
+        Photos: s.photos.length,
+        SurveyId: s.id,
+      }
+      for (const [k, v] of Object.entries(parseDetails(s.detailsJson))) values[`form:${k}`] = geoValue(v)
+      return { latitude: s.latitude, longitude: s.longitude, name: reference, group: project, values }
+    })
+    return { fields: [...GEO_BASE_FIELDS, ...formFields.values()], points }
+  }, [filtered, fieldsOf, projectName, refOf])
+
   const exportCsv = () => {
     const stamp = new Date().toISOString().slice(0, 10)
     download(csvBlob(headers, rows), `geofold-surveys-${stamp}.csv`)
   }
 
+  const exportGeojson = () => {
+    const stamp = new Date().toISOString().slice(0, 10)
+    download(geojsonBlob(geoTable, 'geofold_surveys'), `geofold-surveys-${stamp}.geojson`)
+  }
+
+  const exportKml = () => {
+    const stamp = new Date().toISOString().slice(0, 10)
+    download(kmlBlob(geoTable, `GeoFold surveys ${stamp}`), `geofold-surveys-${stamp}.kml`)
+  }
+
+  // The parts inside are named without hyphens: ArcGIS will not import a layer called "a-b".
+  const exportShapefile = () => {
+    const stamp = new Date().toISOString().slice(0, 10)
+    download(shapefileZipBlob(geoTable, 'geofold_surveys'), `geofold-surveys-${stamp}-shapefile.zip`)
+  }
+
   const exportXlsx = async () => {
     setPreparing(true)
     try {
-      const images = await Promise.all(
-        filtered.map((s) => (s.photos.length ? fetchPhotoImage(s.id, s.photos[0].id) : Promise.resolve(null))),
-      )
+      // The photos and the map picture are fetched side by side; either can fail without the other.
+      const [images, map] = await Promise.all([
+        Promise.all(filtered.map((s) => (s.photos.length ? fetchPhotoImage(s.id, s.photos[0].id) : Promise.resolve(null)))),
+        renderStaticMap(filtered),
+      ])
       const stamp = new Date().toISOString().slice(0, 10)
-      download(xlsxBlob(headers, rows, { imageColumn: 'Foto', images }), `geofold-surveys-${stamp}.xlsx`)
+      const picture = map && {
+        ...map,
+        title: `Survey map · ${filtered.length} point${filtered.length === 1 ? '' : 's'} · exported ${stamp}`,
+        note:
+          filtered.length <= 80
+            ? 'Each number on the map is the No. of that point in the Survey Data sheet.'
+            : 'Too many points to number. See the Survey Data sheet for coordinates.',
+      }
+      download(xlsxBlob(headers, rows, { imageColumn: 'Foto', images, map: picture }), `geofold-surveys-${stamp}.xlsx`)
     } finally {
       setPreparing(false)
     }
@@ -152,7 +227,7 @@ export default function SurveysPage() {
     <div>
       <div className="page-head">
         <h1>Records</h1>
-        <p>Every survey point you&apos;ve captured. Filter, search, view photos, and export to CSV or Excel.</p>
+        <p>Every survey point you&apos;ve captured. Filter, search, view photos, and export to CSV, Excel, GeoJSON, KML or a shapefile for ArcGIS.</p>
       </div>
 
       {error && <p className="error">{error}</p>}
@@ -199,9 +274,18 @@ export default function SurveysPage() {
           <button className="ghost" onClick={exportCsv} disabled={rows.length === 0}>
             <Download size={15} style={{ verticalAlign: -3, marginRight: 6 }} /> CSV
           </button>
+          <button className="ghost" onClick={exportGeojson} disabled={rows.length === 0} title="Opens in ArcGIS, QGIS and any web map">
+            <Download size={15} style={{ verticalAlign: -3, marginRight: 6 }} /> GeoJSON
+          </button>
+          <button className="ghost" onClick={exportKml} disabled={rows.length === 0} title="Opens in Google Earth and ArcGIS">
+            <Download size={15} style={{ verticalAlign: -3, marginRight: 6 }} /> KML
+          </button>
+          <button className="ghost" onClick={exportShapefile} disabled={rows.length === 0} title="Zipped shapefile: upload it to ArcGIS Online as is, or open it in ArcGIS Pro">
+            <Download size={15} style={{ verticalAlign: -3, marginRight: 6 }} /> Shapefile (ArcGIS)
+          </button>
           <button onClick={exportXlsx} disabled={rows.length === 0 || preparing}>
             {preparing ? <span className="spinner" style={{ marginRight: 8 }} /> : <Download size={15} style={{ verticalAlign: -3, marginRight: 6 }} />}
-            {preparing ? 'Menyiapkan…' : 'Excel + foto'}
+            {preparing ? 'Menyiapkan…' : 'Excel + foto + peta'}
           </button>
         </div>
       </div>
@@ -219,7 +303,7 @@ export default function SurveysPage() {
         const pending = s.status.toLowerCase() === 'pending'
         return (
           <Link key={s.id} href={`/surveys/${s.id}`} className={`rec lift${pending ? ' pending' : ''}`}>
-            {s.photos.length > 0 && <PhotoThumb surveyId={s.id} photoId={s.photos[0].id} />}
+            {s.photos.length > 0 && <PhotoThumb surveyId={s.id} photo={s.photos[0]} />}
             <div className="rec-body">
               <div className="rec-ref">{refOf.get(s.id) ?? s.id.slice(0, 8)}</div>
               <div className="rec-top">

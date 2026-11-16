@@ -40,6 +40,17 @@ function targetFromLocation(): string | null {
   return `${scheme}://auth/callback${query ? `?${query}` : ''}${hash ? `#${hash}` : ''}`
 }
 
+function openDeepLink(url: string) {
+  // In a Custom Tab, `window.location.replace` to a custom scheme fails silently.
+  // Use an anchor click instead — this triggers the browser's intent handler and opens the app.
+  const a = document.createElement('a')
+  a.href = url
+  a.style.display = 'none'
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+}
+
 export default function AuthHandoffPage() {
   const [target, setTarget] = useState<string | null>(null)
   const [stalled, setStalled] = useState(false)
@@ -49,9 +60,8 @@ export default function AuthHandoffPage() {
     setTarget(url)
     if (!url) return
 
-    // `replace`, not `assign`: going Back should not re-fire the hand-off with a code that has
-    // already been redeemed.
-    window.location.replace(url)
+    // Try the anchor-click method which works in Custom Tabs.
+    openDeepLink(url)
 
     // If the app does not come to the foreground, the page is still here — say so rather than
     // leaving a spinner running forever.

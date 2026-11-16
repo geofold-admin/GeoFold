@@ -23,18 +23,21 @@ import { pageMetadata } from '@/lib/seo'
 import { SITE_LOCATION } from '@/lib/business'
 import { FREE_STORAGE_LABEL, PREMIUM_DAYS, PREMIUM_PRICE_LABEL, PREMIUM_STORAGE_LABEL } from '@/lib/pricing'
 import { FREE_PROJECTS, FREE_PHOTOS_PER_PROJECT } from '@/lib/quota'
+import { EXPORT_FORMATS } from '@/lib/export'
 import { PricingCheckoutButton } from '@/components/PricingCheckoutButton'
 
 /*
  * Every claim on this page is one the app actually does today.
  *
  * An earlier version advertised Shapefile and File Geodatabase export, one-click ArcGIS sync and
- * "sub-meter accuracy". None of those exist: `lib/export.ts` writes CSV and XLSX, and a phone GPS
- * reports metres. That copy was live on a site a payment gateway was verifying, which is a bad
+ * "sub-meter accuracy". None of those exist: at the time `lib/export.ts` wrote CSV and XLSX only, and a
+ * phone GPS reports metres. That copy was live on a site a payment gateway was verifying, which is a bad
  * place to overstate a product. If a capability is added later, add it here: not before.
+ * (2026-11-16: GeoJSON, KML and a zipped point shapefile were added in `lib/geo-export.ts`.
+ * There is still no File Geodatabase export and no ArcGIS sync.)
  *
- * The same rule covers the counters in the hero: the free-plan project and photo caps and the 2
- * export formats in lib/export.ts are the actual limits. They are READ FROM lib/quota.ts rather
+ * The same rule covers the counters in the hero: the free-plan project and photo caps and the
+ * export formats are the actual limits. They are READ FROM lib/quota.ts and EXPORT_FORMATS rather
  * than typed here, because they were typed here once and went stale: commit 44ee4b0 changed the
  * free tier to 2 projects and 3 photos per project and updated the FAQ and the pricing page, but
  * missed this file, so the hero advertised 3 projects and 20 photos for a while after. A number
@@ -118,7 +121,7 @@ const copy: Record<Locale, Copy> = {
     stats: [
       { label: 'Proyek gratis', unit: 'selamanya' },
       { label: 'Foto per proyek', unit: 'paket gratis' },
-      { label: 'Format ekspor', unit: 'XLSX · CSV' },
+      { label: 'Format ekspor', unit: 'tabel dan GIS' },
       { label: 'Biaya mulai', unit: 'tanpa kartu' },
     ],
     capsMicro: 'Apa yang bisa dilakukan',
@@ -255,7 +258,7 @@ const copy: Record<Locale, Copy> = {
     stats: [
       { label: 'Free projects', unit: 'forever' },
       { label: 'Photos per project', unit: 'free plan' },
-      { label: 'Export formats', unit: 'XLSX · CSV' },
+      { label: 'Export formats', unit: 'tables and GIS' },
       { label: 'Cost to start', unit: 'no card' },
     ],
     capsMicro: 'What it does',
@@ -393,8 +396,8 @@ function figures(locale: Locale): ReactNode[] {
     <FigAerial key="aerial" locale={locale} />,
   ]
 }
-const STAT_VALUES = [FREE_PROJECTS, FREE_PHOTOS_PER_PROJECT, 2, 0]
-const STAT_DISPLAY = [String(FREE_PROJECTS), String(FREE_PHOTOS_PER_PROJECT), '2', 'Rp 0']
+const STAT_VALUES = [FREE_PROJECTS, FREE_PHOTOS_PER_PROJECT, EXPORT_FORMATS.length, 0]
+const STAT_DISPLAY = [String(FREE_PROJECTS), String(FREE_PHOTOS_PER_PROJECT), String(EXPORT_FORMATS.length), 'Rp 0']
 const STAT_PREFIX = [undefined, undefined, undefined, 'Rp ']
 /* Row 05 is the aerial one. The palette's secondary accent is reserved for aerial material and
    appears nowhere else: see the token block in paper.css. */
@@ -509,6 +512,12 @@ export default async function HomePage() {
                     already-optimised PNG of a generated asset, and now the accessible/fallback
                     layer under the canvas; next/image would add a loader and a layout box for an
                     image whose dimensions are known at build time. */}
+                {/* WebP first: the same 1200x880 picture at 47 KB instead of the PNG's 393 KB, and this
+                    is the largest thing above the fold. The PNG stays as the <img> for the few
+                    browsers without WebP. `display: contents` keeps the <picture> out of layout, so
+                    every `.pg-hero-stage .pg-hero-map` rule lands on the image exactly as before. */}
+                <picture style={{ display: 'contents' }}>
+                <source srcSet="/hero-terrain.webp" type="image/webp" />
                 <img
                   className="pg-hero-map"
                   src="/hero-terrain.png"
@@ -520,6 +529,7 @@ export default async function HomePage() {
                   fetchPriority="high"
                   decoding="async"
                 />
+                </picture>
                 <HeroTerrain3D className="pg-hero-canvas" />
               </div>
               <figcaption className="pg-hero-map-cap">

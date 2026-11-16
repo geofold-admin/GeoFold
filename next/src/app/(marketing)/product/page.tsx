@@ -26,6 +26,12 @@ import { pageMetadata } from '@/lib/seo'
  * Everything below is checked against the schema and the exporter. If a capability is added later,
  * add it here then: not before.
  *
+ * Updated 2026-11-16: `lib/geo-export.ts` now also writes GeoJSON, KML and a zipped point
+ * shapefile, so the export section lists five formats and the gap paragraph no longer denies
+ * Shapefile. File Geodatabase export and a direct ArcGIS integration still do not exist, and the
+ * paragraph still says so. The shapefile claim is checked against the ESRI spec, not yet against
+ * a real ArcGIS import.
+ *
  * Translated 2026-09-10. This is the page that lists what the product does and does not do, so
  * the two languages have to say the same thing: including the paragraph admitting there is no
  * Shapefile export. A limitation that only appears in one language is not a disclosure.
@@ -52,6 +58,7 @@ type Copy = {
   exportTitle: string
   xlsx: string
   csv: string
+  gis: string
   gap: { before: string; link: string; after: string }
   close: { title: string; body: string; ctaPrimary: string; ctaOutline: string }
 }
@@ -135,14 +142,16 @@ const copy: Record<Locale, Copy> = {
     formNote:
       'Nilai isian tersimpan bersama titiknya dan ikut ke dalam ekspor sebagai kolom tersendiri.',
     exportKick: 'Ekspor',
-    exportTitle: 'Dua format, tanpa kejutan.',
+    exportTitle: 'Lima format, tanpa kejutan.',
     xlsx:
       ': satu baris per titik, dengan fotonya tertanam di baris itu. Dibuat langsung di perangkat Anda, jadi tidak ada data yang dikirim ke layanan lain untuk diubah formatnya.',
     csv:
       ': teks biasa untuk diolah di QGIS, R, Python atau apa pun yang tim Anda pakai. Koordinat dalam desimal WGS 84.',
+    gis:
+      ': titik yang sama untuk perangkat lunak GIS, dalam WGS 84. Shapefile datang sebagai satu berkas zip untuk ArcGIS dan QGIS; KML untuk Google Earth. Isinya titik dan isian formulirnya, tanpa foto, dan diekspor dari aplikasi web. Shapefile memotong teks di 254 byte; format lain menyimpannya utuh.',
     gap: {
       before:
-        'Belum ada ekspor Shapefile atau File Geodatabase, dan belum ada integrasi langsung ke ArcGIS. Kalau itu yang Anda butuhkan, ',
+        'Belum ada ekspor File Geodatabase, dan belum ada integrasi langsung ke ArcGIS: berkas di atas Anda unggah sendiri. Kalau Anda butuh lebih dari itu, ',
       link: 'beri tahu kami',
       after: ': lebih berguna mendengarnya dari Anda daripada menebak.',
     },
@@ -232,14 +241,16 @@ const copy: Record<Locale, Copy> = {
     formNote:
       'Field values are stored with the point and travel into the export as columns of their own.',
     exportKick: 'Export',
-    exportTitle: 'Two formats, no surprises.',
+    exportTitle: 'Five formats, no surprises.',
     xlsx:
       ': one row per point, with its photo embedded in that row. Built directly on your device, so no data is sent to another service to be reformatted.',
     csv:
       ': plain text for QGIS, R, Python or whatever your team uses. Coordinates in WGS 84 decimal degrees.',
+    gis:
+      ': the same points for GIS software, in WGS 84. The shapefile comes as one zip for ArcGIS and QGIS; KML is for Google Earth. They hold each point and its form values, not the photos, and are exported from the web app. A shapefile cuts text at 254 bytes; the other formats keep it whole.',
     gap: {
       before:
-        'There is no Shapefile or File Geodatabase export yet, and no direct ArcGIS integration. If that is what you need, ',
+        'There is no File Geodatabase export yet, and no direct ArcGIS integration: you upload the files above yourself. If you need more than that, ',
       link: 'tell us',
       after: ': hearing it from you is more useful than guessing.',
     },
@@ -376,6 +387,10 @@ export default async function ProductPage() {
           <p>
             <strong>.csv</strong>
             {c.csv}
+          </p>
+          <p>
+            <strong>.geojson · .kml · shapefile</strong>
+            {c.gis}
           </p>
           <p style={{ fontSize: 14, opacity: 0.85 }}>
             {c.gap.before}

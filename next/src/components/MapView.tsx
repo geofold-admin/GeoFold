@@ -332,7 +332,20 @@ const mono: CSSProperties = { fontFamily: 'var(--font-mono), ui-monospace, monos
    physically overlapping. */
 const MAP_CHROME_Z = 1000
 
-export default function MapView({ features: initial, height = '72vh' }: { features: Feature[]; height?: string }) {
+export default function MapView({
+  features: initial,
+  height = '72vh',
+  wheelZoom = true,
+}: {
+  features: Feature[]
+  height?: string
+  /**
+   * False where the map is one panel on a longer page. There the wheel belongs to the page: a map
+   * that takes it stops the scroll dead under the pointer and zooms the survey area away instead.
+   * The +/- control, double-click and pinch still zoom.
+   */
+  wheelZoom?: boolean
+}) {
   const [basemap, setBasemap] = useState<BasemapKey>('satellite')
   const [features, setFeatures] = useState<Feature[]>(initial)
   const [mode, setMode] = useState<Mode>('none')
@@ -455,7 +468,7 @@ export default function MapView({ features: initial, height = '72vh' }: { featur
         )}
       </div>
 
-      <MapContainer center={center} zoom={first ? 12 : 5} style={{ height: '100%', width: '100%', cursor: drawing ? 'crosshair' : '' }}>
+      <MapContainer center={center} zoom={first ? 12 : 5} scrollWheelZoom={wheelZoom} style={{ height: '100%', width: '100%', cursor: drawing ? 'crosshair' : '' }}>
         {/* keyed so switching swaps the layer instead of mutating the existing one */}
         <TileLayer key={basemap} attribution={active.attribution} url={active.url} maxZoom={19} />
         {basemap === 'satellite' && <TileLayer key="labels" url={LABELS_URL} maxZoom={19} />}

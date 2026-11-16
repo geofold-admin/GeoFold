@@ -1,6 +1,12 @@
 // Dependency-free exporters: CSV and a minimal (STORED, uncompressed) .xlsx writer
 // that can also embed photos. An .xlsx is a ZIP of XML parts — we assemble it by hand.
 
+/**
+ * Every format the Records page can download: the two written here and the three in
+ * geo-export.ts. The landing page counts this list, so add to it only when the button exists.
+ */
+export const EXPORT_FORMATS = ['XLSX', 'CSV', 'GeoJSON', 'KML', 'Shapefile'] as const
+
 export type Cell = string | number | null
 export type ExportRow = Record<string, Cell>
 export interface XlsxImage {
@@ -115,6 +121,50 @@ function drawingXml(layout: ImageLayout): string {
   )
 }
 
+/** A picture for a sheet of its own: the map of the exported points. */
+export interface XlsxPicture {
+  image: XlsxImage
+  /** Size in pixels, as drawn. */
+  width: number
+  height: number
+  title: string
+  note?: string
+}
+
+function pictureSheetXml(picture: XlsxPicture): string {
+  return (
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+    `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">` +
+    `<sheetData>` +
+    `<row r="1">${cellXml('A1', picture.title)}</row>` +
+    (picture.note ? `<row r="2">${cellXml('A2', picture.note)}</row>` : '') +
+    `</sheetData><drawing r:id="rId1"/></worksheet>`
+  )
+}
+
+function pictureDrawingXml(picture: XlsxPicture): string {
+  const cx = Math.round(picture.width * PX_TO_EMU)
+  const cy = Math.round(picture.height * PX_TO_EMU)
+  return (
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+    `<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" ` +
+    `xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">` +
+    `<xdr:oneCellAnchor>` +
+    // Below the title and the note, with a row of air.
+    `<xdr:from><xdr:col>0</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>3</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>` +
+    `<xdr:ext cx="${cx}" cy="${cy}"/>` +
+    `<xdr:pic>` +
+    `<xdr:nvPicPr><xdr:cNvPr id="2" name="Survey map"/><xdr:cNvPicPr/></xdr:nvPicPr>` +
+    `<xdr:blipFill>` +
+    `<a:blip xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed="rId1"/>` +
+    `<a:stretch><a:fillRect/></a:stretch>` +
+    `</xdr:blipFill>` +
+    `<xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm>` +
+    `<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr>` +
+    `</xdr:pic><xdr:clientData/></xdr:oneCellAnchor></xdr:wsDr>`
+  )
+}
+
 // --- minimal ZIP (store method) ---
 
 const CRC_TABLE = (() => {
@@ -145,7 +195,7 @@ function concat(parts: Uint8Array[]): Uint8Array {
   return out
 }
 
-function zip(files: { name: string; data: Uint8Array }[]): Uint8Array {
+export function zip(files: { name: string; data: Uint8Array }[]): Uint8Array {
   const enc = new TextEncoder()
   const local: Uint8Array[] = []
   const central: Uint8Array[] = []
@@ -178,7 +228,12 @@ function zip(files: { name: string; data: Uint8Array }[]): Uint8Array {
 export function xlsxBlob(
   headers: string[],
   rows: ExportRow[],
-  opts?: { imageColumn?: string; images?: (XlsxImage | null)[] },
+  opts?: {
+    imageColumn?: string
+    images?: (XlsxImage | null)[]
+    /** Adds a second sheet, "Map", holding this picture. */
+    map?: XlsxPicture | null
+  },
 ): Blob {
   const enc = new TextEncoder()
 
@@ -199,8 +254,10 @@ export function xlsxBlob(
     }
   }
 
-  const hasPng = media.some((m) => m.name.endsWith('.png'))
-  const hasJpeg = media.some((m) => m.name.endsWith('.jpeg'))
+  const map = opts?.map ?? null
+  const mapMedia = map ? `xl/media/map1.${map.image.ext}` : null
+  const hasPng = media.some((m) => m.name.endsWith('.png')) || map?.image.ext === 'png'
+  const hasJpeg = media.some((m) => m.name.endsWith('.jpeg')) || map?.image.ext === 'jpeg'
 
   const contentTypes =
     `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
@@ -212,6 +269,10 @@ export function xlsxBlob(
     `<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>` +
     `<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>` +
     (layout ? `<Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>` : '') +
+    (map
+      ? `<Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>` +
+        `<Override PartName="/xl/drawings/drawing2.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>`
+      : '') +
     `</Types>`
 
   const files: { name: string; data: Uint8Array }[] = [
@@ -230,7 +291,9 @@ export function xlsxBlob(
       data: enc.encode(
         `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
         `<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">` +
-        `<sheets><sheet name="Survey Data" sheetId="1" r:id="rId1"/></sheets></workbook>`,
+        `<sheets><sheet name="Survey Data" sheetId="1" r:id="rId1"/>` +
+        (map ? `<sheet name="Map" sheetId="2" r:id="rId2"/>` : '') +
+        `</sheets></workbook>`,
       ),
     },
     {
@@ -239,6 +302,7 @@ export function xlsxBlob(
         `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
         `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
         `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>` +
+        (map ? `<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/>` : '') +
         `</Relationships>`,
       ),
     },
@@ -270,6 +334,21 @@ export function xlsxBlob(
       ),
     })
     files.push(...media)
+  }
+
+  if (map && mapMedia) {
+    const rel = (type: string, target: string) =>
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+      `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+      `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/${type}" Target="${target}"/>` +
+      `</Relationships>`
+    files.push(
+      { name: 'xl/worksheets/sheet2.xml', data: enc.encode(pictureSheetXml(map)) },
+      { name: 'xl/worksheets/_rels/sheet2.xml.rels', data: enc.encode(rel('drawing', '../drawings/drawing2.xml')) },
+      { name: 'xl/drawings/drawing2.xml', data: enc.encode(pictureDrawingXml(map)) },
+      { name: 'xl/drawings/_rels/drawing2.xml.rels', data: enc.encode(rel('image', mapMedia.replace('xl/', '../'))) },
+      { name: mapMedia, data: map.image.data },
+    )
   }
 
   return new Blob([zip(files) as unknown as BlobPart], {

@@ -37,6 +37,8 @@ export interface FormField {
   label?: string
   type: string
   required?: boolean
+  /** Choices for a `select` field — stored with the schema, set by the mobile form builder. */
+  options?: string[]
 }
 
 export interface SurveyProperties {
@@ -62,6 +64,8 @@ export interface SurveyFeatureCollection {
 export interface SurveyPhoto {
   id: string
   uploadStatus: string
+  /** A signed, hour-long link to the stored WebP. Null until the upload has completed. */
+  viewUrl?: string | null
   latitude: number
   longitude: number
   capturedAtUtc: string

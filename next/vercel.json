@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "regions": ["icn1"],
+  "crons": [
+    {
+      "path": "/api/cron/google-play-voided",
+      "schedule": "0 20 * * *"
+    }
+  ]
+}
