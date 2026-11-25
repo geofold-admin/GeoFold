@@ -560,6 +560,33 @@ Open work lives in [`TODO.md`](TODO.md) and [`NEXT-STEPS.md`](NEXT-STEPS.md). Th
 track is **professional survey support (GNSS/RTK)**, aimed at engineering and cadastral
 surveyors:
 
+Planned data path for RTK capture:
+
+```
+NTRIP caster (e.g. InaCORS)
+   ▲ GGA position (required by VRS / nearest-base mountpoints)
+   │ RTCM corrections ▼
+Phone / GeoFold  ── NTRIP client runs here, over mobile data
+   │ RTCM ▼          ▲ NMEA (GGA, GST, GSA, GSV)
+External RTK receiver  ── computes the RTK fix
+   (Bluetooth SPP / USB serial / Wi-Fi)
+
+GeoFold → local outbox → Supabase
+   (stores ellipsoid height, antenna height, fix type, HRMS/VRMS,
+    correction age and mountpoint with every point)
+```
+
+Notes:
+
+- The phone relays corrections in both directions over the one receiver link. A receiver with its
+  own SIM or Wi-Fi can fetch corrections itself instead; only one of the two may be enabled.
+- Joining a receiver's Wi-Fi hotspot can make Android drop mobile data, which stops NTRIP.
+  Bluetooth SPP is the primary target; USB needs a USB-serial driver (CP210x / FTDI / CH340 / CDC).
+- No internet in the field means no corrections: the fix degrades to float, then single. The UI
+  must show this; a local base with a radio link, or PPK, are the fallbacks.
+- On MIUI/HyperOS devices, battery optimisation must be off for GeoFold or the link is killed in
+  the background.
+
 0. **External receiver** — Bluetooth GNSS receiver, NMEA parsing, NTRIP corrections (InaCORS), and
    fix type / HRMS / VRMS / PDOP stored per point. Everything else depends on this; with phone GPS
    (3–10 m) none of the items below are meaningful.
