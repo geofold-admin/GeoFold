@@ -24,6 +24,7 @@ the photos embedded. A drone variant extends the same loop to the air.
 - [Running locally](#running-locally)
 - [Deployment](#deployment)
 - [Security notes](#security-notes)
+- [Roadmap](#roadmap)
 
 ---
 
@@ -52,6 +53,30 @@ the photos embedded. A drone variant extends the same loop to the air.
 - **GIS export** — GeoJSON, KML, or a zipped point shapefile (`next/src/lib/geo-export.ts`), all
   WGS 84 with ArcGIS-safe field names. The shapefile zip uploads to ArcGIS Online as is.
 - **Auth** — Supabase email/password, with email confirmation links and password reset.
+
+### In the field (mobile only)
+
+Everything below lives on the phone and works offline. It leaves the device through the
+per-project shapefile package (`mobile/src/lib/project-data.ts`).
+
+- **GPS logger** — records the surveyor's route as timestamped points, independently of any
+  capture, and keeps running with the screen off (Android foreground service; falls back to
+  foreground-only when background location is refused). Tracks export as GPX 1.1.
+- **Layers** — draw or import points, lines and polygons (road centre lines, building footprints,
+  vegetation blocks) into named, coloured layers with editable attributes.
+- **Shapefile import and export** — `.shp/.shx/.dbf/.prj/.cpg`, written from the ESRI spec with no
+  dependency. Imports in UTM, TM-3° or Web Mercator are reprojected to WGS 84 on the way in
+  (`projection.ts`); datums are *not* shifted, and old local datums are flagged.
+- **Raster overlays** — lay a scanned or exported map exactly where it belongs: from a world file
+  (`.pgw`, `.jgw`, `.wld`), from a GeoPDF's own georeferencing, or pinned by hand.
+- **Offline basemap** — download a street-map area; the tile release is pinned so a downloaded area
+  doesn't go blank when the map provider publishes a new release.
+- **Survey grid** — UTM quadrat overlay (50 m–1 km cells) with coverage shading and per-cell
+  references, draggable origin, snap-to-survey. Also drives the drone flight plan.
+- **Markers and labels** — per-project marker icon (built-in or uploaded) and point labels.
+- **Form templates** — standard Indonesian sectoral survey forms that pre-fill the form builder.
+- **Reminders** — local notifications to sync captures still in the outbox, and to export a backup
+  of the device-only spatial data on a schedule.
 
 ---
 
@@ -178,9 +203,12 @@ GeoFold/
 │   └── DEPLOY.md               #   Vercel deployment runbook
 │
 ├── mobile/                     # React Native (Expo) field client
-│   ├── src/app/                #   expo-router: welcome, signin, tabs, capture, sync, drone, details
-│   ├── src/lib/                #   api, auth, outbox, sync, capture, photo, drone-survey, mission, grid, billing
+│   ├── src/app/                #   expo-router: onboarding, tabs, capture, sync, drone, tracks, layers, overlays, offline
+│   ├── src/lib/                #   api, auth, outbox, sync, capture, photo, tracker, gis, shapefile, projection,
+│   │                           #   georef/geopdf/worldfile, offline-map, grid, mission, drone-survey, reminders, billing
+│   ├── native/                 #   DJI MSDK native module and libraries (drone builds only)
 │   ├── plugins/                #   with-dji-msdk.js, with-dji-v4.js (drone build only)
+│   ├── scripts/                #   prepare-variant.js — switches between standard / drone / drone-v4 builds
 │   └── README.md               #   setup, dev builds, APK build, offline behaviour
 │
 ├── docs/
@@ -189,6 +217,9 @@ GeoFold/
 │   ├── migration-002…007.sql   #   subscriptions, profiles, contact, superadmin, storage bucket, iPaymu
 │   ├── PAYMENT-SETUP.md        #   iPaymu / Midtrans configuration
 │   └── WORKFLOW.md             #   end-to-end workflow notes
+│
+├── vps/                        # Express storage/payment backend, Caddy, docker-compose
+│   └── scripts/                #   deploy.sh, backup.sh (nightly DB + photo snapshots, optional rclone off-site)
 │
 ├── NEXT-STEPS.md               # handoff: roadmap, auth options, DB options, known traps
 └── TODO.md                     # open work items
@@ -520,3 +551,23 @@ endpoint reachable from the client.
 - iPaymu live charging requires `IPAYMU_IS_PRODUCTION=true` **and**
   `IPAYMU_LIVE_CHECKOUT_ENABLED=true`, plus a registered static egress IP and domain on the
   merchant account — the VPS provides the static IP that iPaymu validates against.
+
+---
+
+## Roadmap
+
+Open work lives in [`TODO.md`](TODO.md) and [`NEXT-STEPS.md`](NEXT-STEPS.md). The largest planned
+track is **professional survey support (GNSS/RTK)**, aimed at engineering and cadastral
+surveyors:
+
+0. **External receiver** — Bluetooth GNSS receiver, NMEA parsing, NTRIP corrections (InaCORS), and
+   fix type / HRMS / VRMS / PDOP stored per point. Everything else depends on this; with phone GPS
+   (3–10 m) none of the items below are meaningful.
+1. **Coordinate systems and heights** — projected output in UTM and TM-3°, SRGI2013, geoid models
+   (EGM2008, INAGEOID2020) for orthometric height, and site calibration to a local grid.
+2. **Field workflows** — stakeout with cut/fill, COGO tools, feature codes.
+3. **Quality control** — GNSS status and skyplot, precision locks, raw logging for PPK.
+4. **Interop and reports** — CSV/DXF import and export, survey PDF report.
+
+Until Phase 0 ships, GeoFold records phone GPS with its accuracy radius and should not be
+described as RTK-compatible.
