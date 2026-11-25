@@ -16,6 +16,11 @@ export interface FormField {
   label?: string;
   type: string;
   required?: boolean;
+  /**
+   * Choices for a `select` field. The server stores the schema JSON as given and only checks that
+   * a select value is a string, so the options travel with the project without a server change.
+   */
+  options?: string[];
 }
 
 export interface SurveyPhoto {

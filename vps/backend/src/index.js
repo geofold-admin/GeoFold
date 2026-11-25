@@ -5,6 +5,7 @@ const paymentRoutes = require('./routes/payment');
 const picturesRoutes = require('./routes/pictures');
 const storageRoutes = require('./routes/storage');
 const { requireAuth, requirePro } = require('./auth');
+const { keepRawBody, configured: vpsSecretConfigured } = require('./security');
 
 const app = express();
 app.use(cors({ origin: '*' }));
@@ -47,7 +48,9 @@ app.use((req, res, next) => {
 app.use('/api/storage', storageRoutes);
 
 // JSON body parser for other routes
-app.use(express.json());
+// Keeps the exact request bytes too: the payment proxy verifies its signature over them, and a
+// parsed-then-restringified body would not match what was signed.
+app.use(express.json({ verify: keepRawBody }));
 
 // Routes
 app.use('/api/payment', paymentRoutes);
@@ -77,4 +80,9 @@ app.get('/api/feature/pro-tool', requireAuth, requirePro, (req, res) => {
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => console.log('Backend running on port ' + port));
+app.listen(port, () => {
+  console.log('Backend running on port ' + port);
+  if (!vpsSecretConfigured()) {
+    console.error('GEOFOLD_VPS_SECRET is missing or shorter than 32 characters: storage and the payment proxy will refuse every request (503).');
+  }
+});

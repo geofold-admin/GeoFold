@@ -4,7 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui';
-import { C, Fonts } from '@/constants/theme';
+import { Fonts, makeStyles, useColors } from '@/constants/theme';
 
 /**
  * Welcome. The design's opening screen: white-to-accent-tint wash, the teardrop mark in a rounded
@@ -13,6 +13,8 @@ import { C, Fonts } from '@/constants/theme';
 export default function WelcomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const styles = useStyles();
+  const C = useColors();
 
   return (
     <View
@@ -56,7 +58,7 @@ export default function WelcomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((C) => ({
   root: {
     flex: 1,
     justifyContent: 'space-between',
@@ -97,4 +99,4 @@ const styles = StyleSheet.create({
   },
   footer: { textAlign: 'center', fontSize: 14, color: C.ink46, fontFamily: Fonts.sans },
   link: { color: C.accent, fontWeight: '500' },
-});
+}));

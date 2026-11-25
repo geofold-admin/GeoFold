@@ -7,7 +7,7 @@ services:
     depends_on:
       - db
     volumes:
-      - ./backend/src:/app/src
+      - ./backend/src:/app/src:ro   # read-only: the app cannot rewrite its own code
       - ./storage:/app/storage
     expose:
       - "3000"

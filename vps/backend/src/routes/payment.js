@@ -3,7 +3,18 @@ const axios = require('axios');
 const crypto = require('crypto');
 const pool = require('../db');
 const { requireAuth } = require('../auth');
+const { requireProxySignature } = require('../security');
 const router = express.Router();
+
+/** The only iPaymu endpoints the Next.js API needs through the proxy (see next/src/lib/ipaymu.ts). */
+const IPAYMU_PROXY_PATHS = new Set(['/api/v2/payment', '/api/v2/payment/direct', '/api/v2/transaction', '/api/v2/history']);
+
+/** Pro price is decided here, never by the client — a caller-chosen amount let a Rp 1 checkout buy Pro. */
+const PRO_PRICE_IDR = Math.round(Number(process.env.PRO_PRICE_IDR || 35000));
+
+function ipaymuBaseUrl() {
+  return process.env.IPAYMU_ENV === 'production' ? 'https://my.ipaymu.com' : 'https://sandbox.ipaymu.com';
+}
 
 function getTimestamp() {
   const d = new Date();
@@ -15,6 +26,35 @@ function signIpaymuRequest(va, apiKey, method, bodyJson) {
   const bodyHash = crypto.createHash('sha256').update(bodyJson, 'utf8').digest('hex');
   const stringToSign = `${method.toUpperCase()}:${va}:${bodyHash}:${apiKey}`;
   return crypto.createHmac('sha256', apiKey).update(stringToSign, 'utf8').digest('hex');
+}
+
+/**
+ * POST a merchant-signed request to iPaymu — and only to iPaymu. The URL is built with `new URL`
+ * and its origin and path checked, so a crafted path such as "@other.host/x" cannot redirect the
+ * signed request (and the merchant VA) to another server.
+ */
+async function ipaymuPost(ipaymuPath, body) {
+  const baseUrl = ipaymuBaseUrl();
+  const url = new URL(ipaymuPath, baseUrl);
+  if (url.origin !== baseUrl || url.pathname !== ipaymuPath || url.search || url.hash) {
+    throw new Error('invalid iPaymu path');
+  }
+  const va = process.env.IPAYMU_VA;
+  const apiKey = process.env.IPAYMU_API_KEY;
+  const bodyJson = JSON.stringify(body || {});
+  return axios({
+    method: 'POST',
+    url: url.toString(),
+    data: bodyJson,
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'va': va,
+      'signature': signIpaymuRequest(va, apiKey, 'POST', bodyJson),
+      'timestamp': getTimestamp(),
+    },
+    timeout: 15000,
+  });
 }
 
 async function recordLog({ endpoint, method, statusCode, requestIp, requestBody, responseBody, errorMessage, durationMs }) {
@@ -38,34 +78,21 @@ async function recordLog({ endpoint, method, statusCode, requestIp, requestBody,
   }
 }
 
-// 0. Transparent Egress Proxy for Next.js (bypasses Vercel dynamic IP limitations)
-router.post('/proxy', express.json(), async (req, res) => {
+// 0. Egress proxy for the Next.js API (iPaymu allowlists this server's static IP, not Vercel's).
+//
+// Only the Next.js API may use it: every call must carry a signature made with GEOFOLD_VPS_SECRET
+// (see ../security.js). It was open — anyone could make merchant-signed iPaymu calls through it.
+router.post('/proxy', requireProxySignature, async (req, res) => {
   const start = Date.now();
-  const { path: ipaymuPath, method = 'POST', body } = req.body;
-  const va = process.env.IPAYMU_VA;
-  const apiKey = process.env.IPAYMU_API_KEY;
-  const isProduction = process.env.IPAYMU_ENV === 'production';
-  const baseUrl = isProduction ? 'https://my.ipaymu.com' : 'https://sandbox.ipaymu.com';
+  const { path: ipaymuPath, method = 'POST', body } = req.body || {};
   const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
 
-  const bodyJson = JSON.stringify(body || {});
-  const signature = signIpaymuRequest(va, apiKey, method, bodyJson);
-  const timestamp = getTimestamp();
+  if (String(method).toUpperCase() !== 'POST' || !IPAYMU_PROXY_PATHS.has(ipaymuPath)) {
+    return res.status(400).json({ error: 'proxy_target_not_allowed' });
+  }
 
   try {
-    const upstream = await axios({
-      method,
-      url: `${baseUrl}${ipaymuPath}`,
-      data: bodyJson,
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'va': va,
-        'signature': signature,
-        'timestamp': timestamp
-      },
-      timeout: 15000
-    });
+    const upstream = await ipaymuPost(ipaymuPath, body);
 
     const duration = Date.now() - start;
     await recordLog({
@@ -106,7 +133,8 @@ router.post('/create', requireAuth, async (req, res) => {
   const start = Date.now();
   const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   try {
-    const { amount = 35000, plan = 'monthly' } = req.body;
+    const plan = 'monthly';
+    const amount = PRO_PRICE_IDR;
     const referenceId = 'ORDER-' + Date.now() + '-' + req.user.id;
 
     // Record pending transaction in VPS DB
@@ -216,16 +244,47 @@ router.post('/notify', async (req, res) => {
   const start = Date.now();
   const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   try {
-    const { trx_id, sid, status, reference_id } = req.body;
-    console.log('Webhook callback received:', req.body);
+    const { trx_id, status } = req.body || {};
+    console.log('Webhook callback received:', { trx_id, status });
 
-    const isSuccess = (status || '').toLowerCase() === 'berhasil';
+    // The callback body is never trusted: anyone can POST "berhasil" here. What decides the
+    // outcome is iPaymu's own answer to a merchant-signed transaction lookup.
+    if (!trx_id) {
+      await recordLog({
+        endpoint: '/api/payment/notify', method: 'POST', statusCode: 400, requestIp: clientIp,
+        requestBody: req.body, responseBody: null, errorMessage: 'missing trx_id', durationMs: Date.now() - start,
+      });
+      return res.status(400).send('trx_id required');
+    }
 
-    if (isSuccess && reference_id) {
-      // 1. Mark transaction successful
+    let trx;
+    try {
+      const lookup = await ipaymuPost('/api/v2/transaction', { transactionId: String(trx_id) });
+      const d = (lookup.data && lookup.data.Data) || {};
+      trx = {
+        referenceId: d.ReferenceId == null ? '' : String(d.ReferenceId),
+        status: Math.round(Number(d.Status)),
+        amount: Math.round(Number(d.Amount)),
+      };
+    } catch (err) {
+      // Could not verify right now: answer non-2xx so iPaymu retries later.
+      console.error('Webhook verification lookup failed:', err.message);
+      await recordLog({
+        endpoint: '/api/payment/notify', method: 'POST', statusCode: 502, requestIp: clientIp,
+        requestBody: req.body, responseBody: null, errorMessage: 'verification lookup failed: ' + err.message,
+        durationMs: Date.now() - start,
+      });
+      return res.status(502).send('verification unavailable');
+    }
+
+    // iPaymu status 1 = berhasil, 6 = settled (same reading as next/src/lib/ipaymu.ts).
+    const isSuccess = trx.status === 1 || trx.status === 6;
+
+    if (isSuccess && trx.referenceId && Number.isFinite(trx.amount)) {
+      // 1. Mark the transaction iPaymu confirmed — once, and only if it paid at least the price.
       const { rows } = await pool.query(
-        'UPDATE transactions SET status = $1, trx_id = COALESCE($2, trx_id), updated_at = NOW() WHERE reference_id = $3 RETURNING user_id',
-        ['success', trx_id, reference_id]
+        "UPDATE transactions SET status = $1, trx_id = COALESCE($2, trx_id), updated_at = NOW() WHERE reference_id = $3 AND status <> 'success' AND amount <= $4 RETURNING user_id",
+        ['success', String(trx_id), trx.referenceId, trx.amount]
       );
 
       // 2. Upgrade user to Pro (500MB storage, 30 days)
@@ -244,7 +303,7 @@ router.post('/notify', async (req, res) => {
       statusCode: 200,
       requestIp: clientIp,
       requestBody: req.body,
-      responseBody: { ok: true, status, isSuccess },
+      responseBody: { ok: true, verifiedStatus: trx.status, referenceId: trx.referenceId, isSuccess },
       errorMessage: null,
       durationMs: Date.now() - start
     });

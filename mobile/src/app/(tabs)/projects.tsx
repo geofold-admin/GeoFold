@@ -1,14 +1,16 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CaptureSheet } from '@/components/capture-sheet';
-import { CameraGlyph, Chevron } from '@/components/icons';
-import { Chip, Empty, ErrorNote, StatusPill, T, TabTitle } from '@/components/ui';
-import { C, Fonts } from '@/constants/theme';
+import { CameraGlyph, Chevron, PlusIcon } from '@/components/icons';
+import { ReminderBanner } from '@/components/reminder-banner';
+import { Chip, Empty, ErrorNote, Loading, ProjectAvatar, StatusPill, useT, TabTitle } from '@/components/ui';
+import { Fonts, Radius, makeStyles, useColors } from '@/constants/theme';
 import { api, errorMessage } from '@/lib/api';
 import { parseSchema, type ProjectResponse } from '@/lib/types';
+import { useSync } from '@/lib/sync-context';
 import { useRefreshOnFocus } from '@/lib/use-refresh-on-focus';
 
 type Filter = 'all' | 'active' | 'empty';
@@ -16,6 +18,10 @@ type Filter = 'all' | 'active' | 'empty';
 export default function ProjectsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const styles = useStyles();
+  const C = useColors();
+  const T = useT();
+  const { online } = useSync();
 
   const [projects, setProjects] = useState<ProjectResponse[] | null>(null);
   const [filter, setFilter] = useState<Filter>('all');
@@ -52,7 +58,13 @@ export default function ProjectsScreen() {
       <View style={{ paddingHorizontal: 20 }}>
         <TabTitle
           title="Projects"
-          subtitle={projects ? `${projects.length} assigned to you` : 'Loading…'}
+          subtitle={
+            projects
+              ? `${projects.length} assigned to you${online ? '' : ' · offline, saved copy'}`
+              : error
+                ? undefined
+                : 'Loading…'
+          }
         />
         <View style={styles.chips}>
           {(
@@ -71,8 +83,11 @@ export default function ProjectsScreen() {
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
         <ErrorNote message={error} />
+        <ReminderBanner onExport={() => router.push('/project/data?mode=export')} />
 
-        {projects === null ? null : filtered.length === 0 ? (
+        {projects === null ? (
+          error ? null : <Loading />
+        ) : filtered.length === 0 ? (
           <Empty>
             {projects.length === 0
               ? 'No projects yet. Create one to start capturing.'
@@ -85,24 +100,33 @@ export default function ProjectsScreen() {
               <Pressable
                 key={p.id}
                 onPress={() => router.push(`/project/${p.id}`)}
+                accessibilityRole="button"
                 style={({ pressed }) => [styles.row, { opacity: pressed ? 0.65 : 1 }]}>
+                <ProjectAvatar name={p.name} />
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={styles.name}>{p.name}</Text>
+                  {/* The status rides on the title line, so the chevron can sit centred on the
+                      row the way it does on every other list in the app. */}
+                  <View style={styles.titleLine}>
+                    <Text style={styles.name} numberOfLines={1}>
+                      {p.name}
+                    </Text>
+                    <StatusPill
+                      status={p.surveyCount > 0 ? 'submitted' : 'none'}
+                      label={p.surveyCount > 0 ? 'In progress' : 'Not started'}
+                    />
+                  </View>
                   <Text style={styles.address} numberOfLines={1}>
                     {p.description ?? 'No description'}
                   </Text>
-                  <Text style={T.caption}>
-                    {new Date(p.createdAtUtc).toLocaleDateString()} · {p.surveyCount} surveys ·{' '}
-                    {fields.length} field{fields.length === 1 ? '' : 's'}
+                  <Text style={T.caption} numberOfLines={1}>
+                    {new Date(p.createdAtUtc).toLocaleDateString()} · {p.surveyCount} survey
+                    {p.surveyCount === 1 ? '' : 's'} ·{' '}
+                    {fields.length === 0
+                      ? 'no custom fields'
+                      : `${fields.length} field${fields.length === 1 ? '' : 's'}`}
                   </Text>
                 </View>
-                <View style={styles.rowRight}>
-                  <StatusPill
-                    status={p.surveyCount > 0 ? 'submitted' : 'none'}
-                    label={p.surveyCount > 0 ? 'In progress' : 'Not started'}
-                  />
-                  <Chevron />
-                </View>
+                <Chevron />
               </Pressable>
             );
           })
@@ -110,15 +134,19 @@ export default function ProjectsScreen() {
 
         <Pressable
           onPress={() => router.push('/project/new')}
+          accessibilityRole="button"
           style={({ pressed }) => [styles.newProject, { opacity: pressed ? 0.7 : 1 }]}>
-          <Text style={styles.newProjectText}>+ New project</Text>
+          <PlusIcon color={C.accentText} />
+          <Text style={styles.newProjectText}>New project</Text>
         </Pressable>
       </ScrollView>
 
       <Pressable
         onPress={() => setSheetOpen(true)}
+        accessibilityRole="button"
+        accessibilityLabel="Capture a survey photo"
         style={({ pressed }) => [styles.fab, { bottom: 20, opacity: pressed ? 0.9 : 1 }]}>
-        <CameraGlyph size={22} />
+        <CameraGlyph size={26} />
       </Pressable>
 
       <CaptureSheet
@@ -130,21 +158,33 @@ export default function ProjectsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((C) => ({
   chips: { flexDirection: 'row', gap: 8, marginBottom: 14 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 14,
     paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: C.line92,
   },
-  name: { fontSize: 15, fontWeight: '500', color: C.ink, marginBottom: 3, fontFamily: Fonts.sans },
-  address: { fontSize: 13, color: C.ink55, marginBottom: 6, fontFamily: Fonts.sans },
-  rowRight: { alignItems: 'flex-end', gap: 10 },
-  newProject: { paddingVertical: 18, alignItems: 'center' },
-  newProjectText: { fontSize: 15, fontWeight: '500', color: C.accent, fontFamily: Fonts.sans },
+  titleLine: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 3 },
+  name: { flexShrink: 1, fontSize: 15, fontWeight: '600', color: C.ink, fontFamily: Fonts.sans },
+  address: { fontSize: 13, color: C.ink55, marginBottom: 4, fontFamily: Fonts.sans },
+  // Dashed like the empty state: an open slot for the next project, not a stray link.
+  newProject: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 16,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: C.line85,
+    borderRadius: Radius.lg,
+  },
+  newProjectText: { fontSize: 15, fontWeight: '500', color: C.accentText, fontFamily: Fonts.sans },
   fab: {
     position: 'absolute',
     right: 20,
@@ -160,4 +200,4 @@ const styles = StyleSheet.create({
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 6 },
   },
-});
+}));

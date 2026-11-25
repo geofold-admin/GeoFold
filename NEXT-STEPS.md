@@ -3,7 +3,7 @@
 Context for picking this up in a fresh session: what exists, what's worth doing next, and the
 traps that will waste your time if you don't know about them.
 
-Written 2026-08-04.
+Written 2026-08-04. Last updated 2026-08-29 — map fixes and the survey grid (§1, §2, §5).
 
 ---
 
@@ -45,6 +45,64 @@ Capture (viewfinder → review) · Photo detail · Sync & backup.
 The map uses **MapLibre + OpenFreeMap** — no API key, no Google Cloud account, no card. This was a
 deliberate move off `expo-maps`, which needs a billing-enabled Google project.
 
+Everything MapLibre-shaped lives in `mobile/src/components/survey-map.tsx`, which now carries three
+tools: the street/satellite basemap toggle, a two-point **ruler**, and the **survey grid** below.
+The same component runs in `pickMode` as the tap-to-pick coordinate picker on the capture screen.
+
+### The survey grid
+
+A toggleable quadrat grid for laying systematic coverage over a parcel or a protected block. Cells
+holding at least one survey are tinted, with an `N of M cells surveyed` readout; tapping a cell
+gives its full grid reference (`49M 531600E 9995600N`) and how many surveys are in it. Coverage
+honours the map's All/Pending/Synced chips, so "which cells have synced data" is a question you can
+actually ask.
+
+**Cell size** defaults to `Auto`, which follows the zoom: the size is picked from the viewport's
+ground width targeting ~10 cells across, off a ladder running 1 m to 100 km — deliberately wider
+than the chips at both ends, so zoomed right out there is still *a* grid rather than none. Steps
+are compared on a **log** scale because the ladder is multiplicative: 250 sits between 100 and 500
+by ratio, not by subtraction, and nearest-by-ratio is what stops a step feeling like a jump.
+Measured at the default view — z10 → 2.5 km cells, z14 → 250 m, z18 → 10 m, z21 → 1 m, never
+tripping `MAX_CELLS`. Manual sizes (10 m…1 km) override it. Whichever is in force is printed in the
+panel: under Auto it changes as you zoom, so `8 of 20 cells` would otherwise mean nothing.
+
+**Custom origin.** "Set origin" arms a tap that places the plot's corner. That point becomes the
+south-west corner of cell **A1**; columns run east (A…Z, AA, AB…), rows run north. Ground south or
+west of the origin is *off-plot* — drawn thinner so the lattice stays continuous, but unlabelled
+and excluded from the coverage count, so `18 of 40` counts the plot rather than the viewport. The
+origin also pins the grid's UTM zone and hemisphere: without it, panning towards a zone boundary
+silently renumbers every cell. `GridFrame` carries zone + hemisphere + origin as one value, so a
+tap is always resolved in the frame its cells were drawn in — a tap resolved against a different
+frame names the wrong cell and nothing on screen looks wrong.
+
+Three ways to place it, in rising order of precision: tap anywhere, **drag the handle**, or **tap a
+survey pin** while placing — which snaps to that survey's *recorded* position rather than to where
+the finger landed, so a known control point becomes the plot corner exactly. Dragging is why the
+handle is a `ViewAnnotation` and not a `Marker`: `Marker` has no drag support, `ViewAnnotation`
+carries `draggable` + `onDragStart`/`onDrag`/`onDragEnd`, and Android implements it
+(`MLRNPointAnnotation.withDraggable`). The grid rebuilds on `onDragEnd` only — regenerating several
+hundred polygons per frame makes the drag itself stutter.
+
+**It is built in UTM, not in degrees, and that is the whole point.** A "100 m" grid drawn as a fixed
+number of degrees is not square — a degree of longitude shrinks towards the poles — and worse, it
+drifts: the same ground falls in a different cell depending on where the viewport is. That makes
+coverage meaningless, which is the one thing a survey grid exists to record. `mobile/src/lib/grid.ts`
+carries Snyder's transverse Mercator series on WGS84, written out rather than pulled in (sixty
+lines, and the app keeps no geodesy dependency — same call as `next/src/lib/export.ts`).
+
+If you touch that file, re-run the checks it was verified with, because a plausible-looking wrong
+answer here is invisible in the UI:
+
+- meridian arc vs. numerical integration of the meridional radius of curvature — matched to
+  sub-millimetre at 10°/30°/45°/60°/84°;
+- generated 100 m cell edges measured with a Vincenty geodesic — 100.006–100.039 m on all four
+  edges in Kalimantan, Sydney, NYC and northern Norway, i.e. exactly the 0.9996 UTM scale factor.
+
+Both checks are self-contained, which is why they are the ones recorded here: spot-checking against
+a remembered or copied "known" UTM coordinate proved worthless — the landmark's own latitude and
+longitude have to be exactly the ones the quoted easting/northing was derived from, and when they
+are not, the disagreement looks identical to a bug in the projection.
+
 ### One server change already made
 
 `next/src/lib/auth.ts` — `getUserId()` previously only accepted `Authorization: Bearer` when the
@@ -75,6 +133,44 @@ path is untouched.
 - **Route collision:** never put a screen at `app/index.tsx` while `app/(tabs)/index.tsx` exists.
   Both resolve to `/` and navigation silently stops working. Welcome lives at `app/welcome.tsx`
   for this reason.
+- **MapLibre's `lngLat` is a `[longitude, latitude]` tuple, not `{lng, lat}`.** Every press event
+  carries it that way (`MapPressEvent.kt` → `putArray`). Reading `.lng`/`.lat` yields `undefined`,
+  the guard returns early, and the symptom is a map that ignores every tap with no error anywhere.
+  Read it through `pressCoords()` in `survey-map.tsx` rather than destructuring it again.
+- **`Camera` re-applies its stop whenever a prop's identity changes.** It is `memo`'d on prop
+  identity, so a `center={[lng, lat]}` array literal built during render re-flies the camera on
+  *every* re-render — each basemap toggle, each feed refresh, each touch. Memoise the array on the
+  lat/lng numbers. The same trap applies one level up: key the camera memo on coordinates, never on
+  the `markers` array, which is new after every fetch.
+- **`null` checks do not catch `NaN`.** A non-finite coordinate reaches Android as `Double.NaN` and
+  takes the native renderer down — no JS exception, no stack. `isCoord()` in `survey-map.tsx`
+  guards the camera, every marker and the picked point; use it for anything new that reaches
+  MapLibre.
+- **`Marker` cannot be dragged; `ViewAnnotation` can.** They look interchangeable — both take
+  `lngLat`, `anchor` and a child view — but only `ViewAnnotation` exposes `draggable` and the drag
+  callbacks. The trade is that on Android it renders its children to a bitmap, so it suits static
+  handles and not interactive views. Both events extend `PressEvent`, so `pressCoords()` reads a
+  drag result the same way it reads a tap.
+- **A symbol layer with no glyph source draws nothing, silently.** The street style ships its own;
+  `SATELLITE_STYLE` is ours, so it has to declare `glyphs` explicitly — that is what makes the grid's
+  cell labels appear on satellite. OpenFreeMap serves `Noto Sans Regular`/`Medium`/`Bold` only.
+- **The `Layer` `style` prop is deprecated** and goes away in MapLibre RN v12. New layers use
+  `paint`/`layout` with style-spec kebab-case keys.
+- **Esri serves a placeholder tile, not a 404, past its real coverage.** Beyond where imagery
+  exists, `World_Imagery` answers **200 OK, `image/jpeg`**, with a byte-identical 2521-byte JPEG
+  reading *"Map data not yet available"* — so MapLibre cannot detect it and simply draws it. The
+  satellite source's `maxzoom` therefore has to be set to where imagery *actually* stops, not to
+  Esri's nominal maximum, or zooming in shows that image. **Sampled 2026-08-29: rural Kalimantan and
+  Balikpapan stop at z18; Jakarta and Pontianak reach z19.** Capped globally at 18 — this is a field
+  app for rural Indonesia. Re-probe before changing it; a tile's byte size gives it away instantly
+  (real imagery is 7–21 kB, the placeholder is always exactly 2521).
+- **UTM's false northing belongs to the grid, not to the point.** The southern convention adds
+  10 000 km to every northing. Deciding that per point (`if (latitude < 0)`) puts a 10 000 km cliff
+  straight through the equator — and this app's default view sits on it, Kalimantan at −0.0376°, so
+  it is the *likeliest* place a real survey hits it, not an edge case. `toUtm()` takes an explicit
+  `southern`; inside a grid, always pass the grid's, and never let it fall back to the per-point
+  default. Shipped wrong once (fixed 2026-08-29); the symptom would have been a grid torn in half
+  at latitude zero.
 
 ---
 
@@ -146,6 +242,11 @@ Roughly in order of value.
 
 ### High
 
+- **Protected-area boundaries.** The grid gives systematic coverage *over* a protected block, but
+  there is no way to define the block. Needs a polygon on the server — a table, `GET`/`POST`, and
+  `ST_Intersects` against it — then the map can draw the reserve, clip the grid to it, and report
+  coverage of the protected area rather than of whatever happens to be in view. This is the natural
+  next step for the wildlife-survey use case and is the reason the grid stops where it does.
 - **Persist demo state** — back the in-memory store in `mobile/src/lib/demo.ts` with AsyncStorage
   so a reload doesn't wipe it. Currently makes the demo look broken.
 - **Google login** — see above.
@@ -160,6 +261,10 @@ Roughly in order of value.
 - **Heading in the stamp** — the design shows `heading N 38°`; `expo-location`'s
   `watchHeadingAsync` provides it. Currently only coordinates, accuracy and time are burned in.
 - **Marker clustering** at low zoom — MapLibre supports it via `GeoJSONSource` with `cluster`.
+- **Export the grid.** A surveyor writing cell references into a notebook wants them in the CSV
+  too: add the cell reference of each survey to the export, and a per-cell coverage sheet.
+- **Grid cell as a capture target** — "go to cell 16·56" and a nudge when a cell in the plan has no
+  survey yet. The coverage shading answers this visually; a worklist would answer it in the field.
 - **Offline map tiles** — MapLibre ships an `OfflineManager`. Genuinely useful for a field app in a
   dead zone, and currently unused.
 - **Search and filters** in Gallery and Projects.
@@ -194,6 +299,22 @@ cd mobile/android && JAVA_HOME="$USERPROFILE/.gradle/jdks/eclipse_adoptium-17-am
 ```
 
 APK: `mobile/android/app/build/outputs/apk/release/app-release.apk`
+
+That command assembles **every** subproject, so each library's `assembleRelease` and
+`lintVitalAnalyzeRelease` run alongside the four-ABI C++ builds and Metro. On a 16 GB machine that
+wants roughly **6 GB free** — a cold build with less than that died on a native `malloc` and took
+the Gradle daemon with it (`hs_err_pid*.log` in `mobile/android/`, *"insufficient memory for the
+Java Runtime Environment"*). Close anything large first. If it still will not fit:
+
+```bash
+./gradlew :app:assembleRelease --no-parallel --max-workers=2 -Dkotlin.daemon.jvm.options=-Xmx1024m
+```
+
+`:app:` skips the library modules' own assemble and lint tasks. A crashed build leaves an orphaned
+Kotlin daemon holding ~1 GB; `./gradlew --stop` does not take it, so kill the stray `java.exe`.
+
+**Never pipe a gradle build through `tail`** — the pipeline's exit status is `tail`'s, so a failed
+build reports success.
 
 `mobile/eas.json` also has `preview`/`development` profiles pinned to APK output for cloud builds —
 needs `eas login` and `EXPO_PUBLIC_*` supplied via `eas env:create`, since `.env.local` is

@@ -4,6 +4,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 const sharp = require('sharp');
 const { enqueue, stats: queueStats } = require('../imageQueue');
+const { requireSignedUrl } = require('../security');
 
 const router = express.Router();
 
@@ -71,9 +72,27 @@ function evictIfNeeded() {
 }
 
 // 1. Raw upload (PUT binary image, converts to WebP) — serialised
-router.put('/raw', express.raw({ type: '*/*', limit: '35mb' }), async (req, res) => {
+//
+// Size cap: 3 MB. Real client uploads are ≤1 MB (1600 px JPEG at q82, watermarked
+// and downscaled on the device before upload). 3 MB gives headroom without
+// allowing the 35 MB ceiling that the load test proved was a DoS vector.
+// The sharp queue is serialised on a single vCPU — a backlog of big images
+// stalls the whole event loop.
+const MAX_PUT_BYTES = 3 * 1024 * 1024; // 3 MB hard limit
+// The signature is checked before the body is read, so an unauthenticated upload is refused
+// without the server buffering it first.
+router.put('/raw', requireSignedUrl('PUT'), express.raw({ type: '*/*', limit: '3mb' }), async (req, res) => {
   const relPath = req.query.path || req.headers['x-storage-path'];
   if (!relPath) return res.status(400).json({ error: 'path query parameter required' });
+
+  // Reject oversized uploads before touching the queue
+  const contentLength = parseInt(req.headers['content-length'] || '0', 10);
+  if (contentLength && contentLength > MAX_PUT_BYTES) {
+    return res.status(413).json({
+      error: `Payload too large: ${contentLength} bytes exceeds ${MAX_PUT_BYTES} byte limit. ` +
+             'Photos must be downscaled to 1600px and compressed before upload.'
+    });
+  }
 
   const targetPath = getTargetPath(relPath);
   if (!targetPath) return res.status(400).json({ error: 'invalid path' });
@@ -93,13 +112,18 @@ router.put('/raw', express.raw({ type: '*/*', limit: '35mb' }), async (req, res)
     const stat = fs.statSync(targetPath);
     res.json({ ok: true, sizeBytes: stat.size, format: 'webp' });
   } catch (err) {
+    // Queue full (MAX_DEPTH reached) — tell the client to retry shortly
+    if (err.message && err.message.includes('queue full')) {
+      res.setHeader('Retry-After', '5');
+      return res.status(429).json({ error: 'Server busy processing images, retry shortly' });
+    }
     console.error('Storage raw upload error:', err);
     res.status(400).json({ error: 'Image processing failed: ' + err.message });
   }
 });
 
 // 2. Info / Size / Exists (HEAD or GET info) — no queue
-router.head('/raw', (req, res) => {
+router.head('/raw', requireSignedUrl('GET'), (req, res) => {
   const relPath = req.query.path;
   if (!relPath) return res.status(400).end();
   const targetPath = getTargetPath(relPath);
@@ -111,7 +135,7 @@ router.head('/raw', (req, res) => {
   res.status(200).end();
 });
 
-router.get('/info', (req, res) => {
+router.get('/info', requireSignedUrl('GET'), (req, res) => {
   const relPath = req.query.path;
   const targetPath = getTargetPath(relPath);
   if (!targetPath || !fs.existsSync(targetPath)) return res.status(404).json({ exists: false });
@@ -123,7 +147,7 @@ router.get('/info', (req, res) => {
 // 3. Download (PNG). Resize happens at most once per image: the result is
 //    cached on disk and served directly thereafter. Never re-resize the same
 //    image twice. Cache is size-capped (default 500 MB) with LRU eviction.
-router.get('/download', (req, res) => {
+router.get('/download', requireSignedUrl('GET'), (req, res) => {
   const relPath = req.query.path;
   const targetPath = getTargetPath(relPath);
   if (!targetPath || !fs.existsSync(targetPath)) {
@@ -163,7 +187,7 @@ router.get('/download', (req, res) => {
 });
 
 // 4. View (Native WebP) — direct file, no queue
-router.get('/view', (req, res) => {
+router.get('/view', requireSignedUrl('GET'), (req, res) => {
   const relPath = req.query.path;
   const targetPath = getTargetPath(relPath);
   if (!targetPath || !fs.existsSync(targetPath)) {

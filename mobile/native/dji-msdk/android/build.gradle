@@ -1,0 +1,35 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'app.geofold.dji'
+version = '0.1.0'
+
+android {
+  namespace 'app.geofold.dji'
+  defaultConfig {
+    versionCode 1
+    versionName '0.1.0'
+  }
+
+  kotlinOptions {
+    // DJI's listener interfaces use Java `default` methods, and a Kotlin `object :` expression does
+    // not inherit them without this flag — the generated class simply has no implementation, and
+    // the first SDK call to one throws AbstractMethodError at runtime. Nothing catches it at build
+    // time.
+    //
+    // This is DJI's own setting; their sample build.gradle carries the same line. It cost a crash
+    // to learn: ICameraStreamManager.AvailableCameraUpdatedListener.onCameraStreamEnableUpdate is
+    // `default`, and the app died the moment an aircraft's camera came up.
+    freeCompilerArgs += ['-Xjvm-default=all']
+  }
+}
+
+dependencies {
+  // The module compiles against the SDK's API surface. `-provided` is compileOnly by design — it
+  // is the declarations only, and shipping it would collide with the implementation artifact the
+  // app pulls in. Kept in step with SDK_VERSION in plugins/with-dji-msdk.js.
+  compileOnly 'com.dji:dji-sdk-v5-aircraft-provided:5.18.0'
+  implementation 'com.dji:dji-sdk-v5-aircraft:5.18.0'
+}

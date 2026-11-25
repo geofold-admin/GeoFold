@@ -21,6 +21,11 @@ export interface OutboxItem {
   photoId: string;
   /** `file://` URI in the outbox directory, or null when the capture has no photo. */
   photoUri: string | null;
+  /**
+   * Further photos of the same point — the wide shot and the close-up, the nameplate, the damage
+   * from the other side. Absent on captures queued before a point could carry more than one.
+   */
+  extraPhotos?: { id: string; uri: string; capturedAtUtc?: string }[];
   status: 'pending' | 'syncing' | 'error';
   error?: string;
   createdAt: number;
@@ -46,7 +51,8 @@ export async function storePhoto(sourceUri: string, photoId: string): Promise<st
   return destination.uri;
 }
 
-function discardPhoto(uri: string | null): void {
+/** Deletes a stored photo. Never throws: a file already gone is the outcome that was wanted. */
+export function discardPhoto(uri: string | null): void {
   if (!uri) return;
   try {
     const file = new File(uri);
@@ -112,8 +118,17 @@ export function removeItem(id: string): Promise<void> {
     const target = items.find((i) => i.id === id);
     if (!target) return;
     discardPhoto(target.photoUri);
+    for (const extra of target.extraPhotos ?? []) discardPhoto(extra.uri);
     await write(items.filter((i) => i.id !== id));
   });
+}
+
+/** Every photo a queued capture carries, the main one first. */
+export function itemPhotos(item: OutboxItem): { id: string; uri: string; capturedAtUtc: string }[] {
+  return [
+    ...(item.photoUri ? [{ id: item.photoId, uri: item.photoUri, capturedAtUtc: item.capturedAtUtc }] : []),
+    ...(item.extraPhotos ?? []).map((p) => ({ ...p, capturedAtUtc: p.capturedAtUtc ?? item.capturedAtUtc })),
+  ];
 }
 
 /**

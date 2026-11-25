@@ -581,6 +581,61 @@ counting the incoming photo before issuing the upload URL.
 
 ---
 
+## 📡 Professional survey (GNSS/RTK) — roadmap, added 2026-11-25
+
+Goal: make GeoFold usable for engineering and cadastral surveyors, not only photo/form field
+surveys. **Phase 0 blocks everything else**: with phone GPS (3–10 m) none of the items below mean
+anything. Order is by dependency, not by how exciting it is.
+
+### Phase 0 — External receiver (prerequisite)
+- [ ] Bluetooth receiver connection (classic SPP + BLE), pair/scan screen. Pick 1–2 target receivers
+      first and test with real hardware; vendor NMEA differs.
+- [ ] NMEA parser: `GGA` (fix type, sats, HDOP, ellipsoid/MSL height), `GST` (σ lat/lon/alt),
+      `GSA` (PDOP/VDOP), `GSV` (per-constellation satellites, for the skyplot).
+- [ ] Location layer in `capture.ts` / `tracker.tsx`: prefer receiver, fall back to phone GPS,
+      flag mocked fixes when coming through Android mock location.
+- [ ] NTRIP client (caster, mountpoint, GGA upload) for receivers that don't fetch corrections
+      themselves — InaCORS (BIG) as the default target.
+- [ ] Schema: per-point fix type, HRMS, VRMS, PDOP, sats, age of correction, base ID, ellipsoid
+      height, antenna height. New Supabase columns + outbox/sync + exports.
+
+### Phase 1 — Coordinate systems & heights
+- [ ] Projected output (not just import): UTM zones (48S/49S/50S/… — Pontianak sits on the
+      equator in zone 49, Palembang is 48S) and TM-3° for BPN. `projection.ts` already does
+      TM *import*; extend to forward projection + display + export.
+- [ ] Datum: national datum is **SRGI2013** (DGN95 is legacy, still in old BPN data). Support both
+      labels; `projection.ts` currently does no datum shift — document that SRGI2013 ≈ ITRF2008
+      and the WGS 84 difference is sub-metre but *not* acceptable at RTK level.
+- [ ] Geoid: load grid (`.gtx` / GeoTIFF; `.byn` is Canadian-format, low priority), ship EGM2008,
+      let user load INAGEOID2020 from BIG (check licence before bundling). Orthometric height =
+      ellipsoid height − N.
+- [ ] Site calibration: ≥3 control points → 2D Helmert/similarity (horizontal) + inclined plane
+      (vertical). Show residuals per point; reject bad points.
+
+### Phase 2 — Field workflows
+- [ ] Stakeout (pematokan): import design points, pick target, live ΔN/ΔE (or distance+bearing)
+      and cut/fill. Display to mm, but RTK is ~1–2 cm H / 2–3 cm V — don't market "millimetre".
+- [ ] COGO: inverse (distance/bearing), area/perimeter (polygon tool exists on web), point offset,
+      line–line intersection.
+- [ ] Feature codes: code list per project (`BM`, `CL`, `MH`, `PT` …) with attribute forms —
+      reuse the existing per-project form schema rather than a second system.
+
+### Phase 3 — QC & audit trail
+- [ ] GNSS status panel + skyplot (needs `GSV`; not every receiver sends it at useful rate).
+- [ ] Precision locks per project: block save if HRMS > X cm, PDOP > Y, or fix ≠ RTK Fixed.
+      Optional averaging (N epochs) for control points.
+- [ ] Raw logging (UBX / vendor binary → RINEX) for PPK. **Receiver-specific** — only u-blox-based
+      units expose UBX; many commercial receivers log internally instead. Lowest priority.
+
+### Phase 4 — Interop & reports
+- [ ] Import/export: CSV/TXT (`PointID,Northing,Easting,Elevation,Code`, configurable order),
+      DXF (points + polylines underlay). GeoJSON/KML/SHP already exist (`geo-export.ts`,
+      `shapefile.ts`). **DWG is proprietary** — needs ODA/Teigha licence; skip, tell users to save as DXF.
+- [ ] Survey PDF report: coordinates (grid + geographic), fix status, RMS, antenna height,
+      photos, timestamp, sign-off block. `geopdf.ts` exists as a starting point.
+
+---
+
 ## Later / roadmap
 
 See [`NEXT-STEPS.md`](NEXT-STEPS.md) for the full backlog (Google login is now partly wired,

@@ -2,7 +2,8 @@ import { File, UploadType } from 'expo-file-system';
 
 import { api, errorMessage } from './api';
 import { DEMO_MODE } from './config';
-import { allItems, removeItem, updateItem, type OutboxItem } from './outbox';
+import { allItems, itemPhotos, removeItem, updateItem, type OutboxItem } from './outbox';
+import { pushPendingFields } from './project-fields';
 import type { InitiatePhotoResponse } from './types';
 
 // Port of `next/src/lib/sync-client.ts`. The three-step photo handshake is the same: the server
@@ -59,6 +60,9 @@ export async function syncAll(online: boolean): Promise<void> {
 
   running = true;
   try {
+    // Form fields added offline go first, so the surveys that use them arrive at a form that knows them.
+    if (!DEMO_MODE) await pushPendingFields();
+
     const pending = (await allItems()).filter((i) => i.status !== 'syncing');
     const upserted = await batchUpsert(pending);
     for (const item of pending) {
@@ -70,6 +74,10 @@ export async function syncAll(online: boolean): Promise<void> {
 }
 
 async function syncOne(item: OutboxItem, alreadyUpserted = false): Promise<void> {
+  // The loop works from a snapshot of the queue. A capture the surveyor discarded since it was
+  // taken must not be sent on the strength of that snapshot.
+  if (!(await allItems()).some((i) => i.id === item.id)) return;
+
   await updateItem(item.id, { status: 'syncing', error: undefined });
   try {
     // Enough of a pause for the queue to be visible doing its work.
@@ -94,7 +102,11 @@ async function syncOne(item: OutboxItem, alreadyUpserted = false): Promise<void>
 
     // Demo mode has no storage behind the signed URL, so the photo step is skipped — but the
     // survey still lands, which is the part worth demonstrating.
-    if (!DEMO_MODE && item.photoUri) await uploadPhoto(item, item.photoUri);
+    // Every photo id is fixed on the device and the server's handshake is idempotent per id, so a
+    // retry after the second of three photos failed re-sends only what is missing.
+    if (!DEMO_MODE) {
+      for (const photo of itemPhotos(item)) await uploadPhoto(item, photo);
+    }
 
     await removeItem(item.id);
   } catch (e) {
@@ -102,8 +114,11 @@ async function syncOne(item: OutboxItem, alreadyUpserted = false): Promise<void>
   }
 }
 
-async function uploadPhoto(item: OutboxItem, photoUri: string): Promise<void> {
-  const file = new File(photoUri);
+async function uploadPhoto(
+  item: OutboxItem,
+  photo: { id: string; uri: string; capturedAtUtc: string },
+): Promise<void> {
+  const file = new File(photo.uri);
   // The photo can go missing if the OS reclaimed storage. The survey point itself is already
   // saved, so drop the photo rather than trapping the item in a permanent error.
   if (!file.exists) return;
@@ -111,13 +126,14 @@ async function uploadPhoto(item: OutboxItem, photoUri: string): Promise<void> {
   const initiated = await api<InitiatePhotoResponse>(`/api/surveys/${item.id}/photos/initiate`, {
     method: 'POST',
     body: {
-      id: item.photoId,
+      id: photo.id,
       fileName: 'photo.jpg',
       contentType: 'image/jpeg',
       sizeBytes: file.size,
       latitude: item.latitude,
       longitude: item.longitude,
-      capturedAtUtc: item.capturedAtUtc,
+      // Each photo's own shutter time, which is also what orders a point's photos when it is shown.
+      capturedAtUtc: photo.capturedAtUtc,
     },
   });
 
@@ -131,5 +147,5 @@ async function uploadPhoto(item: OutboxItem, photoUri: string): Promise<void> {
     throw new Error(`Photo upload failed (${result.status}).`);
   }
 
-  await api(`/api/surveys/${item.id}/photos/${item.photoId}/complete`, { method: 'POST' });
+  await api(`/api/surveys/${item.id}/photos/${photo.id}/complete`, { method: 'POST' });
 }

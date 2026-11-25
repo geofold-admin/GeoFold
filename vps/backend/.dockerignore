@@ -1,0 +1,6 @@
+# Secrets reach the container through `env_file` at runtime. Without this file, `COPY . .`
+# baked backend/.env — database password and iPaymu API key — into the image layers.
+.env
+.env.*
+node_modules
+npm-debug.log

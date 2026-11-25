@@ -40,32 +40,86 @@ function readParams(url: string): Record<string, string> {
 }
 
 /**
- * Opens the provider's sign-in page in a native auth session and turns the result into a
- * Supabase session. Resolves false when the surveyor backs out of the browser sheet.
+ * Opens the provider's sign-in page in a native auth session (Custom Tab / ASWebAuthenticationSession)
+ * and turns the result into a Supabase session. Resolves false when the surveyor backs out.
  *
- * Handles both flows so it works whichever the project is configured for: PKCE returns a
- * `?code` to exchange, the implicit flow returns tokens in the `#fragment`. Deliberately
- * does not set `flowType` on the shared client — that would also change how the email
- * confirmation links from signUp() are redeemed.
- *
- * `redirectTo` (geofold://auth/callback in a dev/production build) must be listed under
- * Authentication → URL Configuration → Redirect URLs in the Supabase dashboard.
+ * Uses the custom scheme (geofold://auth/callback) as redirectTo so the Custom Tab
+ * receives the redirect back directly, giving us the code/tokens in the returned promise.
+ * This avoids the broken handoff page → custom scheme redirect that Custom Tabs can't capture.
  */
 export async function signInWithProvider(provider: Provider): Promise<boolean> {
-  const redirectTo = Linking.createURL('auth/callback');
+  const returnUrl = Linking.createURL('auth/callback');
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
-    options: { redirectTo, skipBrowserRedirect: true },
+    options: {
+      redirectTo: returnUrl,
+      skipBrowserRedirect: true,
+      queryParams: {
+        access_type: 'offline',
+        prompt: 'consent',
+      },
+    },
   });
   if (error) throw new Error(error.message);
   if (!data?.url) throw new Error('Supabase did not return a sign-in URL.');
 
-  const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
-  // 'cancel' (user dismissed) and 'dismiss' (closed programmatically) are both non-errors.
-  if (result.type !== 'success') return false;
+  // Open in a native auth session (Custom Tab on Android, ASWebAuthenticationSession on iOS).
+  // The redirectTo is our custom scheme, so the Custom Tab receives geofold://auth/callback?...
+  // back and returns it to this promise. No handoff page, no race.
+  const result = await WebBrowser.openAuthSessionAsync(data.url, returnUrl, {
+    showInRecents: true,
+    preferEphemeralSession: false,
+  });
 
-  const params = readParams(result.url);
+  if (result.type === 'success') {
+    const url = result.url;
+    const params = readParams(url);
+
+    if (params.error || params.error_description) {
+      throw new Error(params.error_description || params.error);
+    }
+
+    if (params.code) {
+      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(params.code);
+      if (exchangeError) throw new Error(exchangeError.message);
+      return true;
+    }
+
+    if (params.access_token && params.refresh_token) {
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: params.access_token,
+        refresh_token: params.refresh_token,
+      });
+      if (sessionError) throw new Error(sessionError.message);
+      return true;
+    }
+
+    throw new Error('Sign-in finished but returned no credentials.');
+  }
+
+  // User cancelled or closed the browser sheet.
+  return false;
+}
+
+/**
+ * Turns a `geofold*://auth/callback?...` URL into a Supabase session.
+ *
+ * Split out from `signInWithProvider` because that function's promise is not the only way this URL
+ * can arrive. While the browser sheet is in front, Android is free to recreate the activity — and
+ * on aggressive OEM builds, to kill the process outright. Either way the awaiting promise is gone
+ * by the time the redirect lands, and a sign-in that actually succeeded upstream is dropped on the
+ * floor: the browser closes, the app comes back, and the surveyor is still signed out with nothing
+ * on screen to say why. `lib/auth` also feeds every incoming deep link through here, so the result
+ * survives the round trip regardless of what happened to the JS that started it.
+ *
+ * Safe to call with any URL: anything that is not an auth callback returns false without touching
+ * the session.
+ */
+export async function completeAuthFromUrl(url: string): Promise<boolean> {
+  if (!url.includes('auth/callback')) return false;
+
+  const params = readParams(url);
   if (params.error_description || params.error) {
     throw new Error(params.error_description || params.error);
   }
@@ -85,5 +139,7 @@ export async function signInWithProvider(provider: Provider): Promise<boolean> {
     return true;
   }
 
+  // A callback with neither a code nor tokens is a real failure, not a no-op — say so rather than
+  // returning quietly and leaving the sign-in screen looking like nothing happened.
   throw new Error('Sign-in finished but returned no credentials.');
 }

@@ -39,18 +39,33 @@ concepts are the backend's:
 
 ### The capture loop
 
-1. **Viewfinder** — a real `expo-camera` preview with the design's rule-of-thirds guides and a live
-   coordinate readout.
-2. **GPS fix** — `BestForNavigation` accuracy, taken while the viewfinder is up so it belongs to the
-   moment of the photo, with the accuracy radius recorded alongside the point.
-3. **Photo** — downscaled to a 1600 px longest edge and re-encoded as JPEG.
-4. **Review** — the stamp is burned into the image: coordinates, accuracy, time and project. What
+1. **Viewfinder** — a real `expo-camera` preview with the design's rule-of-thirds guides, a torch
+   and three zoom steps, and a live coordinate readout.
+2. **GPS fix** — `BestForNavigation` accuracy, *followed* for as long as the camera is up and frozen
+   at the first shutter, so the point is where the phone was when the photo was taken and not where
+   it was when the camera opened. The readout is graded (≤10 m good, ≤25 m fair, worse is flagged)
+   and saving a point worse than 25 m asks first. On the review step a better reading taken since
+   the shutter is offered back, for the surveyor still standing at the point.
+3. **Photos** — up to four per point (`MAX_PHOTOS` in `capture.tsx`), each downscaled to a 1600 px
+   longest edge and re-encoded as JPEG. The first one fixes the point's position and time; the rest
+   are queued as `extraPhotos` on the outbox item and uploaded through the same handshake.
+4. **Review** — the stamp is burned into every photo: coordinates, accuracy, time and project. What
    you approve on screen is exactly what uploads — a full-resolution copy of the same component is
-   snapshotted off-screen.
+   snapshotted off-screen, once its image has finished drawing.
 5. **Form** — the project's `formSchema` rendered dynamically (text / number / integer / boolean /
-   date / select), plus the always-present `catatan` note. It sits on the review step because the
-   server validates required fields on upload, and finding that out after leaving site is too late.
-6. **Use photo** — the survey goes into the local outbox and the screen returns immediately.
+   date / select), plus the always-present `catatan` note. It is there from the viewfinder on and
+   carries into the review step, because the server validates required fields on upload and
+   finding that out after leaving site is too late. The form can be shaped from here with what
+   creating a project offers: a new field of any type, a sectoral template's fields, one more
+   option on a choice field ("Other"), and a link to the project editor for renaming, reordering
+   and removing. Additions are written to the phone first (`lib/project-fields.ts`) and joined to
+   the project's form at the next sync, so none of it needs a signal. "Same as the last point"
+   refills the form from the previous capture in the project.
+6. **Save / Save & next** — the survey goes into the local outbox. *Save* returns to where the
+   camera was opened from; *Save & next* clears the form and keeps the camera up for the next point.
+
+A queued capture can be opened on **Sync & backup** — its photos, position and values — and
+discarded there if it was taken by mistake.
 
 ### Offline behaviour
 

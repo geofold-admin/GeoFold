@@ -1,0 +1,36 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'app.geofold.djiv4'
+version = '0.1.0'
+
+android {
+  namespace 'app.geofold.djiv4'
+  defaultConfig {
+    versionCode 1
+    versionName '0.1.0'
+  }
+
+  kotlinOptions {
+    // Same reason as the V5 module: DJI's listener interfaces carry Java `default` methods, and a
+    // Kotlin `object :` expression does not inherit them without this flag.
+    freeCompilerArgs += ['-Xjvm-default=all']
+  }
+}
+
+dependencies {
+  // MSDK V4. Same two-artifact split as V5: `-provided` is the API surface only and must stay
+  // compileOnly, or it collides at runtime with the implementation artifact.
+  compileOnly 'com.dji:dji-sdk-provided:4.18'
+  implementation 'com.dji:dji-sdk:4.18'
+
+  // DJI's V4 AAR ships its own layouts — dji_dialog_login.xml, lidar_map.xml — that reference
+  // ConstraintLayout and AppCompat attributes (`layout_constraintTop_toTopOf`, `srcCompat`), but
+  // the AAR declares neither dependency. Without these, `:dji-v4:verifyReleaseResources` fails
+  // with "Android resource linking failed / attribute … not found". Debug builds can slip past it
+  // because the verify task only runs for release, which is why this surfaced at packaging time.
+  implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+  implementation 'androidx.appcompat:appcompat:1.7.0'
+}

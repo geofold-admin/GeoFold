@@ -1,0 +1,6 @@
+{
+  "platforms": ["android"],
+  "android": {
+    "modules": ["app.geofold.djiv4.DjiV4Module"]
+  }
+}

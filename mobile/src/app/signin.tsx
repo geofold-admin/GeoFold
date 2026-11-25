@@ -1,11 +1,11 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackChevron } from '@/components/icons';
-import { Button, ErrorNote, Input, Segmented, T } from '@/components/ui';
-import { C, Fonts } from '@/constants/theme';
+import { Button, ErrorNote, Input, Segmented, useT } from '@/components/ui';
+import { Fonts, makeStyles, useColors } from '@/constants/theme';
 import { errorMessage } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { DEMO_MODE } from '@/lib/config';
@@ -14,14 +14,19 @@ import { OAUTH_PROVIDERS, signInWithProvider } from '@/lib/oauth';
 export default function SignInScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const styles = useStyles();
+  const C = useColors();
+  const T = useT();
   const { mode } = useLocalSearchParams<{ mode?: string }>();
-  const { signIn, signUp, enterDemo } = useAuth();
+  const { signIn, signUp, verifyOtp, enterDemo } = useAuth();
 
   const [tab, setTab] = useState(mode === 'signup' ? 'signup' : 'signin');
   const [name, setName] = useState('');
   const [org, setOrg] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [otp, setOtp] = useState('');
+  const [awaitingOtp, setAwaitingOtp] = useState(false);
   const [busy, setBusy] = useState(false);
   const [social, setSocial] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -51,14 +56,28 @@ export default function SignInScreen() {
       if (isSignup) {
         const confirmationRequired = await signUp(email, password, { name, org });
         if (confirmationRequired) {
-          setNotice('Check your email to confirm the account, then sign in.');
-          setTab('signin');
+          setNotice('Check your email for the confirmation link, or enter the 6-digit verification code below:');
+          setAwaitingOtp(true);
         }
       } else {
         await signIn(email, password);
       }
     } catch (e) {
       setError(errorMessage(e, isSignup ? 'Could not create the account.' : 'Could not sign in.'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const submitOtp = async () => {
+    if (!otp.trim()) return;
+    setError(null);
+    setNotice(null);
+    setBusy(true);
+    try {
+      await verifyOtp(email, otp);
+    } catch (e) {
+      setError(errorMessage(e, 'Could not verify code. Please check and try again.'));
     } finally {
       setBusy(false);
     }
@@ -114,51 +133,80 @@ export default function SignInScreen() {
           </View>
         ) : null}
 
-        {isSignup ? (
+        {awaitingOtp ? (
           <>
             <Input
-              placeholder="Full name"
-              value={name}
-              onChangeText={setName}
+              placeholder="Enter 6-digit verification code"
+              value={otp}
+              onChangeText={setOtp}
+              keyboardType="number-pad"
+              autoCapitalize="none"
+              onSubmitEditing={submitOtp}
+              returnKeyType="go"
+              style={styles.gap}
+            />
+            <Button
+              title={busy ? 'Verifying…' : 'Verify Code'}
+              onPress={submitOtp}
+              busy={busy}
+              disabled={!otp.trim()}
+            />
+            <View style={{ height: 12 }} />
+            <Button
+              title="Resend or back to form"
+              variant="outline"
+              onPress={() => setAwaitingOtp(false)}
+            />
+          </>
+        ) : (
+          <>
+            {isSignup ? (
+              <>
+                <Input
+                  placeholder="Full name"
+                  value={name}
+                  onChangeText={setName}
+                  style={styles.gap}
+                />
+                <Input
+                  placeholder="Organization"
+                  value={org}
+                  onChangeText={setOrg}
+                  style={styles.gap}
+                />
+              </>
+            ) : null}
+
+            <Input
+              placeholder="Work email"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
               style={styles.gap}
             />
             <Input
-              placeholder="Organization"
-              value={org}
-              onChangeText={setOrg}
-              style={styles.gap}
+              placeholder="Password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              onSubmitEditing={submit}
+              returnKeyType="go"
+              style={{ marginBottom: 10 }}
+            />
+
+            <View style={{ height: 18 }} />
+
+            <Button
+              title={busy ? 'Working…' : isSignup ? 'Create account' : 'Sign in'}
+              onPress={submit}
+              busy={busy}
+              disabled={!email || !password}
             />
           </>
-        ) : null}
-
-        <Input
-          placeholder="Work email"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoComplete="email"
-          style={styles.gap}
-        />
-        <Input
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          autoCapitalize="none"
-          onSubmitEditing={submit}
-          returnKeyType="go"
-          style={{ marginBottom: 10 }}
-        />
-
-        <View style={{ height: 18 }} />
-
-        <Button
-          title={busy ? 'Working…' : isSignup ? 'Create account' : 'Sign in'}
-          onPress={submit}
-          busy={busy}
-          disabled={!email || !password}
-        />
+        )}
 
         {DEMO_MODE ? (
           <>
@@ -189,7 +237,7 @@ export default function SignInScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((C) => ({
   topBar: { flexDirection: 'row', alignItems: 'center', paddingLeft: 8, paddingTop: 8 },
   back: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   body: { paddingHorizontal: 28, paddingTop: 12, flexGrow: 1 },
@@ -199,4 +247,4 @@ const styles = StyleSheet.create({
   rule: { flex: 1, height: 1, backgroundColor: C.line90 },
   footer: { textAlign: 'center', fontSize: 14, color: C.ink46, marginTop: 24, fontFamily: Fonts.sans },
   link: { color: C.accent, fontWeight: '500' },
-});
+}));

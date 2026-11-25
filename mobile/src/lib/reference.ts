@@ -13,11 +13,14 @@ export function slugifyProject(name: string): string {
   return slug || 'PROJECT';
 }
 
+/** Only the fields the numbering needs, so a map feature or an outbox item can be numbered too. */
+type Referenceable = Pick<SurveyDetail, 'id' | 'projectId' | 'capturedAtUtc'>;
+
 export function buildReferences(
-  surveys: SurveyDetail[],
+  surveys: Referenceable[],
   projectName: (id: string) => string,
 ): Map<string, string> {
-  const byProject = new Map<string, SurveyDetail[]>();
+  const byProject = new Map<string, Referenceable[]>();
   for (const survey of surveys) {
     const bucket = byProject.get(survey.projectId) ?? [];
     bucket.push(survey);

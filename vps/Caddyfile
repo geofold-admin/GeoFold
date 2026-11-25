@@ -16,16 +16,10 @@ api.geofold.sayba.id {
 		}
 	}
 
-	# --- Nested picture paths: /api/pictures/view/<dir>/<file>.webp ---
-	# These paths CAN be overwritten by uploads (PUT /api/storage/raw?path=...)
-	# so never cache immutably: short TTL + revalidation.
-	@picturesNested path /api/pictures/view/*
-	handle @picturesNested {
-		uri strip_prefix /api/pictures/view
-		root * /home/deploy/app/storage/pictures
-		file_server
-		header Cache-Control "private, max-age=60, must-revalidate"
-	}
+	# Nested paths (/api/pictures/view/<user>/<survey>/<photo>.webp) are survey photos and are
+	# deliberately NOT served from disk here: they are only reachable through /api/storage/*,
+	# which requires a signed, expiring URL. A public file_server route for them was a way round
+	# that check. They now fall through to the backend, which has no such route (404).
 
 	# --- Storage API view (path-based, user-controllable) => revalidate ---
 	@storageview path /api/storage/view*

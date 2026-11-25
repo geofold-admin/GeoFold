@@ -182,6 +182,20 @@ export function demoResponse<T>(path: string, method: string, body?: unknown): T
   }
 
   const projectMatch = clean.match(/^\/api\/projects\/([^/]+)$/);
+  if (projectMatch && method === 'PUT') {
+    // Editing a project, and fields added to its form from the capture screen.
+    projects = projects.map((p) =>
+      p.id === projectMatch[1]
+        ? {
+            ...p,
+            name: String(payload.name ?? p.name),
+            description: (payload.description as string | null | undefined) ?? null,
+            formSchema: String(payload.formSchema ?? p.formSchema),
+          }
+        : p,
+    );
+    return withCounts().find((p) => p.id === projectMatch[1]) as T;
+  }
   if (projectMatch && method === 'GET') {
     return (withCounts().find((p) => p.id === projectMatch[1]) ?? withCounts()[0]) as T;
   }

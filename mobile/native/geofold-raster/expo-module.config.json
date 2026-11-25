@@ -1,0 +1,9 @@
+{
+  "platforms": ["android", "apple"],
+  "android": {
+    "modules": ["app.geofold.raster.GeofoldRasterModule"]
+  },
+  "apple": {
+    "modules": ["GeofoldRasterModule"]
+  }
+}
