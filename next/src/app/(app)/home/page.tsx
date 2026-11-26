@@ -12,8 +12,11 @@ import type { ProjectResponse, SubscriptionMe, SurveyDetail, SurveyFeatureCollec
 
 const MapView = dynamic(() => import('@/components/MapView'), {
   ssr: false,
-  loading: () => <div className="center" style={{ minHeight: '42vh' }}>Loading map…</div>,
+  loading: () => <div className="center" style={{ minHeight: MAP_HEIGHT }}>Loading map…</div>,
 })
+
+/** Tall enough to read a survey area at a glance, capped so a big monitor still shows the panels below. */
+const MAP_HEIGHT = 'clamp(360px, 62vh, 720px)'
 
 /** How many captures the activity list shows. The rest are one click away on Records. */
 const RECENT = 6
@@ -220,47 +223,21 @@ export default function HomePage() {
         </div>
       ) : null}
 
-      <div className="dash-grid">
-        <div className="panel">
-          <div className="phead">
-            <span>Survey locations</span>
-            <Link href="/map" className="phead-link">Open map <ArrowRight size={13} /></Link>
-          </div>
-          {fc === null ? (
-            <div className="center" style={{ minHeight: '42vh' }}>Loading…</div>
-          ) : (
-            <MapView features={features} height="44vh" wheelZoom={false} />
-          )}
+      {/* The map has a full-width row of its own: it is the panel on this page worth reading in
+          detail, and squeezed into a column beside Workspace it was a short strip. */}
+      <div className="panel dash-map">
+        <div className="phead">
+          <span>Survey locations</span>
+          <Link href="/map" className="phead-link">Open map <ArrowRight size={13} /></Link>
         </div>
-
-        <div className="panel">
-          <div className="phead">
-            <span>Workspace</span>
-            {me ? <span className={`pill${me.premiumActive ? ' on' : ''}`}>{me.premiumActive ? 'Premium' : 'Free'}</span> : null}
-          </div>
-          {!me ? (
-            <div className="center" style={{ minHeight: 160 }}>Loading…</div>
-          ) : (
-            <div className="ws">
-              <p className="hint" style={{ margin: 0 }}>
-                {me.premiumActive && me.premiumUntilUtc
-                  ? `Premium until ${new Date(me.premiumUntilUtc).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })}.`
-                  : 'Free plan. Limits reset every day at 00:00 UTC.'}
-              </p>
-              <Usage label="Projects" used={me.usage.projects} limit={me.limits.maxProjects} />
-              <Usage label="Surveys today" used={me.usage.surveysToday} limit={me.limits.dailySurveys} />
-              <Usage label="Photos today" used={me.usage.photosToday} limit={me.limits.dailyPhotos} />
-              <Usage label="Cloud storage" used={me.usage.storageBytes} limit={me.limits.storageBytes} format={bytes} />
-              {me.limits.photosPerProject != null ? (
-                <p className="hint" style={{ margin: 0 }}>Up to {me.limits.photosPerProject} photos per project. A point can carry several, and each one counts.</p>
-              ) : null}
-              <Link href="/subscription" className="btn-ghost ws-cta">{me.premiumActive ? 'Manage plan' : `Upgrade · ${me.offer.priceLabel} / ${me.offer.days} days`}</Link>
-            </div>
-          )}
-        </div>
+        {fc === null ? (
+          <div className="center" style={{ minHeight: MAP_HEIGHT }}>Loading…</div>
+        ) : (
+          <MapView features={features} height={MAP_HEIGHT} wheelZoom={false} />
+        )}
       </div>
 
-      <div className="dash-grid even">
+      <div className="dash-grid three">
         <div className="panel">
           <div className="phead">
             <span>Recent captures</span>
@@ -318,6 +295,32 @@ export default function HomePage() {
                   </Link>
                 )
               })}
+            </div>
+          )}
+        </div>
+
+        <div className="panel">
+          <div className="phead">
+            <span>Workspace</span>
+            {me ? <span className={`pill${me.premiumActive ? ' on' : ''}`}>{me.premiumActive ? 'Premium' : 'Free'}</span> : null}
+          </div>
+          {!me ? (
+            <div className="center" style={{ minHeight: 160 }}>Loading…</div>
+          ) : (
+            <div className="ws">
+              <p className="hint" style={{ margin: 0 }}>
+                {me.premiumActive && me.premiumUntilUtc
+                  ? `Premium until ${new Date(me.premiumUntilUtc).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })}.`
+                  : 'Free plan. Limits reset every day at 00:00 UTC.'}
+              </p>
+              <Usage label="Projects" used={me.usage.projects} limit={me.limits.maxProjects} />
+              <Usage label="Surveys today" used={me.usage.surveysToday} limit={me.limits.dailySurveys} />
+              <Usage label="Photos today" used={me.usage.photosToday} limit={me.limits.dailyPhotos} />
+              <Usage label="Cloud storage" used={me.usage.storageBytes} limit={me.limits.storageBytes} format={bytes} />
+              {me.limits.photosPerProject != null ? (
+                <p className="hint" style={{ margin: 0 }}>Up to {me.limits.photosPerProject} photos per project. A point can carry several, and each one counts.</p>
+              ) : null}
+              <Link href="/subscription" className="btn-ghost ws-cta">{me.premiumActive ? 'Manage plan' : `Upgrade · ${me.offer.priceLabel} / ${me.offer.days} days`}</Link>
             </div>
           )}
         </div>

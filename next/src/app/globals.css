@@ -439,8 +439,16 @@ a.btn-ghost:hover { background: color-mix(in srgb, var(--ink) 5%, transparent); 
 
 .dash-grid { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: var(--space-4); margin-bottom: var(--space-4); align-items: start; }
 .dash-grid.even { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.dash-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .dash-grid > .panel { margin-bottom: 0; }
-@media (max-width: 900px) { .dash-grid, .dash-grid.even { grid-template-columns: minmax(0, 1fr); } }
+.panel.dash-map { margin-bottom: var(--space-4); }
+/* Three narrow columns stop reading well before the single-column break: go to two, and let the
+   third panel (Workspace) take the full row under them. */
+@media (max-width: 1280px) {
+  .dash-grid.three { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dash-grid.three > :nth-child(3) { grid-column: 1 / -1; }
+}
+@media (max-width: 900px) { .dash-grid, .dash-grid.even, .dash-grid.three { grid-template-columns: minmax(0, 1fr); } }
 
 .panel .phead .phead-link { display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-body), system-ui, sans-serif;
   font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; }

@@ -141,7 +141,13 @@ function SurveyMarker({
       <Popup maxWidth={260}>
         <div style={{ minWidth: 200 }}>
           {photoUrl ? (
-            <img src={photoUrl} alt="Survey" style={{ width: '100%', borderRadius: 6, marginBottom: 6 }} />
+            /* A thumbnail, not the photo: a fixed box with `cover` so a portrait shot cannot stretch
+               the popup down the map. The full image is one click away in a new tab. */
+            <a href={photoUrl} target="_blank" rel="noopener noreferrer" title="Open the full photo"
+              style={{ display: 'block', marginBottom: 6, cursor: 'zoom-in' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element -- a short-lived signed URL; nothing for the optimizer to cache */}
+              <img src={photoUrl} alt="Survey photo" style={{ display: 'block', width: '100%', maxWidth: 240, height: 140, objectFit: 'cover', border: '1px solid var(--line)' }} />
+            </a>
           ) : (
             <div style={{ fontSize: 12, color: 'var(--ink-2)', padding: '18px 0', textAlign: 'center', background: 'var(--paper)', borderRadius: 0, marginBottom: 6 }}>
               {state === 'loading' && 'Loading photo…'}{state === 'error' && 'Photo unavailable'}{state === 'none' && 'No photo'}{state === 'idle' && !photoUrl && 'Open to load photo'}
@@ -394,7 +400,11 @@ export default function MapView({
   const clearActive = () => (mode === 'measure' ? setMeasurePoints([]) : setPolyPoints([]))
 
   return (
-    <div style={{ height, overflow: 'hidden', border: '1px solid var(--line)', position: 'relative' }}>
+    /* `isolation: isolate` keeps Leaflet's z-index ladder (panes 400+, controls 1000) inside this
+       box. Without it the map painted over the phone layout's sticky top and bottom bars
+       (z-index 20) whenever it scrolled under them. The rail below still sits above the panes,
+       because both compete inside this one stacking context. */
+    <div style={{ height, overflow: 'hidden', border: '1px solid var(--line)', position: 'relative', isolation: 'isolate' }}>
       {/* ONE RAIL, TOP-RIGHT. Every surface this app owns lives in a single right-aligned column:
           the mode buttons on the first row and the live readout stacked beneath them. Leaflet's
           own chrome keeps the corners it draws itself into — zoom top-left, attribution
