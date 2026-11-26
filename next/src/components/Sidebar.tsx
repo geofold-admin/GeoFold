@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { LogOut } from 'lucide-react'
-import { useSync } from '@/lib/SyncContext'
 import { useAuth } from '@/lib/AuthContext'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import { DEMO_MODE } from '@/lib/demo'
@@ -13,7 +12,6 @@ import { SyncStatus } from './SyncStatus'
 export function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
-  const { pending, syncing } = useSync()
   const { exitDemo } = useAuth()
 
   const signOut = async () => {
@@ -38,9 +36,6 @@ export function Sidebar() {
         {navItems.map(({ href, label, icon: Icon }) => (
           <Link key={href} href={href} className={pathname.startsWith(href) ? 'active' : ''}>
             <Icon /> {label}
-            {href === '/capture' && pending > 0 && (
-              <span className="badge accent" style={{ marginLeft: 'auto' }}>{syncing ? '…' : pending}</span>
-            )}
           </Link>
         ))}
       </nav>

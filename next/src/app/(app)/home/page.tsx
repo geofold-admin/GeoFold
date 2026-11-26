@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
-import { ArrowRight, Camera, Check, FolderPlus, MapPin } from 'lucide-react'
+import { Camera, Check, FolderPlus, MapPin, Smartphone, ArrowRight } from 'lucide-react'
 import { api } from '@/lib/api-client'
 import { useSync } from '@/lib/SyncContext'
 import { buildReferences } from '@/lib/reference'
@@ -138,7 +138,7 @@ export default function HomePage() {
   // The three things that make a workspace useful, in the order they have to happen.
   const steps = [
     { done: hasProject, title: 'Create a project', body: 'A project holds one survey and the form its points are filled in with.', href: '/projects/new', cta: 'New project' },
-    { done: hasPoint, title: 'Capture the first point', body: 'From the phone in the field, or here in the browser. It is saved on the device first and synced when there is a signal.', href: '/capture', cta: 'Open capture' },
+    { done: hasPoint, title: 'Capture the first point', body: 'With the GeoFold app on a phone in the field. It is saved on the device first and synced when there is a signal.', href: '/download', cta: 'Get the app' },
     { done: false, title: 'Review and export', body: 'Every synced point lands in Records, where it can be filtered and exported to CSV or Excel with its photos.', href: '/surveys', cta: 'Open records' },
   ]
 
@@ -170,8 +170,8 @@ export default function HomePage() {
             <p>{summary}</p>
           </div>
           <div className="hero-actions">
-            <Link href="/capture" className="hero-btn solid"><Camera size={16} /> New capture</Link>
-            <Link href="/projects/new" className="hero-btn"><FolderPlus size={16} /> New project</Link>
+            <Link href="/projects/new" className="hero-btn solid"><FolderPlus size={16} /> New project</Link>
+            <Link href="/download" className="hero-btn"><Smartphone size={16} /> Get the mobile app</Link>
           </div>
         </div>
       </div>
@@ -191,7 +191,6 @@ export default function HomePage() {
                 ? `Uploading ${pending} capture${pending === 1 ? '' : 's'} from this device…`
                 : `${pending} capture${pending === 1 ? ' is' : 's are'} waiting on this device to upload.`}
           </span>
-          {pending > 0 ? <Link href="/capture">See the queue <ArrowRight size={13} /></Link> : null}
         </div>
       ) : null}
 

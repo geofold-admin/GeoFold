@@ -59,7 +59,7 @@ await page.evaluate(() => {
 })
 await new Promise((r) => setTimeout(r, 3000))
 let url = page.url()
-check('can enter the demo portal', /\/home|\/capture|\/map/.test(url), `filled=${JSON.stringify(filled)} url=${url}`)
+check('can enter the demo portal', /\/home|\/map/.test(url), `filled=${JSON.stringify(filled)} url=${url}`)
 
 /* If a login form appeared instead, fill the demo credentials. */
 if (!/\/home/.test(page.url())) {

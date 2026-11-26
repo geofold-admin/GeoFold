@@ -94,7 +94,7 @@ export default function ProjectDetailPage() {
         {surveys === null ? (
           <p className="muted" style={{ marginBottom: 0 }}>Loading…</p>
         ) : surveys.length === 0 ? (
-          <p className="hint" style={{ marginBottom: 0 }}>No submissions yet. <Link href="/capture">Capture a survey</Link> for this project.</p>
+          <p className="hint" style={{ marginBottom: 0 }}>No submissions yet. Points for this project are captured with the <Link href="/download">GeoFold mobile app</Link>.</p>
         ) : (
           <div className="subs">
             {recent.map((s) => (

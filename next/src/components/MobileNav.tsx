@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { CreditCard, LogOut } from 'lucide-react'
-import { useSync } from '@/lib/SyncContext'
 import { useAuth } from '@/lib/AuthContext'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import { DEMO_MODE } from '@/lib/demo'
@@ -14,7 +13,6 @@ import { SyncStatus } from './SyncStatus'
 export function MobileNav() {
   const pathname = usePathname()
   const router = useRouter()
-  const { pending } = useSync()
   const { exitDemo } = useAuth()
 
   const signOut = async () => {
@@ -49,7 +47,6 @@ export function MobileNav() {
           <Link key={href} href={href} className={pathname.startsWith(href) ? 'active' : ''}>
             <Icon />
             {short}
-            {href === '/capture' && pending > 0 && <span className="dot" />}
           </Link>
         ))}
       </nav>

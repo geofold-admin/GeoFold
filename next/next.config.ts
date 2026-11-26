@@ -53,6 +53,11 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }]
   },
+  // The browser Capture page was removed: points are captured with the mobile app. Old bookmarks
+  // land on the Overview instead of a 404. Not permanent, so the path stays free to reuse.
+  async redirects() {
+    return [{ source: '/capture', destination: '/home', permanent: false }]
+  },
 }
 
 export default nextConfig

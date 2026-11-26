@@ -212,7 +212,7 @@ export default function SurveysPage() {
       {surveys !== null && filtered.length === 0 && (
         <div className="empty">
           {surveys.length === 0
-            ? <>No records yet. <Link href="/capture">Capture your first survey</Link>.</>
+            ? <>No records yet. Capture your first survey with the <Link href="/download">GeoFold mobile app</Link>.</>
             : 'No records match these filters.'}
         </div>
       )}
